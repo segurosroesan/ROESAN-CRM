@@ -1,0 +1,15 @@
+{
+  "name": "roesan-crm",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev -w apps/frontend",
+    "dev:backend": "npm run dev -w apps/backend",
+    "build:frontend": "npm run build -w apps/frontend",
+    "build:backend": "npm run build -w apps/backend",
+    "lint": "npm run lint -w apps/frontend && npm run lint -w apps/backend"
+  }
+}

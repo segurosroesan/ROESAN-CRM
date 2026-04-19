@@ -46,7 +46,7 @@ export class SoftSegurosApi {
   /**
    * Helper to make authorized requests.
    */
-  private async request(method: string, url: string, data?: any, params?: any) {
+  private async request(method: string, url: string, data?: any, params?: any): Promise<any> {
     if (!this.token) {
       await this.login();
     }

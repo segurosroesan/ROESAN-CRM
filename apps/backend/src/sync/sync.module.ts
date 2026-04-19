@@ -21,6 +21,5 @@ import { SyncController } from './sync.controller';
     },
   ],
   exports: [SyncService],
-  controllers: [SyncController],
 })
 export class SyncModule {}

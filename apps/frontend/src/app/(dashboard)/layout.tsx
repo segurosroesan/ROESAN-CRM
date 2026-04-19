@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { 
   Users, 
   RefreshCw, 
@@ -7,15 +10,30 @@ import {
   Settings, 
   LogOut,
   ChevronRight,
-  ShieldCheck,
   Bell
 } from "lucide-react";
+
+const PAGE_TITLES: Record<string, { parent: string; current: string }> = {
+  "/":             { parent: "Panel Comercial", current: "Dashboard" },
+  "/leads":         { parent: "Panel Comercial", current: "Pre-Venta" },
+  "/renovaciones":  { parent: "Panel Comercial", current: "Renovaciones" },
+  "/config":        { parent: "Panel Comercial", current: "Configuración" },
+};
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  
+  // For lead detail pages, show special breadcrumb
+  const isLeadDetail = pathname.startsWith("/leads/") && pathname !== "/leads";
+  
+  const pageInfo = isLeadDetail
+    ? { parent: "Pre-Venta", current: "Ficha de Prospecto" }
+    : PAGE_TITLES[pathname] || { parent: "Panel Comercial", current: "" };
+
   const navItems = [
     { title: "Dashboard", icon: LayoutDashboard, href: "/" },
     { title: "Pre-Venta", icon: Users, href: "/leads" },
@@ -41,19 +59,28 @@ export default function DashboardLayout({
            />
         </div>
         
-        <nav className="flex-1 px-4 py-6 space-y-2 relative z-10">
-          <div className="px-3 mb-2 text-xs font-semibold text-indigo-300/50 uppercase tracking-wider">Menú Principal</div>
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="group flex items-center px-3 py-3 text-sm font-medium rounded-xl hover:bg-white/5 hover:shadow-[0_0_15px_rgba(59,130,246,0.1)] transition-all duration-300 relative overflow-hidden"
-            >
-              <div className="absolute left-0 top-0 h-full w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <item.icon className="mr-3 h-5 w-5 text-indigo-300 group-hover:text-blue-400 transition-colors" />
-              <span className="text-slate-300 group-hover:text-white transition-colors">{item.title}</span>
-            </Link>
-          ))}
+        <nav className="flex-1 px-4 py-6 space-y-1 relative z-10">
+          <div className="px-3 mb-3 text-xs font-semibold text-indigo-300/50 uppercase tracking-wider">Menú Principal</div>
+          {navItems.map((item) => {
+            const isActive = item.href === "/"
+              ? pathname === "/"
+              : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex items-center px-3 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative overflow-hidden ${
+                  isActive
+                    ? "bg-white/10 shadow-[0_0_20px_rgba(59,130,246,0.15)] border border-white/10"
+                    : "hover:bg-white/5 hover:shadow-[0_0_15px_rgba(59,130,246,0.08)]"
+                }`}
+              >
+                <div className={`absolute left-0 top-0 h-full w-[3px] bg-blue-400 rounded-r transition-opacity ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-60"}`} />
+                <item.icon className={`mr-3 h-5 w-5 transition-colors ${isActive ? "text-blue-400" : "text-indigo-300/70 group-hover:text-blue-400"}`} />
+                <span className={`transition-colors ${isActive ? "text-white font-semibold" : "text-slate-400 group-hover:text-white"}`}>{item.title}</span>
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-6 relative z-10">
@@ -84,19 +111,28 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
         
-        {/* Premium Header */}
-        <header className="h-20 bg-white/70 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-10 sticky top-0 z-20">
+        {/* Dynamic Header */}
+        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/40 flex items-center justify-between px-8 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center text-sm font-medium text-slate-400">
-            <span className="hover:text-blue-600 transition-colors cursor-pointer">Panel Comercial</span>
-            <ChevronRight className="h-4 w-4 mx-3 opacity-50" />
-            <span className="text-slate-800 bg-slate-100 px-3 py-1 rounded-full font-semibold shadow-sm">Pre-Venta Leads</span>
+            <span className="hover:text-blue-600 transition-colors cursor-pointer font-medium">{pageInfo.parent}</span>
+            {pageInfo.current && (
+              <>
+                <ChevronRight className="h-4 w-4 mx-2 opacity-40" />
+                <span className="text-slate-800 bg-slate-100/80 px-3 py-1 rounded-full font-bold text-sm shadow-sm">
+                  {pageInfo.current}
+                </span>
+              </>
+            )}
           </div>
           
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-3">
              <button className="relative p-2 text-slate-400 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50">
                <Bell className="h-5 w-5" />
                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
              </button>
+             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-black text-white shadow-sm">
+               J
+             </div>
           </div>
         </header>
 

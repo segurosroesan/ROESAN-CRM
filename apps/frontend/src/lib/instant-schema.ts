@@ -10,6 +10,7 @@ const schema = i.schema({
       city: i.string().optional(),
       type: i.string().indexed(), // ramo: 'auto', 'salud', 'empresarial', 'cumplimiento'
       source: i.string().optional(), // e.g., 'Sitio Web', 'Meta', etc.
+      documento: i.string().optional(),
       
       // Vehicle (Auto)
       vehiclePlate: i.string().optional(),
@@ -63,6 +64,21 @@ const schema = i.schema({
       leadId: i.string().indexed(),
       createdAt: i.number(),
     }),
+
+    interacciones: i.entity({
+      tipo: i.string(), // 'llamada', 'whatsapp', 'email', 'reunion'
+      notas: i.string(),
+      leadId: i.string().indexed(),
+      createdAt: i.number(),
+    }),
+
+    cotizaciones: i.entity({
+      valor: i.number(),
+      aseguradora: i.string(),
+      estado: i.string(), // 'pendiente', 'aprobada', 'rechazada'
+      leadId: i.string().indexed(),
+      createdAt: i.number(),
+    }),
     
     users: i.entity({
       name: i.string(),
@@ -93,6 +109,30 @@ const schema = i.schema({
         on: "users",
         has: "many",
         label: "leads",
+      },
+    },
+    leadInteracciones: {
+      forward: {
+        on: "leads",
+        has: "many",
+        label: "interacciones",
+      },
+      reverse: {
+        on: "interacciones",
+        has: "one",
+        label: "lead",
+      },
+    },
+    leadCotizaciones: {
+      forward: {
+        on: "leads",
+        has: "many",
+        label: "cotizaciones",
+      },
+      reverse: {
+        on: "cotizaciones",
+        has: "one",
+        label: "lead",
       },
     },
   },

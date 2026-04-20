@@ -75,9 +75,12 @@ const schema = i.schema({
     cotizaciones: i.entity({
       valor: i.number(),
       aseguradora: i.string(),
+      cobertura: i.string().optional(),
+      fuente: i.string().optional(),
       estado: i.string(), // 'pendiente', 'aprobada', 'rechazada'
       leadId: i.string().indexed(),
       createdAt: i.number(),
+      updatedAt: i.number().optional(),
     }),
     
     users: i.entity({

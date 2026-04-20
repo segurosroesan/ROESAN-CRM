@@ -134,7 +134,7 @@ export default function LeadDetailPage() {
     },
   });
 
-  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos">("timeline");
+  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails">("timeline");
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editData, setEditData] = useState<any>(null);

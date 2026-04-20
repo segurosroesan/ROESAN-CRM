@@ -1,0 +1,202 @@
+//CotizaciC3n - exitosa
+{
+    "correlationalID": "0001",
+    "Movimientos": [
+        {
+            "Movimiento": {
+                "referencialID": "01",
+                "TipoMovimiento": "02",
+                "NoNegocio": "00003",
+                "DatosAsegurado": {
+                    "Departamento": "11",
+                    "CodigoMunicipio": "11001",
+                    "ConsideracionesAdicionalesDA": [
+                        {
+                            "NoConsideracion": "40",
+                            "TipoRegla": "19",
+                            "ValorRegla": "1"
+                        },
+                        {
+                            "NoConsideracion": "40",
+                            "TipoRegla": "20",
+                            "ValorRegla": "24/11/1986"
+                        },
+                        {
+                            "NoConsideracion": "40",
+                            "TipoRegla": "56",
+                            "ValorRegla": "F"
+                        }
+                    ]
+                },
+                "DatosVehiculo": [
+                    {
+                        "NoInciso": "1",
+                        "ClaveFasecolda": "01601276",
+                        "Modelo": 2016,
+                        "Uso": "1",
+                        "Servicio": "1",
+                        "Paquete": "01",
+                        "Coberturas": [
+                            {
+                                "NoCobertura": "14", //14   Asistencia en Viaje
+                                "SumaAsegurada": "01",
+                                "Deducible": "0",
+                                "TipoSuma": "1",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "04",  //4    Responsabilidad Civil 
+                                "SumaAsegurada": "2000000000",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "07",  //7    Abogados en Proceso Civil o Penal
+                                "SumaAsegurada": "40000000",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "01",  //1    PC)rdida Parcial por DaC1os (PPD)
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "M|0|1500000",
+                                "TipoSuma": "02",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "02", //2    PC)rdida Total por DaC1os (PTD)
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "P|C|0",
+                                "TipoSuma": "02",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "03",  //3    PC)rdida Parcial por Hurto (PPH)
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "M|0|1500000",
+                                "TipoSuma": "02",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "74",  //74   PC)rdida Total por Hurto (PTH)
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "P|C|0",
+                                "TipoSuma": "02",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "05", //5    Gastos MC)dicos por accidente de trC!nsito
+                                "SumaAsegurada": "3093333",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "75", //75   Afectaciones por Accidente de TrC!nsito
+                                "SumaAsegurada": "4000000",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "76",  //76   Gastos por accidente de trC!nsito a Mascotas
+                                "SumaAsegurada": "5000000",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "17", //17   Gastos de Transporte por PT del Vehiculo Aseg
+                                "SumaAsegurada": "1500000",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "28",  //28   Gastos de Transporte por PP del VehC-culo Aseg
+                                "SumaAsegurada": "75000",
+                                "Deducible": "",
+                                "TipoSuma": "30",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "15",  //15   PC)rdida de llaves
+                                "SumaAsegurada": "LLAVES|1200000",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "77",  //77   PequeC1os accesorios
+                                "SumaAsegurada": "1200000",
+                                "Deducible": "",
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            {
+                                "NoCobertura": "43",  //43 Llantas estalladas
+                                "SumaAsegurada": "1200000",
+                                "Deducible": "25", //se coloca el % en valor. Esta cobertura no requiere siglas adicionales
+                                "TipoSuma": "",
+                                "Prima": ""
+                            },
+                            /*{
+                                "NoCobertura": "55", //55   Reparacion en Concesionario
+                                "SumaAsegurada": "",
+                                "Deducible": "1500000",
+                                "TipoSuma": "01"
+                            },*/
+                            {
+                                "NoCobertura": "48", //48 Rotura de Vidrios
+                                "SumaAsegurada": "2200000", //5700000 - 5000000
+                                "Deducible": "20", //se coloca el % en valor. Esta cobertura no requiere siglas adicionales
+                                "TipoSuma": "02"
+                            }
+                        ],
+                        "ConsideracionesAdicionalesDV": [
+                            {
+                                "NoConsideracion": "37",
+                                "TipoRegla": "",
+                                "ValorRegla": "N"
+                            },
+                            {
+                                "NoConsideracion": "58",
+                                "TipoRegla": "",
+                                "ValorRegla": "BSV110"
+                            }
+                        ]
+                    }
+                ],
+                "DatosGenerales": {
+                    "FechaEmision": "2025-05-06",
+                    "FechaInicio": "2025-05-06",
+                    "FechaTermino": "2026-05-06",
+                    "Moneda": "00",
+                    "Agente": "20150", //"10001",//20017
+                    "FormaPago": "A",
+                    //Si se habilita la consideracion 56, este bloque no se coloca. 
+                    //Si se desea apuntar a una tarifa especifica. Se debe quitar la 56
+                    /*
+                    "TarifaValores": "2312",  //2312 (aliados) 2501 (banca)
+                    "TarifaCuotas": "231201",
+                    "TarifaDerechos": "2312",
+                    */
+                    "ConsideracionesAdicionalesDG": [
+                        {
+                            "NoConsideracion": "26", //Valor Convenido pero con tarifa diferente + -, se aplica en las coberturas que la matriz dice ( Valor Fasecolda + 5%* , 10%*)
+                            "TipoRegla": "",
+                            "ValorRegla": "62"
+                        },
+                        {
+                            "NoConsideracion": "56",   //Habilitar para siempre tomar la tarifa vigente
+                            "TipoRegla": "",
+                            "ValorRegla": ""
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,291 @@
+{
+    "correlationalID": "0001",
+    "Movimientos": [
+        {
+            "referencialID": "",
+            "Respuesta_Solicitud": {
+                "status": 201,
+                "transaction": true,
+                "msn": "Informacion procesada correctamente",
+                "numOtra": "1272401255P"
+            },
+            "Movimiento": {
+                "TipoMovimiento": "2",
+                "NoNegocio": "00003",
+                "NoPoliza": "",
+                "NoCotizacion": "0000019989",
+                "NoEndoso": "",
+                "TipoEndoso": "21",
+                "DatosAsegurado": {
+                    "NoAsegurado": "",
+                    "Nombre": "",
+                    "Direccion": "",
+                    "Colonia": "",
+                    "Poblacion": "",
+                    "Departamento": "11",
+                    "CodigoMunicipio": "11001",
+                    "ConsideracionesAdicionalesDA": [
+                        {
+                            "NoConsideracion": "40",
+                            "TipoRegla": "19",
+                            "ValorRegla": "1"
+                        },
+                        {
+                            "NoConsideracion": "40",
+                            "TipoRegla": "20",
+                            "ValorRegla": "24/11/1986"
+                        },
+                        {
+                            "NoConsideracion": "40",
+                            "TipoRegla": "56",
+                            "ValorRegla": "F"
+                        }
+                    ]
+                },
+                "DatosVehiculo": [
+                    {
+                        "NoInciso": "0001",
+                        "ClaveFasecolda": "01601276",
+                        "Modelo": "2016",
+                        "DescripcionVehiculo": "",
+                        "Uso": "01",
+                        "Servicio": "01",
+                        "Paquete": "01",
+                        "Motor": "",
+                        "Serie": "",
+                        "Coberturas": [
+                            {
+                                "NoCobertura": "01",
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "M||1500000",
+                                "TipoSuma": "02",
+                                "Prima": "859245.69",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "02",
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "P|C|0",
+                                "TipoSuma": "02",
+                                "Prima": "377740",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "03",
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "M||1500000",
+                                "TipoSuma": "02",
+                                "Prima": "20815",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "04",
+                                "SumaAsegurada": "2000000000",
+                                "Deducible": "",
+                                "TipoSuma": "02",
+                                "Prima": "434000",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "05",
+                                "SumaAsegurada": "3093333",
+                                "Deducible": "0",
+                                "TipoSuma": "02",
+                                "Prima": "20088.23",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "07",
+                                "SumaAsegurada": "40000000",
+                                "Deducible": "0",
+                                "TipoSuma": "02",
+                                "Prima": "25308.6",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "14",
+                                "SumaAsegurada": "1500000",
+                                "Deducible": "0",
+                                "TipoSuma": "02",
+                                "Prima": "107202.93",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "15",
+                                "SumaAsegurada": "1200000",
+                                "Deducible": "00000",
+                                "TipoSuma": "02",
+                                "Prima": "6376.8",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "17",
+                                "SumaAsegurada": "1500000",
+                                "Deducible": "0",
+                                "TipoSuma": "02",
+                                "Prima": "18991.5",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "28",
+                                "SumaAsegurada": "2250000",
+                                "Deducible": "",
+                                "TipoSuma": "02",
+                                "Prima": "146749.5",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "43",
+                                "SumaAsegurada": "1200000",
+                                "Deducible": "0025",
+                                "TipoSuma": "02",
+                                "Prima": "113317.2",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "48",
+                                "SumaAsegurada": "2200000",
+                                "Deducible": "20",
+                                "TipoSuma": "02",
+                                "Prima": "37307.6",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "74",
+                                "SumaAsegurada": "44000000",
+                                "Deducible": "P|C|0",
+                                "TipoSuma": "02",
+                                "Prima": "126676",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "75",
+                                "SumaAsegurada": "20000000",
+                                "Deducible": "0",
+                                "TipoSuma": "02",
+                                "Prima": "15085.95",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "76",
+                                "SumaAsegurada": "5000000",
+                                "Deducible": "0",
+                                "TipoSuma": "02",
+                                "Prima": "13475",
+                                "CondicionesAdicionalesC": []
+                            },
+                            {
+                                "NoCobertura": "77",
+                                "SumaAsegurada": "1200000",
+                                "Deducible": "0",
+                                "TipoSuma": "02",
+                                "Prima": "8370",
+                                "CondicionesAdicionalesC": []
+                            }
+                        ],
+                        "ConsideracionesAdicionalesDV": [
+                            {
+                                "NoConsideracion": "37",
+                                "TipoRegla": "0",
+                                "ValorRegla": "N"
+                            },
+                            {
+                                "NoConsideracion": "58",
+                                "TipoRegla": "0",
+                                "ValorRegla": "BSV110"
+                            },
+                            {
+                                "NoConsideracion": "10",
+                                "TipoRegla": "5177",
+                                "ValorRegla": "06/05/2023-13XX-P-03-AUTOMOVILNORMAL1-D00I"
+                            },
+                            {
+                                "NoConsideracion": "10",
+                                "TipoRegla": "5178",
+                                "ValorRegla": "06/05/2023-13XX-NT-P-03-AUTOMOVILNORMAL1"
+                            },
+                            {
+                                "NoConsideracion": "168",
+                                "TipoRegla": "",
+                                "ValorRegla": "2330750|35000|0|449493|2815243"
+                            },
+                            {
+                                "NoConsideracion": "166",
+                                "TipoRegla": "",
+                                "ValorRegla": "* PTD - Deducible por aplicar sobre el valor convenido asegurado.|* PTH - Deducible por aplicar sobre el valor convenido asegurado."
+                            },
+                            {
+                                "NoConsideracion": "167",
+                                "TipoRegla": "",
+                                "ValorRegla": "859246|377740|20815|434000|20088|25309|107203|6377|18992|146750|113317|37308|126676|15086|13475|8370"
+                            }
+                        ]
+                    }
+                ],
+                "DatosGenerales": {
+                    "FechaEmision": "2025-08-21",
+                    "FechaInicio": "2025-05-06",
+                    "FechaTermino": "2026-05-06",
+                    "Moneda": "00",
+                    "Agente": "20150",
+                    "FormaPago": "A",
+                    "TarifaValores": "2312",
+                    "TarifaCuotas": "231201",
+                    "TarifaDerechos": "2312",
+                    "PorcentajeDescuento": "",
+                    "ConsideracionesAdicionalesDG": [
+                        {
+                            "NoConsideracion": "26",
+                            "TipoRegla": "0",
+                            "ValorRegla": "62"
+                        },
+                        {
+                            "NoConsideracion": "56",
+                            "TipoRegla": "0",
+                            "ValorRegla": ""
+                        },
+                        {
+                            "NoConsideracion": "169",
+                            "TipoRegla": "0",
+                            "ValorRegla": "0"
+                        },
+                        {
+                            "NoConsideracion": "151",
+                            "TipoRegla": "",
+                            "ValorRegla": "03019908"
+                        }
+                    ]
+                },
+                "Primas": {
+                    "PrimaNeta": 2330750.0,
+                    "GastoExpedicion": 35000.0,
+                    "Recargo": 0.0,
+                    "IVA": 449492.5,
+                    "PrimaTotal": 2815242.5,
+                    "Comision": 1.0,
+                    "CondicionesAdicionalesP": []
+                },
+                "Recibos": [
+                    {
+                        "NoRecibo": "1",
+                        "FechaInicio": "2025-05-06",
+                        "FechaFin": "2026-05-06",
+                        "PrimaNeta": 2330750.0,
+                        "GastoExpedicion": 35000.0,
+                        "Recargo": 0.0,
+                        "IVA": 449492.5,
+                        "PrimaTotal": 2815242.5,
+                        "Comision": 23307.5,
+                        "ConsoderacionesAdicionalesR": [
+                            {
+                                "NoConsideracion": "41",
+                                "TipoRegla": "5141",
+                                "ValorRegla": "2330750|35000|0|449493|2815243|23308"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

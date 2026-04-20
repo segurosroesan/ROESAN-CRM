@@ -8,6 +8,8 @@ import { LeadsModule } from './leads/leads.module';
 import { SyncModule } from './sync/sync.module';
 import { CotizacionesModule } from './cotizaciones/cotizaciones.module';
 import { RenovacionesModule } from './renovaciones/renovaciones.module';
+import { CotizadorModule } from './cotizador/cotizador.module';
+import { GmailModule } from './gmail/gmail.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { RenovacionesModule } from './renovaciones/renovaciones.module';
     SyncModule,
     CotizacionesModule,
     RenovacionesModule,
+    CotizadorModule,
+    GmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

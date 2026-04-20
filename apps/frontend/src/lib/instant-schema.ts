@@ -84,6 +84,8 @@ const schema = i.schema({
       name: i.string(),
       email: i.string().indexed(),
       role: i.string(), // 'admin', 'coordinador', 'asesor'
+      googleEmail: i.string().optional(),
+      googleRefreshToken: i.string().optional(),
     }),
   },
   links: {

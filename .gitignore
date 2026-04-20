@@ -29,3 +29,12 @@ Thmubs.db
 
 # InstantDB logs/temp
 .instant-db/
+
+# Credenciales y certificados de aseguradoras
+APIS/**/*.pfx
+APIS/**/*.txt
+APIS/**/*.md
+APIS/**/*.xlsx
+APIS/**/*.docx
+APIS/**/*.pdf
+apps/backend/certs/

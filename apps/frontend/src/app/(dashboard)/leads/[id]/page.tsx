@@ -36,6 +36,7 @@ import {
   ExternalLink,
   Copy,
 } from "lucide-react";
+import { EmailComposer } from "@/components/EmailComposer";
 
 // ✅ Etapas PRD v2.0 completas
 const STAGES = [
@@ -140,6 +141,7 @@ export default function LeadDetailPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAddInteraccion, setShowAddInteraccion] = useState(false);
   const [showAddCotizacion, setShowAddCotizacion] = useState(false);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [copied, setCopied] = useState(false);
 
   if (isLoading) return (
@@ -398,6 +400,7 @@ export default function LeadDetailPage() {
           <div className="flex items-center gap-1 bg-white/60 backdrop-blur rounded-2xl p-1 border border-slate-100 w-fit">
             {[
               { id: "timeline", label: "Timeline", icon: Clock },
+              { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
               { id: "cotizaciones", label: `Cotizaciones (${cotizaciones.length})`, icon: DollarSign },
               { id: "datos", label: "Datos completos", icon: User },
             ].map(tab => (
@@ -470,6 +473,43 @@ export default function LeadDetailPage() {
                     );
                   })}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Emails Tab */}
+          {activeTab === "emails" && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowEmailComposer(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-sm font-bold text-slate-400 hover:border-purple-400 hover:text-purple-500 hover:bg-purple-50/30 transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                Redactar nuevo correo
+              </button>
+
+              {interacciones.filter(i => i.tipo === "email").length === 0 && (
+                <div className="text-center py-12 bg-white rounded-2xl border border-slate-100">
+                  <Mail className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-slate-400 font-medium text-sm">Sin correos enviados</p>
+                  <p className="text-slate-300 text-xs mt-1">Vincula tu cuenta en configuración para empezar.</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {interacciones.filter(i => i.tipo === "email").map((email) => (
+                  <div key={email.id} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Gmail</span>
+                      <span className="text-[10px] text-slate-300 font-medium font-mono">
+                        {new Date(email.createdAt || Date.now()).toLocaleString("es-CO")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed italic border-l-2 border-slate-100 pl-4">
+                      {email.notas}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -627,13 +667,13 @@ export default function LeadDetailPage() {
                 </a>
               )}
               {lead.email && (
-                <a
-                  href={`mailto:${lead.email}`}
+                <button
+                  onClick={() => setShowEmailComposer(true)}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-sm transition-all"
                 >
                   <Send className="h-4 w-4" />
                   Enviar correo
-                </a>
+                </button>
               )}
             </div>
           </div>
@@ -690,6 +730,15 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Email Composer Modal */}
+      {showEmailComposer && lead.email && (
+        <EmailComposer 
+          leadId={leadId}
+          toEmail={lead.email}
+          onClose={() => setShowEmailComposer(false)}
+        />
+      )}
 
       {/* Click outside to close stage dropdown */}
       {isEditingStage && (

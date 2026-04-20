@@ -30,6 +30,7 @@ import {
   Lock,
   Bell,
   Database,
+  Mail,
 } from "lucide-react";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -165,6 +166,40 @@ export default function ConfigPage() {
           Credenciales, integraciones, usuarios y parámetros del sistema.
         </p>
       </div>
+      
+      {/* ── Mi Cuenta Gmail ── */}
+      <Section title="Mi Cuenta Gmail" icon={Mail}>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-100">
+                <Globe className="h-6 w-6 text-slate-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-700">Estado de la conexión</p>
+                <p className="text-xs text-slate-400 font-medium">Vincula tu cuenta de Google Workspace para enviar correos desde el CRM.</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => {
+                const userId = "u2"; // Usamos el ID del asesor John Doe para pruebas
+                window.location.href = `http://localhost:3002/api/auth/google/login?userId=${userId}`;
+              }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              Vincular cuenta de Google
+            </button>
+          </div>
+
+          <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 text-xs text-blue-700 space-y-1.5 font-medium">
+            <p className="font-bold flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Sobre la privacidad</p>
+            <p>• Solo accedemos a Gmail para enviar correos a tus leads y sincronizar hilos de conversación.</p>
+            <p>• El CRM nunca leerá correos personales o externos al flujo comercial.</p>
+          </div>
+        </div>
+      </Section>
 
       {/* ── Soft Seguros Credentials ── */}
       <Section title="Integración Soft Seguros" icon={ShieldCheck}>

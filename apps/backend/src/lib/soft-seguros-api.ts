@@ -132,15 +132,24 @@ export class SoftSegurosApi {
         numero_documento: data.numero_documento,
         nombres: data.nombres || data.nombre_completo,
         apellidos: data.apellidos || '',
-        correo: data.correo || '',
-        celular: data.celular || '',
-        tipo_identificacion: 'C', // Using generic Cedula code initially
-        tipo_cliente: 'F', // Persona natural/física
-        // Default fields needed by standard insurance APIs:
-        direccion: "Sin dirección",
-        ciudad: "Bogotá", 
+        email: data.correo || 'sin_correo@test.com',
+        celular: data.celular || '0000000000',
+        telefono: data.celular || '0000000000',
+        tipo_documento: "01", // Cédula (default)
+        genero: "MASCULINO", // Default requerido
+        fecha_nacimiento: "1990-01-01", // Default requerido
+        ocupacion: 4, // INDEPENDIENTE (ID encontrado en SoftSeguros)
+        es_prospecto: true,
+        sede: 6787, // Sede Principal Roesan
+        marca: 6751, // Marca Roesan
+        tipo_cliente: "F", // Persona Física
+        direccion: data.direccion || "Sin dirección",
+        ciudad: data.ciudad || "BOGOTÁ",
+        provincia: data.provincia || "BOGOTÁ",
+        pais: "CO",
       };
 
+      this.logger.debug(`Payload sync-2: ${JSON.stringify(payload)}`);
       const response = await this.request('POST', '/api/cliente/', payload);
       this.logger.log(`Client created successfully with ID: ${response.id}`);
       return response;

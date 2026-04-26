@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { QualitasApi, CotizarDto } from '../lib/qualitas-api';
 import { AllianzApi } from '../lib/allianz-api';
+import { ComparadorService } from './comparador.service';
+import { generarCorreo, GenerarCorreoParams } from './email-generator';
 
 @Injectable()
 export class CotizadorService {
@@ -9,6 +11,7 @@ export class CotizadorService {
   constructor(
     @Inject('QUALITAS_API') private readonly qualitasApi: QualitasApi,
     @Inject('ALLIANZ_API') private readonly allianzApi: AllianzApi,
+    private readonly comparadorService: ComparadorService,
   ) {}
 
   async cotizarQualitas(dto: CotizarDto) {
@@ -42,5 +45,21 @@ export class CotizadorService {
     }
 
     return result;
+  }
+
+  async compararCotizaciones(cotizaciones: any[]) {
+    return this.comparadorService.compararCotizaciones(cotizaciones);
+  }
+
+  generarCorreoCliente(params: GenerarCorreoParams) {
+    return generarCorreo(params);
+  }
+
+  async parsearPdfCotizacion(buffer: Buffer, mimeType: string) {
+    return this.comparadorService.parsearPdfCotizacion(buffer, mimeType);
+  }
+
+  async parsearMultiplesPdfsCotizacion(files: any[]) {
+    return this.comparadorService.parsearMultiplesPdfsCotizacion(files);
   }
 }

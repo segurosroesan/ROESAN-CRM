@@ -96,6 +96,14 @@ export class AllianzApi {
       ? dto.fechaNacimiento.replace(/-/g, '')
       : '';
 
+    const TIPO_DOC_MAPPING: Record<string, string> = {
+      'CC': 'C',
+      'CE': 'E',
+      'NIT': 'N',
+      'PP': 'P',
+    };
+    const docType = TIPO_DOC_MAPPING[dto.tipoDocumento] || 'C';
+
     const chargeXml =
       `<chargerequest>` +
       `<transactionnumber>${transactionNumber}</transactionnumber>` +
@@ -115,11 +123,11 @@ export class AllianzApi {
       `<TermDate>${termDate}</TermDate>` +
       `<firstbill>0</firstbill>` +
       `<successive>0</successive>` +
-      `<holderdoctype>C</holderdoctype>` +
+      `<holderdoctype>${docType}</holderdoctype>` +
       `<holderdocnumber>${dto.documento}</holderdocnumber>` +
       `<isholderdriver>S</isholderdriver>` +
       `<isholderowner>S</isholderowner>` +
-      `<ownerdoctype>C</ownerdoctype>` +
+      `<ownerdoctype>${docType}</ownerdoctype>` +
       `<ownerdocnumber>${dto.documento}</ownerdocnumber>` +
       `<risktype>L0008</risktype>` +
       `<vehicleplate>${dto.placa!.toUpperCase()}</vehicleplate>` +

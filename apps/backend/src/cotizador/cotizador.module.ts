@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CotizadorController } from './cotizador.controller';
 import { CotizadorService } from './cotizador.service';
+import { ComparadorService } from './comparador.service';
 import { QualitasApi } from '../lib/qualitas-api';
 import { AllianzApi } from '../lib/allianz-api';
 
@@ -10,6 +11,7 @@ import { AllianzApi } from '../lib/allianz-api';
   controllers: [CotizadorController],
   providers: [
     CotizadorService,
+    ComparadorService,
     {
       provide: 'QUALITAS_API',
       useFactory: (config: ConfigService) =>

@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/instant-db";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   ArrowLeft,
   Phone,
@@ -37,6 +37,7 @@ import {
   Copy,
 } from "lucide-react";
 import { EmailComposer } from "@/components/EmailComposer";
+import { CotizacionComparativo } from "@/components/CotizacionComparativo";
 
 // ✅ Etapas PRD v2.0 completas
 const STAGES = [
@@ -98,18 +99,21 @@ const RAMO_META: Record<string, { label: string; icon: React.ComponentType<{ cla
 function ScoreBar({ score }: { score?: number }) {
   const s = score || 0;
   let label = "Frío";
-  let color = "bg-slate-300";
   let Icon = Snowflake;
-  if (s >= 80) { label = "Urgente"; color = "bg-red-500"; Icon = Flame; }
-  else if (s >= 60) { label = "Caliente"; color = "bg-orange-500"; Icon = Zap; }
-  else if (s >= 40) { label = "Tibio"; color = "bg-amber-400"; Icon = Thermometer; }
+  let barGradient = "linear-gradient(90deg, #94a3b8, #cbd5e1)";
+  if (s >= 80) { label = "Urgente"; Icon = Flame;       barGradient = "linear-gradient(90deg, #ef4444, #f97316)"; }
+  else if (s >= 60) { label = "Caliente"; Icon = Zap;   barGradient = "linear-gradient(90deg, #f59e0b, #f97316)"; }
+  else if (s >= 40) { label = "Tibio"; Icon = Thermometer; barGradient = "linear-gradient(90deg, #fbbf24, #f59e0b)"; }
 
   return (
     <div className="flex items-center gap-3">
       <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${s}%` }} />
+        <div
+          className="nova-progress-fill h-full rounded-full transition-all duration-700"
+          style={{ width: `${s}%`, background: barGradient }}
+        />
       </div>
-      <span className="flex items-center gap-1 text-xs font-bold text-slate-600 min-w-[70px]">
+      <span className="flex items-center gap-1 text-xs font-semibold text-slate-600 min-w-[72px]" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>
         <Icon className="h-3.5 w-3.5" />
         {label} ({s})
       </span>
@@ -143,6 +147,11 @@ export default function LeadDetailPage() {
   const [showAddCotizacion, setShowAddCotizacion] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [copied, setCopied] = useState(false);
+   const [isComparing, setIsComparing] = useState(false);
+  const [comparativoData, setComparativoData] = useState<any>(null);
+  const [isAutoQuoting, setIsAutoQuoting] = useState(false);
+  const [uploadingBulk, setUploadingBulk] = useState(false);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   if (isLoading) return (
     <div className="h-full flex items-center justify-center">
@@ -176,6 +185,140 @@ export default function LeadDetailPage() {
   const ramoMeta = RAMO_META[lead.type?.toLowerCase()] || { label: lead.type || "Sin ramo", icon: Shield, color: "from-slate-500 to-slate-600" };
   const RamoIcon = ramoMeta.icon;
 
+
+  const handleAutoQuote = async () => {
+    if (!lead.vehicleFasecolda || !lead.vehicleYear || !lead.documento) {
+      alert("Faltan datos críticos para cotizar (Fasecolda, Modelo o Documento). Por favor completa los datos del lead o sube un PDF de otra aseguradora.");
+      return;
+    }
+
+    setIsAutoQuoting(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const response = await fetch(`${backendUrl}/cotizador/all`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          claveFasecolda: lead.vehicleFasecolda,
+          modelo: parseInt(lead.vehicleYear),
+          placa: lead.vehiclePlate || "PROVIS",
+          tipoDocumento: "CC",
+          documento: lead.documento,
+          departamento: "11",
+          municipio: "11001",
+          fechaInicio: new Date().toISOString().split('T')[0],
+          fechaFin: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+          leadId: leadId
+        }),
+      });
+
+      const results = await response.json();
+      const transactions = [];
+      
+      if (results.qualitas && !results.qualitas.error) {
+        const qId = crypto.randomUUID();
+        const prima = results.qualitas.total_a_pagar || results.qualitas.prima_total || 0;
+        transactions.push(db.tx.cotizaciones[qId].update({
+          leadId,
+          aseguradora: "Qualitas",
+          valor: prima,
+          prima_total: prima,
+          cobertura: "Plan Automóvil - Generado Automáticamente",
+          estado: "enviada",
+          fuente: "API Qualitas",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }));
+        transactions.push(db.tx.cotizaciones[qId].link({ lead: leadId }));
+      }
+
+      if (results.allianz && !results.allianz.error) {
+        for (const pkg of (results.allianz.paquetes || [])) {
+          const aId = crypto.randomUUID();
+          transactions.push(db.tx.cotizaciones[aId].update({
+            leadId,
+            aseguradora: "Allianz",
+            valor: pkg.primaTotal,
+            prima_total: pkg.primaTotal,
+            cobertura: pkg.nombre,
+            estado: "enviada",
+            fuente: "API Allianz",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }));
+          transactions.push(db.tx.cotizaciones[aId].link({ lead: leadId }));
+        }
+      }
+
+      if (transactions.length > 0) {
+        await db.transact(transactions);
+        alert(`Se han generado ${transactions.length / 2} cotizaciones nuevas.`);
+      } else {
+        const errMsg = results.qualitas?.error || results.allianz?.error || "No se encontraron ofertas.";
+        alert(`Error al cotizar: ${errMsg}`);
+      }
+    } catch (err) {
+      console.error("Error en auto-quote:", err);
+      alert("Error llamando al servicio de cotización.");
+    } finally {
+      setIsAutoQuoting(false);
+    }
+  };
+
+  const handleBulkPdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setUploadingBulk(true);
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => formData.append("files", file));
+      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const res = await fetch(`${backendUrl}/cotizador/parse-pdfs`, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (res.ok) {
+        const parsedQuotes = await res.json();
+        const txs: any[] = [];
+        
+        parsedQuotes.forEach((data: any) => {
+          const newId = crypto.randomUUID();
+          const prima = parseFloat(String(data.prima_total || 0)) || 0;
+          txs.push(
+            db.tx.cotizaciones[newId].update({
+              leadId,
+              aseguradora: data.aseguradora || "Desconocida",
+              valor: prima,
+              prima_total: prima,
+              cobertura: data.cobertura || "",
+              estado: "enviada",
+              es_renovacion: false, // Asume falso, se puede editar despues si se desea
+              fuente: "IA (Múltiples PDFs)",
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            }),
+            db.tx.cotizaciones[newId].link({ lead: leadId })
+          );
+        });
+        
+        if (txs.length > 0) {
+          await db.transact(txs);
+        }
+      } else {
+        alert("Error al analizar los documentos");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al subir los PDFs");
+    } finally {
+      setUploadingBulk(false);
+      if (bulkFileInputRef.current) bulkFileInputRef.current.value = "";
+    }
+  };
+
   const handleStageChange = async (newStage: string) => {
     await db.transact([
       db.tx.leads[leadId].update({ status: newStage, updatedAt: Date.now() }),
@@ -205,7 +348,7 @@ export default function LeadDetailPage() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
       const response = await fetch(`${backendUrl}/sync/softseguros/${leadId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -229,6 +372,47 @@ export default function LeadDetailPage() {
     }
   };
 
+  const handleCompararCotizaciones = async () => {
+    if (!cotizaciones || cotizaciones.length === 0) return;
+    setIsComparing(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+
+      // Normalize cotizaciones: map 'valor' → 'prima_total' for manual quotes,
+      // and use the explicit 'es_renovacion' flag stored in DB.
+      const cots = cotizaciones.map(c => {
+        const primaTotalRaw = c.prima_total ?? c.valor ?? 0;
+        return {
+          aseguradora: c.aseguradora || "Sin nombre",
+          nombre_plan: c.cobertura || c.nombre_plan || "",
+          prima_neta: c.prima_neta ?? primaTotalRaw,
+          prima_total: primaTotalRaw,
+          iva: c.iva ?? 0,
+          gastos_expedicion: c.gastos_expedicion ?? 0,
+          valor_asegurado: c.valor_asegurado ?? 0,
+          coberturas: c.coberturas || [],
+          deducibles: c.deducibles || [],
+          // Use explicit flag from DB; fallback: first quote in renovation pipeline
+          es_renovacion: c.es_renovacion === true,
+        };
+      });
+
+      const response = await fetch(`${backendUrl}/cotizador/comparar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cotizaciones: cots }),
+      });
+      const result = await response.json();
+      if (result.comparativo_ia) {
+        setComparativoData(result);
+      }
+    } catch (err) {
+      console.error("Error comparando cotizaciones:", err);
+    } finally {
+      setIsComparing(false);
+    }
+  };
+
   const copyPhone = () => {
     if (lead.phone) {
       navigator.clipboard.writeText(lead.phone);
@@ -243,20 +427,20 @@ export default function LeadDetailPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      
+
       {/* Back button */}
-      <button 
+      <button
         onClick={() => router.push("/leads")}
-        className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-blue-600 transition-colors group"
+        className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-amber-600 transition-colors group"
       >
         <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-        Pipeline Pre-Venta
+        <span style={{ fontFamily: "var(--font-outfit)" }}>Pipeline Pre-Venta</span>
       </button>
 
       {/* Lead Hero Card */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bento-card bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         {/* Gradient header */}
-        <div className={`h-2 bg-gradient-to-r ${ramoMeta.color}`} />
+        <div className={`h-1.5 bg-gradient-to-r ${ramoMeta.color}`} />
         
         <div className="p-6 flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="flex items-start gap-5">
@@ -397,7 +581,7 @@ export default function LeadDetailPage() {
         {/* Left: Timeline + Cotizaciones */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tab Bar */}
-          <div className="flex items-center gap-1 bg-white/60 backdrop-blur rounded-2xl p-1 border border-slate-100 w-fit">
+          <div className="flex items-center gap-1 bg-white/70 backdrop-blur rounded-2xl p-1 border border-slate-100 w-fit shadow-sm">
             {[
               { id: "timeline", label: "Timeline", icon: Clock },
               { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
@@ -407,13 +591,14 @@ export default function LeadDetailPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                   activeTab === tab.id
-                    ? "bg-white text-slate-800 shadow-sm"
-                    : "text-slate-400 hover:text-slate-600"
+                    ? "bg-white text-slate-800 shadow-sm border border-amber-100"
+                    : "text-slate-400 hover:text-slate-700 hover:bg-white/50"
                 }`}
+                style={activeTab === tab.id ? { fontFamily: "var(--font-outfit)" } : {}}
               >
-                <tab.icon className="h-4 w-4" />
+                <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-amber-500" : ""}`} />
                 {tab.label}
               </button>
             ))}
@@ -517,13 +702,35 @@ export default function LeadDetailPage() {
           {/* Cotizaciones Tab */}
           {activeTab === "cotizaciones" && (
             <div className="space-y-4">
-              <button
-                onClick={() => setShowAddCotizacion(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-sm font-bold text-slate-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50/30 transition-all"
-              >
-                <Plus className="h-4 w-4" />
-                Agregar cotización
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowAddCotizacion(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-sm font-bold text-slate-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50/30 transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  Agregar manual
+                </button>
+                {lead.type === "auto" && (
+                  <button
+                    onClick={handleAutoQuote}
+                    disabled={isAutoQuoting}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all shadow-md disabled:opacity-50 hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", fontFamily: "var(--font-outfit)" }}
+                  >
+                    <Zap className={`h-4 w-4 ${isAutoQuoting ? "animate-spin" : ""}`} />
+                    {isAutoQuoting ? "Cotizando..." : "Cotizar Allianz / Qualitas"}
+                  </button>
+                )}
+                <button
+                  onClick={() => bulkFileInputRef.current?.click()}
+                  disabled={uploadingBulk}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-sm font-bold text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all disabled:opacity-50"
+                >
+                  <input type="file" multiple accept="application/pdf,image/*" className="hidden" ref={bulkFileInputRef} onChange={handleBulkPdfUpload} />
+                  {uploadingBulk ? <RefreshCw className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  {uploadingBulk ? "Procesando..." : "Subir varios PDFs"}
+                </button>
+              </div>
 
               {showAddCotizacion && (
                 <AddCotizacionForm 
@@ -539,6 +746,58 @@ export default function LeadDetailPage() {
                 </div>
               )}
 
+              {cotizaciones.length > 0 && !comparativoData && (
+                <button
+                  onClick={handleCompararCotizaciones}
+                  disabled={isComparing}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl text-sm font-bold text-amber-700 hover:from-amber-100 hover:to-orange-100 transition-all shadow-sm disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isComparing ? "animate-spin" : ""}`} />
+                  {isComparing ? "Analizando opciones con IA..." : "Analizar Cotizaciones con IA"}
+                </button>
+              )}
+
+              {comparativoData && (
+                <CotizacionComparativo 
+                  cotizaciones={cotizaciones}
+                  comparativoIA={comparativoData.comparativo_ia}
+                  accionIA={comparativoData.accion}
+                  asegRenovacion={comparativoData.aseguradora_renovacion}
+                  diferenciaPrima={comparativoData.diferencia_prima}
+                  esNuevo={lead.pipeline_tipo !== "renovacion"}
+                  onGenerarCorreo={async () => {
+                    try {
+                      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+                      const response = await fetch(`${backendUrl}/cotizador/email`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          cotizacionSeleccionada: cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === (comparativoData.comparativo_ia?.aseguradora_recomendada || "").toUpperCase()),
+                          todasCotizaciones: cotizaciones,
+                          aseguradoraRecomendada: comparativoData.comparativo_ia?.aseguradora_recomendada,
+                          justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
+                          datosExtra: { tomador: lead.name, placa: lead.placa, descripcion_vehiculo: lead.vehiculo },
+                          accionIA: comparativoData.accion,
+                          aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
+                          diferenciaPrima: comparativoData.diferencia_prima,
+                          esNuevo: lead.pipeline_tipo !== "renovacion"
+                        }),
+                      });
+                      const result = await response.json();
+                      if (result.body) {
+                        // Opcional: abrir el composer con el body ya seteado o copiar al portapapeles
+                        navigator.clipboard.writeText(result.body);
+                        alert("Correo copiado al portapapeles. (Puedes abrir tu gestor de correo para pegarlo)");
+                      }
+                    } catch(err) {
+                      console.error(err);
+                      alert("Error generando correo");
+                    }
+                  }}
+                />
+              )}
+
+              <div className="grid grid-cols-1 gap-4">
               {cotizaciones.map(cot => {
                 const estadoConfig: Record<string, { color: string; label: string }> = {
                   "borrador": { color: "bg-slate-100 text-slate-500", label: "Borrador" },
@@ -558,7 +817,7 @@ export default function LeadDetailPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-black text-emerald-600">
-                        ${(cot.valor || 0).toLocaleString("es-CO")}
+                        ${(cot.valor || cot.prima_total || 0).toLocaleString("es-CO")}
                       </span>
                       {cot.estado !== "aceptada" && (
                         <button
@@ -577,6 +836,7 @@ export default function LeadDetailPage() {
                   </div>
                 );
               })}
+              </div>
             </div>
           )}
 
@@ -620,6 +880,9 @@ export default function LeadDetailPage() {
                   { label: "Ciudad", field: "city", value: lead.city },
                   { label: "Ramo", field: "type", value: lead.type },
                   { label: "Fuente", field: "source", value: lead.source },
+                  { label: "Placa", field: "vehiclePlate", value: lead.vehiclePlate },
+                  { label: "Modelo", field: "vehicleYear", value: lead.vehicleYear },
+                  { label: "Fasecolda", field: "vehicleFasecolda", value: lead.vehicleFasecolda },
                   { label: "ID Soft Cliente", field: "soft_cliente_id", value: lead.soft_cliente_id },
                 ].map(({ label, field, value }) => (
                   <div key={field} className="space-y-1">
@@ -643,8 +906,8 @@ export default function LeadDetailPage() {
         {/* Right: Quick actions sidebar */}
         <div className="space-y-4">
           {/* Quick actions */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Acciones rápidas</h3>
+          <div className="bento-card bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Acciones rápidas</h3>
             <div className="space-y-2">
               {lead.phone && (
                 <a
@@ -679,8 +942,8 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Meta */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Información del registro</h3>
+          <div className="bento-card bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Información del registro</h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 font-medium">Creado</span>
@@ -706,8 +969,8 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Sync status */}
-          <div className={`rounded-2xl border p-5 ${lead.sincronizado_soft ? "bg-green-50 border-green-100" : "bg-slate-50 border-slate-100"}`}>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Estado Soft Seguros</h3>
+          <div className={`bento-card rounded-2xl border p-5 ${lead.sincronizado_soft ? "bg-green-50 border-green-100" : "bg-slate-50 border-slate-100"}`}>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Estado Soft Seguros</h3>
             {lead.sincronizado_soft ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-green-700 font-bold text-sm">
@@ -818,20 +1081,74 @@ function AddInteraccionForm({ leadId, onClose }: { leadId: string; onClose: () =
 }
 
 function AddCotizacionForm({ leadId, onClose }: { leadId: string; onClose: () => void }) {
-  const [form, setForm] = useState({ aseguradora: "", valor: "", cobertura: "", estado: "enviada" });
+  const [form, setForm] = useState({
+    aseguradora: "",
+    valor: "",
+    cobertura: "",
+    estado: "enviada",
+    es_renovacion: false,
+  });
   const [saving, setSaving] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPdf(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const res = await fetch(`${backendUrl}/cotizador/parse-pdf`, {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setForm(prev => ({
+          ...prev,
+          aseguradora: data.aseguradora || prev.aseguradora,
+          valor: data.prima_total ? String(data.prima_total) : prev.valor,
+          cobertura: data.cobertura || prev.cobertura,
+        }));
+
+        // Actualizar datos del lead si se encontraron en el PDF
+        const updates: any = {};
+        if (data.placa && !lead.vehiclePlate) updates.vehiclePlate = data.placa;
+        if (data.modelo && !lead.vehicleYear) updates.vehicleYear = String(data.modelo);
+        if (data.fasecolda && !lead.vehicleFasecolda) updates.vehicleFasecolda = data.fasecolda;
+        if (data.documento && !lead.documento) updates.documento = data.documento;
+        
+        if (Object.keys(updates).length > 0) {
+          await db.transact([db.tx.leads[leadId].update(updates)]);
+        }
+      } else {
+        alert("Error al analizar el documento de la cotización");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error de conexión al subir el PDF");
+    } finally {
+      setUploadingPdf(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     const newId = crypto.randomUUID();
+    const prima = parseFloat(form.valor) || 0;
     await db.transact([
       db.tx.cotizaciones[newId].update({
         leadId,
         aseguradora: form.aseguradora,
-        valor: parseFloat(form.valor) || 0,
+        valor: prima,
+        prima_total: prima,   // normalized field used by comparador
         cobertura: form.cobertura,
         estado: form.estado,
+        es_renovacion: form.es_renovacion,
         fuente: "Manual",
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -846,7 +1163,13 @@ function AddCotizacionForm({ leadId, onClose }: { leadId: string; onClose: () =>
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-between">
         <h4 className="font-bold text-slate-700">Nueva cotización</h4>
-        <button type="button" onClick={onClose} className="text-slate-300 hover:text-slate-500"><X className="h-4 w-4" /></button>
+        <div className="flex items-center gap-2">
+          <input type="file" accept="application/pdf,image/*" className="hidden" ref={fileInputRef} onChange={handlePdfUpload} />
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingPdf} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors">
+            {uploadingPdf ? "Analizando..." : "📄 Autocompletar con PDF"}
+          </button>
+          <button type="button" onClick={onClose} className="text-slate-300 hover:text-slate-500 ml-2"><X className="h-4 w-4" /></button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
@@ -859,7 +1182,7 @@ function AddCotizacionForm({ leadId, onClose }: { leadId: string; onClose: () =>
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prima (COP) <span className="text-red-500">*</span></label>
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prima Total (COP) <span className="text-red-500">*</span></label>
           <input
             required type="number" value={form.valor}
             onChange={e => setForm({ ...form, valor: e.target.value })}
@@ -869,7 +1192,7 @@ function AddCotizacionForm({ leadId, onClose }: { leadId: string; onClose: () =>
         </div>
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Descripción / Cobertura</label>
+        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Descripción / Plan de Cobertura</label>
         <input
           value={form.cobertura}
           onChange={e => setForm({ ...form, cobertura: e.target.value })}
@@ -877,6 +1200,21 @@ function AddCotizacionForm({ leadId, onClose }: { leadId: string; onClose: () =>
           className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm"
         />
       </div>
+
+      {/* Renovation flag */}
+      <label className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors group">
+        <input
+          type="checkbox"
+          checked={form.es_renovacion}
+          onChange={e => setForm({ ...form, es_renovacion: e.target.checked })}
+          className="w-4 h-4 accent-blue-600"
+        />
+        <div>
+          <span className="text-sm font-bold text-blue-800">🔄 Es póliza vigente (para renovación)</span>
+          <p className="text-[10px] text-blue-500 mt-0.5">Márcala si es la prima actual que se quiere comparar vs. nuevas opciones</p>
+        </div>
+      </label>
+
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600">Cancelar</button>
         <button type="submit" disabled={saving} className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-sm transition-all disabled:opacity-50">

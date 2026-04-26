@@ -17,8 +17,10 @@ const schema = i.schema({
       vehicleBrand: i.string().optional(),
       vehicleModel: i.string().optional(),
       vehicleYear: i.string().optional(),
+      vehicleFasecolda: i.string().optional(),
       vehicleUse: i.string().optional(),
       driverBirthDate: i.string().optional(),
+      driverGender: i.string().optional(),
       
       // Salud
       patientAge: i.string().optional(),
@@ -74,10 +76,12 @@ const schema = i.schema({
 
     cotizaciones: i.entity({
       valor: i.number(),
+      prima_total: i.number().optional(),
       aseguradora: i.string(),
       cobertura: i.string().optional(),
       fuente: i.string().optional(),
-      estado: i.string(), // 'pendiente', 'aprobada', 'rechazada'
+      estado: i.string(), // 'pendiente', 'enviada', 'aceptada', 'rechazada'
+      es_renovacion: i.boolean().optional(),
       leadId: i.string().indexed(),
       createdAt: i.number(),
       updatedAt: i.number().optional(),

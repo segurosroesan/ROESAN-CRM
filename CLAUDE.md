@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+> ## 🧠 LEER PRIMERO: `memory.md`
+> **OBLIGATORIO:** Leer el archivo `memory.md` en la raíz del repositorio ANTES de iniciar cualquier tarea.
+> Contiene el estado actual del proyecto, APIs integradas, reglas críticas y los próximos pasos.
+> También **actualizar `memory.md`** al finalizar cualquier avance importante.
+
+---
+
 ## Project Overview
 
 This is the **CRM Pre-Venta & Renovaciones** for **Seguros Roesan** — a Colombian insurance company. The full PRD is in `CRM_Roesan_PRD_v2.md`.

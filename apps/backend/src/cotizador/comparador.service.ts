@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 const COMPARACION_PROMPT = `\
 Eres Adriana, una ejecutiva de seguros de autos con amplia experiencia en ROESAN, Colombia.
@@ -52,14 +52,14 @@ function toInt(val: any): number {
 @Injectable()
 export class ComparadorService {
   private readonly logger = new Logger(ComparadorService.name);
-  private genAI: GoogleGenerativeAI;
+  private genAI: GoogleGenAI | null = null;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) {
       this.logger.warn('GEMINI_API_KEY is not defined. Comparison AI will fail.');
     } else {
-      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.genAI = new GoogleGenAI({ apiKey });
     }
   }
 
@@ -118,13 +118,12 @@ export class ComparadorService {
     this.logger.log(`Solicitando comparacion a Gemini Flash (${resumen.length} cotizaciones)`);
 
     // Llamar a Gemini
-    const model = this.genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" },
+    const result = await this.genAI.models.generateContent({
+      model: "gemini-2.0-flash-lite",
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
     });
-
-    const result = await model.generateContent(prompt);
-    const rawText = result.response.text();
+    const rawText = result.text ?? "";
     let resultado: any;
 
     try {
@@ -223,22 +222,20 @@ REGLAS:
 
     this.logger.log(`Parseando PDF con Gemini Flash (size: ${buffer.length} bytes)`);
 
-    const model = this.genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" },
-    });
-
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: buffer.toString("base64"),
-          mimeType: mimeType,
+    const result = await this.genAI.models.generateContent({
+      model: "gemini-2.0-flash-lite",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: { data: buffer.toString("base64"), mimeType } },
+          ],
         },
-      },
-    ]);
-
-    const rawText = result.response.text();
+      ],
+      config: { responseMimeType: "application/json" },
+    });
+    const rawText = result.text ?? "";
     try {
       return JSON.parse(rawText);
     } catch {

@@ -594,9 +594,9 @@ export default function LeadDetailPage() {
           <div className="flex items-center gap-1 bg-white/70 backdrop-blur rounded-2xl p-1 border border-slate-100 w-fit shadow-sm">
             {[
               { id: "timeline", label: "Timeline", icon: Clock },
-              { id: "emails", label: `Emails (\${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
+              { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
               { id: "documentos", label: "Documentos", icon: FileText },
-              { id: "cotizaciones", label: `Cotizaciones (\${cotizaciones.length})`, icon: DollarSign },
+              { id: "cotizaciones", label: `Cotizaciones (${cotizaciones.length})`, icon: DollarSign },
               { id: "datos", label: "Datos completos", icon: User },
             ].map(tab => (
               <button

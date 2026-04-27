@@ -86,13 +86,44 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
       updates.documento = extractedData.nit;
       updates.city = extractedData.ciudad;
       if (extractedData.razon_social) updates.name = extractedData.razon_social;
+    } else if (selectedType === "POLIZA") {
+      if (extractedData.placa) updates.vehiclePlate = extractedData.placa;
+      if (extractedData.modelo) updates.vehicleYear = String(extractedData.modelo);
+      if (extractedData.fasecolda) updates.vehicleFasecolda = extractedData.fasecolda;
+      
+      // Also create a "current policy" cotizacion for the comparison engine
+      const cotId = crypto.randomUUID();
+      const prima = parseFloat(extractedData.prima_total) || 0;
+      
+      await db.transact([
+        db.tx.cotizaciones[cotId].update({
+          leadId,
+          aseguradora: extractedData.aseguradora || "Desconocida",
+          valor: prima,
+          prima_total: prima,
+          prima_neta: parseFloat(extractedData.prima_neta) || 0,
+          valor_asegurado: parseFloat(extractedData.valor_asegurado) || 0,
+          cobertura: "Póliza Actual (IA)",
+          es_renovacion: true,
+          fuente: "IA (Documento)",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          coberturas: {
+            rce_limite: extractedData.rce_limite ?? null,
+            terremoto: extractedData.terremoto ?? false,
+            proteccion_patrimonial: extractedData.proteccion_patrimonial ?? false,
+            asistencia_en_viaje: extractedData.asistencia_en_viaje ?? false,
+          }
+        }),
+        db.tx.cotizaciones[cotId].link({ lead: leadId }),
+      ]);
     }
 
     await db.transact([
       db.tx.leads[leadId].update({ ...updates, updatedAt: Date.now() }),
     ]);
 
-    alert("Datos aplicados al prospecto localmente.");
+    alert(selectedType === "POLIZA" ? "Datos del vehículo actualizados y póliza actual registrada." : "Datos aplicados al prospecto localmente.");
   };
 
   const handleSyncToSoft = async () => {

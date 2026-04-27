@@ -119,7 +119,7 @@ export class ComparadorService {
 
     // Llamar a Gemini
     const model = this.genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-preview-04-17",
       generationConfig: { responseMimeType: "application/json" },
     });
 
@@ -224,7 +224,7 @@ REGLAS:
     this.logger.log(`Parseando PDF con Gemini Flash (size: ${buffer.length} bytes)`);
 
     const model = this.genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash-preview-04-17",
       generationConfig: { responseMimeType: "application/json" },
     });
 

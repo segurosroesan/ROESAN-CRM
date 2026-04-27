@@ -19,12 +19,17 @@ import { GmailModule } from './gmail/gmail.module';
     ScheduleModule.forRoot(),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        connection: {
-          host: configService.get('REDIS_HOST', 'localhost'),
-          port: configService.get('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        return {
+          connection: redisUrl
+            ? { url: redisUrl }
+            : {
+                host: configService.get('REDIS_HOST', 'localhost'),
+                port: configService.get<number>('REDIS_PORT', 6379),
+              },
+        };
+      },
       inject: [ConfigService],
     }),
     LeadsModule,

@@ -50,11 +50,16 @@ export class AllianzApi {
       ? certPath
       : path.resolve(process.cwd(), certPath);
 
-    this.httpsAgent = new https.Agent({
-      pfx: fs.readFileSync(resolvedCertPath),
-      passphrase: certPassword,
-      rejectUnauthorized: false, // UAT usa certificado autofirmado de Allianz
-    });
+    if (certPath && fs.existsSync(resolvedCertPath)) {
+      this.httpsAgent = new https.Agent({
+        pfx: fs.readFileSync(resolvedCertPath),
+        passphrase: certPassword,
+        rejectUnauthorized: false,
+      });
+    } else {
+      this.logger.warn(`Cert no encontrado en ${resolvedCertPath}. Allianz deshabilitado.`);
+      this.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+    }
   }
 
   async cotizar(dto: CotizarDto): Promise<AllianzQuoteResult> {

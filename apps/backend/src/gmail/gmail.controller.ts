@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Query, Res, Body, Param, HttpStatus, BadRequestException } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { GmailService } from './gmail.service';
 
 @Controller('auth/google')

@@ -2,7 +2,7 @@ import { Body, Controller, Post, Logger, HttpCode, UseInterceptors, UploadedFile
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CotizadorService } from './cotizador.service';
 import { CotizarDto } from '../lib/qualitas-api';
-import { GenerarCorreoParams } from './email-generator';
+import type { GenerarCorreoParams } from './email-generator';
 
 @Controller('cotizador')
 export class CotizadorController {

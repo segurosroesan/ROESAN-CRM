@@ -10,6 +10,7 @@ import { CotizacionesModule } from './cotizaciones/cotizaciones.module';
 import { RenovacionesModule } from './renovaciones/renovaciones.module';
 import { CotizadorModule } from './cotizador/cotizador.module';
 import { GmailModule } from './gmail/gmail.module';
+import { DocumentosModule } from './documentos/documentos.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { GmailModule } from './gmail/gmail.module';
     RenovacionesModule,
     CotizadorModule,
     GmailModule,
+    DocumentosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

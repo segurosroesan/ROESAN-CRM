@@ -20,6 +20,6 @@ import { SyncController } from './sync.controller';
       inject: [ConfigService],
     },
   ],
-  exports: [SyncService],
+  exports: [SyncService, 'SOFT_SEGUROS_API'],
 })
 export class SyncModule {}

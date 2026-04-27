@@ -281,6 +281,105 @@ GUÍA DE EXTRACCIÓN:
     }
   }
 
+  async parsearDocumentoLegal(buffer: Buffer, mimeType: string, tipoDocumento: 'CEDULA' | 'RUT' | 'SARLAFT' | 'POLIZA'): Promise<any> {
+    if (!this.genAI) {
+      throw new Error("GEMINI_API_KEY no configurada");
+    }
+
+    let prompt = "";
+
+    switch (tipoDocumento) {
+      case 'CEDULA':
+        prompt = `
+Eres un experto analista de documentos de identidad en Colombia.
+Extrae los siguientes datos de esta CÉDULA DE CIUDADANÍA y devuélvelos en JSON puro.
+
+{
+  "numero_documento": "número sin puntos",
+  "nombres": "nombres completos",
+  "apellidos": "apellidos completos",
+  "genero": "MASCULINO o FEMENINO",
+  "fecha_nacimiento": "YYYY-MM-DD"
+}
+`;
+        break;
+      case 'RUT':
+        prompt = `
+Eres un experto analista de documentos tributarios (RUT) en Colombia.
+Extrae los siguientes datos del REGISTRO ÚNICO TRIBUTARIO y devuélvelos en JSON puro.
+
+{
+  "nit": "número de identificación tributaria sin puntos ni DV",
+  "razon_social": "Nombre de la empresa si es persona jurídica, null si es persona natural",
+  "nombres": "nombres si es persona natural",
+  "apellidos": "apellidos si es persona natural",
+  "direccion": "dirección principal",
+  "ciudad": "municipio/ciudad",
+  "departamento": "departamento",
+  "actividades_economicas": ["códigos de 4 dígitos"]
+}
+`;
+        break;
+      case 'SARLAFT':
+        prompt = `
+Eres un experto analista de formularios Sarlaft (prevención de lavado de activos) en seguros.
+Extrae los datos más relevantes de este formulario y devuélvelos en JSON puro.
+
+{
+  "ocupacion": "ID de ocupación o nombre (ej: Empleado, Independiente)",
+  "ingresos_mensuales": 0,
+  "egresos_mensuales": 0,
+  "activos": 0,
+  "pasivos": 0,
+  "empresa_donde_trabaja": "",
+  "cargo": "",
+  "declara_renta": false,
+  "persona_publicamente_expuesta": false
+}
+`;
+        break;
+      case 'POLIZA':
+        prompt = `
+Eres un experto analista de pólizas de seguros en Colombia.
+Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
+
+{
+  "numero_poliza": "número de la póliza",
+  "aseguradora": "nombre de la aseguradora",
+  "fecha_inicio": "YYYY-MM-DD",
+  "fecha_fin": "YYYY-MM-DD",
+  "prima_total": 0,
+  "placa": "placa del vehículo",
+  "marca": "marca del vehículo",
+  "linea": "línea del vehículo",
+  "modelo": 0
+}
+`;
+        break;
+    }
+
+    this.logger.log(`Parseando documento legal (\${tipoDocumento}) con Gemini Flash`);
+
+    const model = this.genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const result = await model.generateContent([
+      prompt,
+      { inlineData: { data: buffer.toString("base64"), mimeType } },
+    ]);
+
+    const rawText = result.response.text();
+    try {
+      return JSON.parse(rawText);
+    } catch {
+      const match = rawText.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]);
+      throw new Error(`Error parseando documento IA (\${tipoDocumento})`);
+    }
+  }
+
   async parsearMultiplesPdfsCotizacion(files: any[]): Promise<any[]> {
     return Promise.all(
       files.map(file => this.parsearPdfCotizacion(file.buffer, file.mimetype))

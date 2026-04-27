@@ -133,17 +133,17 @@ export class SoftSegurosApi {
         numero_documento: data.numero_documento,
         nombres: data.nombres || data.nombre_completo,
         apellidos: data.apellidos || '',
-        email: data.correo || 'sin_correo@test.com',
-        celular: data.celular || '0000000000',
-        telefono: data.celular || '0000000000',
-        tipo_documento: "01", // Cédula (default)
-        genero: "MASCULINO", // Default requerido
-        fecha_nacimiento: "1990-01-01", // Default requerido
-        ocupacion: 4, // INDEPENDIENTE (ID encontrado en SoftSeguros)
+        email: data.correo || data.email || 'sin_correo@test.com',
+        celular: data.celular || data.phone || '0000000000',
+        telefono: data.telefono || data.celular || data.phone || '0000000000',
+        tipo_documento: data.tipo_documento || "01", // Cédula (default)
+        genero: data.genero || "MASCULINO",
+        fecha_nacimiento: data.fecha_nacimiento || "1990-01-01",
+        ocupacion: data.ocupacion || 4, // INDEPENDIENTE (ID encontrado en SoftSeguros)
         es_prospecto: true,
         sede: 6787, // Sede Principal Roesan
         marca: 6751, // Marca Roesan
-        tipo_cliente: "F", // Persona Física
+        tipo_cliente: data.tipo_cliente || "F", // Persona Física
         direccion: data.direccion || "Sin dirección",
         ciudad: data.ciudad || "BOGOTÁ",
         provincia: data.provincia || "BOGOTÁ",
@@ -157,6 +157,78 @@ export class SoftSegurosApi {
     } catch (error) {
        this.logger.error(`Failed to create client in Soft Seguros: ${JSON.stringify(error.response?.data || error.message)}`);
        throw new Error(`Error en SYNC-2: No se pudo crear el cliente. ${JSON.stringify(error.response?.data)}`);
+    }
+  }
+
+  /**
+   * Update client in Soft Seguros
+   */
+  async updateClient(id: string | number, data: any): Promise<any> {
+    try {
+      this.logger.log(`Updating client ID: ${id}`);
+      const response = await this.request('PATCH', `/api/cliente/${id}/`, data);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to update client ${id}: ${JSON.stringify(error.response?.data || error.message)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * SYNC-4: Create policy in Soft Seguros
+   */
+  async createPolicy(data: any): Promise<any> {
+    try {
+      this.logger.log(`Creating policy for client ID: ${data.id_cliente}`);
+      const response = await this.request('POST', '/api/poliza/', data);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to create policy: ${JSON.stringify(error.response?.data || error.message)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Update policy in Soft Seguros
+   */
+  async updatePolicy(id: string | number, data: any): Promise<any> {
+    try {
+      this.logger.log(`Updating policy ID: ${id}`);
+      const response = await this.request('PATCH', `/api/poliza/${id}/`, data);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to update policy ${id}: ${JSON.stringify(error.response?.data || error.message)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * SYNC-6: Upload attachment to Soft Seguros
+   * @param data { id_entidad, tipo_entidad, nombre_archivo, archivo_base64 }
+   */
+  async createAnexo(data: {
+    id_entidad: number;
+    tipo_entidad: 'C' | 'P'; // C=Cliente, P=Poliza
+    nombre_archivo: string;
+    archivo_base64: string;
+    tipo_anexo?: number;
+  }): Promise<any> {
+    try {
+      this.logger.log(`Uploading attachment ${data.nombre_archivo} to entity ${data.tipo_entidad}:${data.id_entidad}`);
+      
+      const payload = {
+        id_entidad: data.id_entidad,
+        tipo_entidad: data.tipo_entidad,
+        nombre_archivo: data.nombre_archivo,
+        archivo: data.archivo_base64,
+        tipo_anexo: data.tipo_anexo || 1, // Default tipo
+      };
+
+      const response = await this.request('POST', '/api/anexopoliza/', payload);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to upload attachment: ${JSON.stringify(error.response?.data || error.message)}`);
+      throw error;
     }
   }
 }

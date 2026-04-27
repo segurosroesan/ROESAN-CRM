@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { EmailComposer } from "@/components/EmailComposer";
 import { CotizacionComparativo } from "@/components/CotizacionComparativo";
+import { DocumentosLegales } from "@/components/DocumentosLegales";
 
 // ✅ Etapas PRD v2.0 completas
 const STAGES = [
@@ -138,7 +139,7 @@ export default function LeadDetailPage() {
     },
   });
 
-  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails">("timeline");
+  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails" | "documentos">("timeline");
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -593,8 +594,9 @@ export default function LeadDetailPage() {
           <div className="flex items-center gap-1 bg-white/70 backdrop-blur rounded-2xl p-1 border border-slate-100 w-fit shadow-sm">
             {[
               { id: "timeline", label: "Timeline", icon: Clock },
-              { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
-              { id: "cotizaciones", label: `Cotizaciones (${cotizaciones.length})`, icon: DollarSign },
+              { id: "emails", label: `Emails (\${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
+              { id: "documentos", label: "Documentos", icon: FileText },
+              { id: "cotizaciones", label: `Cotizaciones (\${cotizaciones.length})`, icon: DollarSign },
               { id: "datos", label: "Datos completos", icon: User },
             ].map(tab => (
               <button
@@ -705,6 +707,13 @@ export default function LeadDetailPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Documentos Tab */}
+          {activeTab === "documentos" && (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+               <DocumentosLegales lead={lead} leadId={leadId} />
             </div>
           )}
 

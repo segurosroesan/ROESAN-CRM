@@ -27,8 +27,10 @@
 | **Allianz SOAP** | ✅ **FUNCIONAL** | UAT probado, 4 paquetes |
 | Comparador IA (Gemini Flash) | ✅ Funcional | Override determinístico para opción más barata |
 | Parse-PDF de cotizaciones | ✅ Funcional | Endpoint `/parse-pdf` y `/parse-pdfs` (bulk) |
+| **Módulo Documentos Legales** | ✅ **FUNCIONAL** | Extracción IA (Cédula, RUT, Sarlaft, Póliza) + Sync Soft |
 | Generador de correo IA | ✅ Funcional | Endpoint `/email` con contexto renovación/nuevo |
 | Schema InstantDB cotizaciones | ✅ Actualizado | Campos: `cobertura`, `prima_total`, `es_renovacion` |
+| **SYNC-6 (Anexos)** | ✅ **FUNCIONAL** | Subida de archivos a Soft Seguros mediante `/documentos/sync` |
 
 ---
 

@@ -18,53 +18,136 @@ interface CotizacionComparativoProps {
   onGenerarCorreo?: () => void;
 }
 
-// Secciones fijas — mismo orden que comparativo.py
-const COBERTURAS_SECCIONES = [
+// Colores de comparativo.py
+const C_HEADER  = "#1a3a5c";
+const C_SUBHDR  = "#2e6da4";
+const C_ROW_ODD = "#eaf3fb";
+const C_BEST    = "#c8e6c9";
+const C_WORST   = "#ffcdd2";
+const C_LBGD    = "#dce8f5";
+const C_LBGD_ODD = "#c8d9ed";
+const C_GRID    = "#c0d0e0";
+
+// ── Helpers de formato ────────────────────────────────────────────────────
+
+function getCob(c: any): any {
+  if (!c.coberturas || Array.isArray(c.coberturas)) return {};
+  return c.coberturas;
+}
+
+function fmtDed(pct: any, smmlv: any): string {
+  const parts: string[] = [];
+  if (pct !== null && pct !== undefined) parts.push(`${pct}%`);
+  if (smmlv !== null && smmlv !== undefined) parts.push(`mín. ${smmlv} SMMLV`);
+  return parts.length ? parts.join(" / ") : "—";
+}
+
+function fmtBool(v: any): { text: string; included: boolean; excluded: boolean } {
+  if (v === true || v === "Si" || v === "si") return { text: "✓", included: true, excluded: false };
+  return { text: "✗", included: false, excluded: true };
+}
+
+function fmtJur(bool: any, valor: any): { text: string; included: boolean; excluded: boolean } {
+  if (valor && parseFloat(String(valor)) > 0) {
+    return { text: fmtPeso(valor), included: true, excluded: false };
+  }
+  return fmtBool(bool);
+}
+
+// ── Definición de secciones (igual que comparativo.py) ────────────────────
+
+type CellResult = { text: string; included?: boolean; excluded?: boolean };
+type FilaDef = { label: string; render: (cob: any) => CellResult };
+type SeccionDef = { titulo: string; filas: FilaDef[] };
+
+const SECCIONES: SeccionDef[] = [
   {
     titulo: "RESPONSABILIDAD CIVIL EXTRACONTRACTUAL",
-    filas: ["Responsabilidad Civil Extracontractual"],
+    filas: [
+      {
+        label: "Límite máximo",
+        render: (cob) => ({ text: cob.rce_limite ? fmtPeso(cob.rce_limite) : "—" }),
+      },
+      {
+        label: "Deducible",
+        render: (cob) => ({
+          text: cob.rce_deducible_smmlv !== null && cob.rce_deducible_smmlv !== undefined
+            ? (cob.rce_deducible_smmlv === 0 ? "Sin deducible" : `${cob.rce_deducible_smmlv} SMMLV`)
+            : "—",
+        }),
+      },
+    ],
   },
   {
     titulo: "PÉRDIDA POR DAÑOS",
-    filas: ["Pérdida Total por Daños", "Pérdida Parcial por Daños"],
+    filas: [
+      {
+        label: "Total — valor asegurado",
+        render: (cob) => ({ text: cob.danio_total_valor ? fmtPeso(cob.danio_total_valor) : "—" }),
+      },
+      {
+        label: "Total — deducible",
+        render: (cob) => ({ text: fmtDed(cob.danio_total_ded_pct, cob.danio_total_ded_smmlv) }),
+      },
+      {
+        label: "Parcial — deducible",
+        render: (cob) => ({ text: fmtDed(cob.danio_parcial_ded_pct, cob.danio_parcial_ded_smmlv) }),
+      },
+    ],
   },
   {
     titulo: "PÉRDIDA POR HURTO",
-    filas: ["Pérdida Total por Hurto", "Pérdida Parcial por Hurto"],
+    filas: [
+      {
+        label: "Total — deducible",
+        render: (cob) => ({ text: fmtDed(cob.hurto_total_ded_pct, cob.hurto_total_ded_smmlv) }),
+      },
+      {
+        label: "Parcial — deducible",
+        render: (cob) => ({ text: fmtDed(cob.hurto_parcial_ded_pct, cob.hurto_parcial_ded_smmlv) }),
+      },
+    ],
   },
   {
     titulo: "COBERTURAS Y ASISTENCIAS ADICIONALES",
     filas: [
-      "Terremoto y Eventos de la Naturaleza",
-      "Amparo Patrimonial",
-      "Asistencia Jurídica",
-      "Asistencia en Viaje",
-      "Vehículo Sustituto",
-      "Accidentes Personales",
+      {
+        label: "Terremoto / eventos naturales",
+        render: (cob) => fmtBool(cob.terremoto),
+      },
+      {
+        label: "Protección patrimonial",
+        render: (cob) => fmtBool(cob.proteccion_patrimonial),
+      },
+      {
+        label: "Asistencia jurídica penal",
+        render: (cob) => fmtJur(cob.asistencia_juridica_penal, cob.asistencia_juridica_penal_valor),
+      },
+      {
+        label: "Asistencia jurídica civil",
+        render: (cob) => fmtJur(cob.asistencia_juridica_civil, cob.asistencia_juridica_civil_valor),
+      },
+      {
+        label: "Lucro cesante",
+        render: (cob) => fmtBool(cob.lucro_cesante),
+      },
+      {
+        label: "Accidentes personales conductor",
+        render: (cob) => ({
+          text: cob.accidentes_personales_conductor
+            ? fmtPeso(cob.accidentes_personales_conductor)
+            : "—",
+        }),
+      },
+      {
+        label: "Asistencia en viaje",
+        render: (cob) => fmtBool(cob.asistencia_en_viaje),
+      },
     ],
   },
 ];
 
-const COBERTURAS_FIJAS = new Set(COBERTURAS_SECCIONES.flatMap(s => s.filas));
-
-// Colores tomados directamente de comparativo.py
-const C_HEADER = "#1a3a5c";
-const C_SUBHDR = "#2e6da4";
-const C_ROW_ODD = "#eaf3fb";
-const C_BEST = "#c8e6c9";
-const C_WORST = "#ffcdd2";
-const C_LBGD = "#dce8f5";
-const C_LBGD_ODD = "#c8d9ed";
-const C_GRID = "#c0d0e0";
-
-function getCobDisplay(coberturas: any[], nombre: string) {
-  const match = (coberturas || []).find((x: any) => x.nombre === nombre);
-  if (!match) return { text: "—", included: false, excluded: false };
-  const val = match.valor || "NO INCLUYE";
-  const excluded = ["NO INCLUYE", "NO AMPARA", "NO APLICA"].includes(val);
-  const included = val === "INCLUIDA";
-  return { text: included ? "✓" : excluded ? "✗" : val, included, excluded };
-}
+// ── Componente principal ───────────────────────────────────────────────────
 
 export function CotizacionComparativo({
   cotizaciones,
@@ -73,7 +156,7 @@ export function CotizacionComparativo({
   asegRenovacion,
   diferenciaPrima,
   esNuevo,
-  onGenerarCorreo
+  onGenerarCorreo,
 }: CotizacionComparativoProps) {
   const [copied, setCopied] = useState(false);
 
@@ -84,7 +167,7 @@ export function CotizacionComparativo({
   const recomendada = (comparativoIA?.aseguradora_recomendada || "").toUpperCase();
   const ordenadas = ordenarCotizaciones(cotizaciones);
 
-  // ── Banner config ──
+  // ── Banner ──
   type BannerConfig = {
     icon: string;
     titulo: string;
@@ -141,29 +224,11 @@ export function CotizacionComparativo({
     }
   };
 
-  // ── Price min/max for MEJOR/MAYOR PRECIO badges ──
+  // ── Price min/max ──
   const primas = ordenadas.map(c => numPrima(c));
   const validPrimas = primas.filter(p => p > 0);
   const minPrima = validPrimas.length > 1 ? Math.min(...validPrimas) : -1;
   const maxPrima = validPrimas.length > 1 ? Math.max(...validPrimas) : -1;
-
-  // Extra coberturas not in fixed sections
-  const coberturasExtra: string[] = [];
-  for (const c of ordenadas) {
-    for (const cob of c.coberturas || []) {
-      if (cob.nombre && !coberturasExtra.includes(cob.nombre) && !COBERTURAS_FIJAS.has(cob.nombre)) {
-        coberturasExtra.push(cob.nombre);
-      }
-    }
-  }
-
-  // Deducibles
-  const todasDeds: string[] = [];
-  for (const c of ordenadas) {
-    for (const d of c.deducibles || []) {
-      if (d.cobertura && !todasDeds.includes(d.cobertura)) todasDeds.push(d.cobertura);
-    }
-  }
 
   const numCols = ordenadas.length + 1;
 
@@ -192,8 +257,8 @@ export function CotizacionComparativo({
     position: "sticky",
     left: 0,
     zIndex: 10,
-    minWidth: "220px",
-    maxWidth: "220px",
+    minWidth: "240px",
+    maxWidth: "240px",
   };
 
   const dataCellBase: React.CSSProperties = {
@@ -208,7 +273,7 @@ export function CotizacionComparativo({
   return (
     <div className="space-y-5">
 
-      {/* ── Nova-style AI Banner ── */}
+      {/* ── AI Banner ── */}
       <div
         className="relative rounded-2xl p-5 overflow-hidden"
         style={{ ...banner.bgStyle, border: `1px solid ${banner.borderColor}` }}
@@ -255,11 +320,10 @@ export function CotizacionComparativo({
         </div>
       </div>
 
-      {/* ── Excel-style Comparativo Table ── */}
+      {/* ── Excel table ── */}
       <div className="rounded-xl overflow-hidden shadow-sm" style={{ border: `1.5px solid ${C_HEADER}` }}>
         <div className="overflow-x-auto">
           <table style={{ borderCollapse: "collapse", width: "100%" }}>
-            {/* Header row: aseguradoras as columns */}
             <thead>
               <tr>
                 <th style={{
@@ -277,7 +341,7 @@ export function CotizacionComparativo({
                 {ordenadas.map((c, i) => {
                   const prima = primas[i];
                   const esMejor = prima === minPrima && prima > 0;
-                  const esPeor = prima === maxPrima && prima > 0 && minPrima !== maxPrima;
+                  const esPeor  = prima === maxPrima && prima > 0 && minPrima !== maxPrima;
                   const esRecom = (c.aseguradora || "").toUpperCase() === recomendada;
                   const esRenov = c.es_renovacion;
                   return (
@@ -331,18 +395,16 @@ export function CotizacionComparativo({
             </thead>
 
             <tbody>
-              {/* ── PRECIOS ── */}
+              {/* ── PRECIO ── */}
               <tr>
                 <td colSpan={numCols} style={sectionHdrStyle}>PRECIO TOTAL (IVA incluido)</td>
               </tr>
-
-              {/* Total a pagar */}
               <tr>
                 <td style={{ ...leftColBase, background: C_LBGD, fontWeight: 700 }}>Total a pagar</td>
                 {ordenadas.map((c, i) => {
                   const prima = primas[i];
                   const esMejor = prima === minPrima && prima > 0;
-                  const esPeor = prima === maxPrima && prima > 0 && minPrima !== maxPrima;
+                  const esPeor  = prima === maxPrima && prima > 0 && minPrima !== maxPrima;
                   return (
                     <td key={i} style={{
                       ...dataCellBase,
@@ -356,8 +418,6 @@ export function CotizacionComparativo({
                   );
                 })}
               </tr>
-
-              {/* Prima neta */}
               <tr>
                 <td style={{ ...leftColBase, background: C_LBGD_ODD }}>Prima neta</td>
                 {ordenadas.map((c, i) => (
@@ -366,8 +426,6 @@ export function CotizacionComparativo({
                   </td>
                 ))}
               </tr>
-
-              {/* Valor asegurado */}
               <tr>
                 <td style={{ ...leftColBase, background: C_LBGD }}>Valor asegurado vehículo</td>
                 {ordenadas.map((c, i) => (
@@ -377,106 +435,40 @@ export function CotizacionComparativo({
                 ))}
               </tr>
 
-              {/* ── Secciones de coberturas fijas ── */}
-              {COBERTURAS_SECCIONES.map((seccion, si) => {
-                const filasConDatos = seccion.filas.filter(nombre =>
-                  ordenadas.some(c => (c.coberturas || []).find((x: any) => x.nombre === nombre))
-                );
-                if (filasConDatos.length === 0) return null;
-                return (
-                  <React.Fragment key={si}>
-                    <tr>
-                      <td colSpan={numCols} style={sectionHdrStyle}>{seccion.titulo}</td>
-                    </tr>
-                    {filasConDatos.map((cobNombre, fi) => {
-                      const isOdd = fi % 2 === 1;
-                      return (
-                        <tr key={fi}>
-                          <td style={{ ...leftColBase, background: isOdd ? C_LBGD_ODD : C_LBGD }}>
-                            {cobNombre}
-                          </td>
-                          {ordenadas.map((c, i) => {
-                            const { text, included, excluded } = getCobDisplay(c.coberturas, cobNombre);
-                            return (
-                              <td key={i} style={{
-                                ...dataCellBase,
-                                background: isOdd ? C_ROW_ODD : "white",
-                                color: included ? "#1b5e20" : excluded ? "#b71c1c" : "#475569",
-                                fontWeight: (included || excluded) ? 700 : 400,
-                              }}>
-                                {text}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </React.Fragment>
-                );
-              })}
-
-              {/* ── Coberturas extra no en secciones fijas ── */}
-              {coberturasExtra.length > 0 && (
-                <>
+              {/* ── Secciones de cobertura ── */}
+              {SECCIONES.map((seccion, si) => (
+                <React.Fragment key={si}>
                   <tr>
-                    <td colSpan={numCols} style={sectionHdrStyle}>OTRAS COBERTURAS</td>
+                    <td colSpan={numCols} style={sectionHdrStyle}>{seccion.titulo}</td>
                   </tr>
-                  {coberturasExtra.map((cobNombre, fi) => {
+                  {seccion.filas.map((fila, fi) => {
                     const isOdd = fi % 2 === 1;
                     return (
                       <tr key={fi}>
                         <td style={{ ...leftColBase, background: isOdd ? C_LBGD_ODD : C_LBGD }}>
-                          {cobNombre}
+                          {fila.label}
                         </td>
                         {ordenadas.map((c, i) => {
-                          const { text, included, excluded } = getCobDisplay(c.coberturas, cobNombre);
+                          const cob = getCob(c);
+                          const cell = fila.render(cob);
                           return (
                             <td key={i} style={{
                               ...dataCellBase,
                               background: isOdd ? C_ROW_ODD : "white",
-                              color: included ? "#1b5e20" : excluded ? "#b71c1c" : "#475569",
-                              fontWeight: (included || excluded) ? 700 : 400,
+                              color: cell.included ? "#1b5e20"
+                                   : cell.excluded ? "#b71c1c"
+                                   : "#475569",
+                              fontWeight: (cell.included || cell.excluded) ? 700 : 400,
                             }}>
-                              {text}
+                              {cell.text}
                             </td>
                           );
                         })}
                       </tr>
                     );
                   })}
-                </>
-              )}
-
-              {/* ── Deducibles ── */}
-              {todasDeds.length > 0 && (
-                <>
-                  <tr>
-                    <td colSpan={numCols} style={sectionHdrStyle}>DEDUCIBLES</td>
-                  </tr>
-                  {todasDeds.map((dedName, fi) => {
-                    const isOdd = fi % 2 === 1;
-                    return (
-                      <tr key={fi}>
-                        <td style={{ ...leftColBase, background: isOdd ? C_LBGD_ODD : C_LBGD }}>
-                          {dedName}
-                        </td>
-                        {ordenadas.map((c, i) => {
-                          const match = (c.deducibles || []).find((x: any) => x.cobertura === dedName);
-                          return (
-                            <td key={i} style={{
-                              ...dataCellBase,
-                              background: isOdd ? C_ROW_ODD : "white",
-                              color: "#475569",
-                            }}>
-                              {match?.deducible || "—"}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </>
-              )}
+                </React.Fragment>
+              ))}
             </tbody>
           </table>
         </div>

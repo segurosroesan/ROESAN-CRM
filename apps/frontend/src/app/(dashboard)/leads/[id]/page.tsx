@@ -300,9 +300,12 @@ export default function LeadDetailPage() {
               aseguradora: data.aseguradora || "Desconocida",
               valor: prima,
               prima_total: prima,
+              prima_neta: parseFloat(String(data.prima_neta || 0)) || 0,
+              valor_asegurado: parseFloat(String(data.valor_asegurado || 0)) || 0,
               cobertura: data.cobertura || "",
+              coberturas: buildCoberturas(data),
               estado: "enviada",
-              es_renovacion: false, // Asume falso, se puede editar despues si se desea
+              es_renovacion: false,
               fuente: "IA (Múltiples PDFs)",
               createdAt: Date.now(),
               updatedAt: Date.now(),
@@ -1027,6 +1030,33 @@ export default function LeadDetailPage() {
   );
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function buildCoberturas(data: any): object {
+  return {
+    rce_limite: data.rce_limite ?? null,
+    rce_deducible_smmlv: data.rce_deducible_smmlv ?? null,
+    danio_total_valor: data.danio_total_valor ?? null,
+    danio_total_ded_pct: data.danio_total_ded_pct ?? null,
+    danio_total_ded_smmlv: data.danio_total_ded_smmlv ?? null,
+    danio_parcial_ded_pct: data.danio_parcial_ded_pct ?? null,
+    danio_parcial_ded_smmlv: data.danio_parcial_ded_smmlv ?? null,
+    hurto_total_ded_pct: data.hurto_total_ded_pct ?? null,
+    hurto_total_ded_smmlv: data.hurto_total_ded_smmlv ?? null,
+    hurto_parcial_ded_pct: data.hurto_parcial_ded_pct ?? null,
+    hurto_parcial_ded_smmlv: data.hurto_parcial_ded_smmlv ?? null,
+    terremoto: data.terremoto ?? false,
+    proteccion_patrimonial: data.proteccion_patrimonial ?? false,
+    asistencia_juridica_penal: data.asistencia_juridica_penal ?? false,
+    asistencia_juridica_penal_valor: data.asistencia_juridica_penal_valor ?? null,
+    asistencia_juridica_civil: data.asistencia_juridica_civil ?? false,
+    asistencia_juridica_civil_valor: data.asistencia_juridica_civil_valor ?? null,
+    lucro_cesante: data.lucro_cesante ?? false,
+    accidentes_personales_conductor: data.accidentes_personales_conductor ?? null,
+    asistencia_en_viaje: data.asistencia_en_viaje ?? false,
+  };
+}
+
 // ── Sub-forms ──────────────────────────────────────────────────────────────
 
 function AddInteraccionForm({ leadId, onClose }: { leadId: string; onClose: () => void }) {
@@ -1100,10 +1130,13 @@ function AddCotizacionForm({ leadId, onClose, lead }: { leadId: string; onClose:
   const [form, setForm] = useState({
     aseguradora: "",
     valor: "",
+    prima_neta: "",
+    valor_asegurado: "",
     cobertura: "",
     estado: "enviada",
     es_renovacion: false,
   });
+  const [parsedCoverage, setParsedCoverage] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1126,16 +1159,17 @@ function AddCotizacionForm({ leadId, onClose, lead }: { leadId: string; onClose:
           ...prev,
           aseguradora: data.aseguradora || prev.aseguradora,
           valor: data.prima_total ? String(data.prima_total) : prev.valor,
+          prima_neta: data.prima_neta ? String(data.prima_neta) : prev.prima_neta,
+          valor_asegurado: data.valor_asegurado ? String(data.valor_asegurado) : prev.valor_asegurado,
           cobertura: data.cobertura || prev.cobertura,
         }));
+        setParsedCoverage(data);
 
-        // Actualizar datos del lead si se encontraron en el PDF
         const updates: any = {};
         if (data.placa && !lead.vehiclePlate) updates.vehiclePlate = data.placa;
         if (data.modelo && !lead.vehicleYear) updates.vehicleYear = String(data.modelo);
         if (data.fasecolda && !lead.vehicleFasecolda) updates.vehicleFasecolda = data.fasecolda;
         if (data.documento && !lead.documento) updates.documento = data.documento;
-        
         if (Object.keys(updates).length > 0) {
           await db.transact([db.tx.leads[leadId].update(updates)]);
         }
@@ -1161,11 +1195,14 @@ function AddCotizacionForm({ leadId, onClose, lead }: { leadId: string; onClose:
         leadId,
         aseguradora: form.aseguradora,
         valor: prima,
-        prima_total: prima,   // normalized field used by comparador
+        prima_total: prima,
+        prima_neta: parseFloat(form.prima_neta) || 0,
+        valor_asegurado: parseFloat(form.valor_asegurado) || 0,
         cobertura: form.cobertura,
+        coberturas: parsedCoverage ? buildCoberturas(parsedCoverage) : undefined,
         estado: form.estado,
         es_renovacion: form.es_renovacion,
-        fuente: "Manual",
+        fuente: parsedCoverage ? "IA (PDF)" : "Manual",
         createdAt: Date.now(),
         updatedAt: Date.now(),
       }),

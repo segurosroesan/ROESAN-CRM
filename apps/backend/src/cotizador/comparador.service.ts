@@ -196,28 +196,67 @@ export class ComparadorService {
 
     const prompt = `
 Eres un experto analista de seguros de autos en Colombia.
-Tu tarea es extraer los datos principales de esta cotización de seguro de vehículo que te adjunto en formato PDF o imagen.
-Extrae la siguiente información y devuélvela en un objeto JSON estricto:
+Extrae TODOS los datos de esta cotización de seguro de vehículo y devuélvelos en un objeto JSON estricto.
 
 {
-  "aseguradora": "Nombre de la aseguradora (ej. AXA Colpatria, HDI, Sura, Allianz, Mapfre, Previsora, etc.)",
-  "valor_asegurado": 0, // numero
-  "prima_neta": 0, // numero (sin IVA)
-  "prima_total": 0, // numero (con IVA y gastos, total a pagar)
-  "cobertura": "Nombre del plan (ej. Auto Pesado, Genio Pesado, Todo Riesgo, etc.)",
-  "placa": "La placa del vehículo (si aparece)",
-  "modelo": 2024, // el año/modelo del vehículo
-  "fasecolda": "Código Fasecolda (ej. 05402012, suele tener 8 dígitos)",
-  "documento": "Documento de identidad del tomador (sin puntos ni comas)",
-  "fecha_nacimiento": "YYYY-MM-DD",
-  "sexo": "MASCULINO / FEMENINO"
+  "aseguradora": "Nombre de la aseguradora (AXA Colpatria, HDI Seguros, Sura, Allianz, Mapfre, La Previsora, Seguros del Estado, etc.)",
+  "valor_asegurado": 0,
+  "prima_neta": 0,
+  "prima_total": 0,
+  "cobertura": "Nombre del plan (Auto Pesado, Todo Riesgo, Genio Pesado, etc.)",
+  "placa": "",
+  "modelo": 0,
+  "fasecolda": "",
+  "documento": "",
+  "fecha_nacimiento": "",
+  "sexo": "",
+
+  "rce_limite": null,
+  "rce_deducible_smmlv": null,
+
+  "danio_total_valor": null,
+  "danio_total_ded_pct": null,
+  "danio_total_ded_smmlv": null,
+  "danio_parcial_ded_pct": null,
+  "danio_parcial_ded_smmlv": null,
+
+  "hurto_total_ded_pct": null,
+  "hurto_total_ded_smmlv": null,
+  "hurto_parcial_ded_pct": null,
+  "hurto_parcial_ded_smmlv": null,
+
+  "terremoto": false,
+  "proteccion_patrimonial": false,
+  "asistencia_juridica_penal": false,
+  "asistencia_juridica_penal_valor": null,
+  "asistencia_juridica_civil": false,
+  "asistencia_juridica_civil_valor": null,
+  "lucro_cesante": false,
+  "accidentes_personales_conductor": null,
+  "asistencia_en_viaje": false
 }
 
-REGLAS:
-- Si no encuentras un valor, pon 0, null o string vacío.
-- Los valores monetarios deben ser números enteros (sin puntos ni comas).
-- Identifica correctamente a la aseguradora leyendo el logo o los encabezados.
-- NO devuelvas markdown, solo el JSON puro.
+GUÍA DE EXTRACCIÓN:
+- rce_limite: límite máximo de Responsabilidad Civil Extracontractual en pesos (ej. 3000000000)
+- rce_deducible_smmlv: deducible RCE en SMMLV (ej. 2.0). Si dice "sin deducible" = 0
+- danio_total_valor: valor asegurado para pérdida total por daños (generalmente = valor_asegurado)
+- danio_total_ded_pct: porcentaje del deducible para pérdida total daños (ej. 10 para 10%)
+- danio_total_ded_smmlv: mínimo del deducible en SMMLV (ej. 0 si no hay mínimo)
+- danio_parcial_ded_pct: % deducible pérdida parcial daños
+- danio_parcial_ded_smmlv: mínimo SMMLV pérdida parcial daños
+- hurto_total_ded_pct/smmlv: igual para hurto total
+- hurto_parcial_ded_pct/smmlv: igual para hurto parcial
+- terremoto: true si cubre terremotos/eventos naturales/fenómenos naturales
+- proteccion_patrimonial: true si cubre "amparo patrimonial" o "protección patrimonial"
+- asistencia_juridica_penal/civil: true si incluye asistencia jurídica penal/civil
+- asistencia_juridica_penal_valor/civil_valor: monto en pesos si lo especifica (ej. 25000000)
+- lucro_cesante: true si incluye lucro cesante
+- accidentes_personales_conductor: monto en pesos (ej. 50000000). null si no incluye
+- asistencia_en_viaje: true si incluye asistencia en viaje/carretera
+- Los valores monetarios son números enteros sin puntos ni comas
+- Los SMMLV son números decimales (ej. 2.0)
+- Los porcentajes son números (ej. 10 para 10%)
+- NO devuelvas markdown, solo el JSON puro
 `;
 
     this.logger.log(`Parseando PDF con Gemini Flash (size: ${buffer.length} bytes)`);

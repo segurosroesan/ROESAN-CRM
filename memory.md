@@ -1,7 +1,7 @@
 # Memoria del Proyecto — ROESAN CRM
 
 > **AGENTES DE IA:** Leer este archivo al inicio de CADA sesión antes de escribir cualquier código. Actualizar al finalizar avances importantes.
-> Última actualización: 2026-04-26
+> Última actualización: 2026-04-27
 
 ---
 
@@ -27,7 +27,7 @@
 | **Allianz SOAP** | ✅ **FUNCIONAL** | UAT probado, 4 paquetes |
 | Comparador IA (Gemini Flash) | ✅ Funcional | Override determinístico para opción más barata |
 | Parse-PDF de cotizaciones | ✅ Funcional | Endpoint `/parse-pdf` y `/parse-pdfs` (bulk) |
-| **Módulo Documentos Legales** | ✅ **FUNCIONAL** | Extracción IA (Cédula, RUT, Sarlaft, Póliza) + Sync Soft |
+| **Módulo Documentos Legales** | ✅ **FUNCIONAL** | Extracción IA (Cédula, RUT, Sarlaft, Póliza) + Auto-registro póliza actual |
 | Generador de correo IA | ✅ Funcional | Endpoint `/email` con contexto renovación/nuevo |
 | Schema InstantDB cotizaciones | ✅ Actualizado | Campos: `cobertura`, `prima_total`, `es_renovacion` |
 | **SYNC-6 (Anexos)** | ✅ **FUNCIONAL** | Subida de archivos a Soft Seguros mediante `/documentos/sync` |
@@ -102,6 +102,8 @@
 | `apps/backend/src/cotizador/coverage-mapping.ts` | Mapeo de coberturas |
 | `apps/frontend/src/app/(dashboard)/leads/[id]/page.tsx` | Ficha de prospecto + cotizaciones |
 | `apps/frontend/src/components/CotizacionComparativo.tsx` | Comparador visual |
+| `apps/frontend/src/components/DocumentosLegales.tsx` | Extractor de documentos legal/póliza |
+| `apps/backend/src/documentos/` | Backend módulo extracción y sync anexos |
 | `apps/frontend/src/lib/instant-schema.ts` | Schema InstantDB |
 | `apps/backend/certs/CP100074_Int_PruebasRN2026.pfx` | Certificado Allianz UAT (gitignored) |
 | `comparativo.py` | Script offline de comparativo PDF (independiente del CRM) |
@@ -123,5 +125,5 @@
 
 1. **Probar SYNC-1 a SYNC-4 en producción** — Soft Seguros ya tiene permisos en `/api/cliente/`
 2. **Resolver Qualitas QA** — Contactar Edgar Bello / Brayan Florez
-3. **SYNC-5 y SYNC-6** — Beneficiarios y anexos (Fase 2)
+3. **SYNC-5** — Beneficiarios (Fase 2)
 4. **PDF comparativo online** — Evaluar integración de `comparativo.py` al backend

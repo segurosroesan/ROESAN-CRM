@@ -57,6 +57,14 @@ const schema = i.schema({
       soft_cliente_id: i.string().optional(),
       soft_poliza_id: i.string().optional(),
       sincronizado_soft: i.boolean().optional(),
+
+      // Renovation-specific fields
+      numero_poliza: i.string().optional(),
+      aseguradora: i.string().optional(),
+      fecha_fin_poliza: i.string().optional(),
+      prima_actual: i.number().optional(),
+      dias_para_vencer: i.number().optional(),
+      objeto_asegurado: i.string().optional(),
       
       // Legal
       consentimiento_datos: i.boolean().optional(),
@@ -107,6 +115,17 @@ const schema = i.schema({
       role: i.string(), // 'admin', 'coordinador', 'asesor'
       googleEmail: i.string().optional(),
       googleRefreshToken: i.string().optional(),
+    }),
+
+    job_importaciones: i.entity({
+      ejecutadoEn: i.number(),
+      totalConsultadas: i.number(),
+      nuevasCreadas: i.number(),
+      actualizadas: i.number(),
+      ignoradas: i.number(),
+      errores: i.number(),
+      detalleErrores: i.string().optional(),
+      duracionMs: i.number().optional(),
     }),
   },
   links: {

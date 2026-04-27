@@ -106,14 +106,15 @@ export class SoftSegurosApi {
    * Specific methods for SYNC flows
    */
   async getClientByDocument(documento: string) {
-    // Note: The documentation says filters are buggy, 
-    // but try the documented endpoint first for efficiency, 
-    // then fallback to exhaustive search if requested.
     try {
         const response = await this.request('GET', '/api/cliente/listar_cliente_por_documento/', undefined, {
             numero_documento: documento
         });
-        return response;
+        // API may return paginated { count, results: [...] } or a direct object
+        if (response?.results !== undefined) {
+          return response.results?.[0] ?? null;
+        }
+        return response ?? null;
     } catch (error) {
         this.logger.warn(`Direct client search failed for ${documento}, trying exhaustive loop...`);
         return this.exhaustiveSearch('/api/cliente/', 'numero_documento', documento);

@@ -356,11 +356,10 @@ export default function LeadDetailPage() {
       });
       const result = await response.json();
       if (result.success) {
+        // Backend already writes soft_cliente_id and sincronizado_soft to InstantDB
         await db.transact([
-          db.tx.leads[leadId].update({ 
-            sincronizado_soft: true, 
+          db.tx.leads[leadId].update({
             status: "Sincronizado ✓",
-            soft_cliente_id: String(result.softClient?.id || ""),
             updatedAt: Date.now(),
           }),
         ]);

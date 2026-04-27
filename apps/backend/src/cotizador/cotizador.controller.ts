@@ -43,7 +43,11 @@ export class CotizadorController {
   @HttpCode(200)
   async compararCotizaciones(@Body('cotizaciones') cotizaciones: any[]) {
     this.logger.log(`Solicitud de comparación IA para ${cotizaciones?.length || 0} cotizaciones`);
-    return this.cotizadorService.compararCotizaciones(cotizaciones);
+    try {
+      return await this.cotizadorService.compararCotizaciones(cotizaciones);
+    } catch (e: any) {
+      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+    }
   }
 
   @Post('email')
@@ -62,7 +66,11 @@ export class CotizadorController {
       throw new BadRequestException('Archivo no proporcionado');
     }
     this.logger.log(`Solicitud de parseo de PDF: ${file.originalname}`);
-    return this.cotizadorService.parsearPdfCotizacion(file.buffer, file.mimetype);
+    try {
+      return await this.cotizadorService.parsearPdfCotizacion(file.buffer, file.mimetype);
+    } catch (e: any) {
+      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+    }
   }
 
   @Post('parse-pdfs')
@@ -73,6 +81,10 @@ export class CotizadorController {
       throw new BadRequestException('Archivos no proporcionados');
     }
     this.logger.log(`Solicitud de parseo de ${files.length} PDFs`);
-    return this.cotizadorService.parsearMultiplesPdfsCotizacion(files);
+    try {
+      return await this.cotizadorService.parsearMultiplesPdfsCotizacion(files);
+    } catch (e: any) {
+      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+    }
   }
 }

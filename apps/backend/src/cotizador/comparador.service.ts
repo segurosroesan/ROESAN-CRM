@@ -121,7 +121,7 @@ export class ComparadorService {
     const result = await this.genAI.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
-      config: { responseMimeType: "application/json" },
+      config: { thinkingConfig: { thinkingBudget: 0 } },
     });
     const rawText = result.text ?? "";
     let resultado: any;
@@ -233,7 +233,7 @@ REGLAS:
           ],
         },
       ],
-      config: { responseMimeType: "application/json" },
+      config: { thinkingConfig: { thinkingBudget: 0 } },
     });
     const rawText = result.text ?? "";
     try {

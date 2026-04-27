@@ -826,7 +826,7 @@ export default function LeadDetailPage() {
                       <span className="text-2xl font-black text-emerald-600">
                         ${(cot.valor || cot.prima_total || 0).toLocaleString("es-CO")}
                       </span>
-                      {cot.estado !== "aceptada" && (
+                      {cot.estado !== "aceptada" ? (
                         <button
                           onClick={async () => {
                             await db.transact([db.tx.cotizaciones[cot.id].update({ estado: "aceptada" })]);
@@ -834,6 +834,15 @@ export default function LeadDetailPage() {
                           className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 px-3 py-1.5 rounded-lg transition-all"
                         >
                           Marcar como aceptada
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            await db.transact([db.tx.cotizaciones[cot.id].update({ estado: "enviada" })]);
+                          }}
+                          className="text-xs font-bold text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-100 hover:border-rose-100 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          Desmarcar aceptada
                         </button>
                       )}
                     </div>

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Logger, HttpCode, UseInterceptors, UploadedFile, UploadedFiles, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Post, Logger, HttpCode, UseInterceptors, UploadedFile, UploadedFiles, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CotizadorService } from './cotizador.service';
 import { CotizarDto } from '../lib/qualitas-api';
@@ -14,14 +14,22 @@ export class CotizadorController {
   @HttpCode(200)
   async cotizarQualitas(@Body() dto: CotizarDto) {
     this.logger.log(`Solicitud cotización Qualitas — doc: ${dto.documento}`);
-    return this.cotizadorService.cotizarQualitas(dto);
+    try {
+      return await this.cotizadorService.cotizarQualitas(dto);
+    } catch (e: any) {
+      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+    }
   }
 
   @Post('allianz')
   @HttpCode(200)
   async cotizarAllianz(@Body() dto: CotizarDto) {
     this.logger.log(`Solicitud cotización Allianz — placa: ${dto.placa}`);
-    return this.cotizadorService.cotizarAllianz(dto);
+    try {
+      return await this.cotizadorService.cotizarAllianz(dto);
+    } catch (e: any) {
+      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+    }
   }
 
   @Post('all')

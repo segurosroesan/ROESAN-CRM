@@ -138,8 +138,16 @@ export class QualitasApi {
 
     this.logger.log(`Cotizando en Qualitas — Fasecolda: ${dto.claveFasecolda}, Modelo: ${dto.modelo}`);
 
-    const response = await this.client.post(this.url, payload);
-    return this.parseResponse(response.data);
+    try {
+      const response = await this.client.post(this.url, payload);
+      return this.parseResponse(response.data);
+    } catch (error: any) {
+      const status = error.response?.status;
+      const body = error.response?.data;
+      this.logger.error(`Qualitas HTTP ${status}: ${JSON.stringify(body)}`);
+      const msg = body?.message || body?.Mensaje || body?.error || JSON.stringify(body) || error.message;
+      throw new Error(`Qualitas (HTTP ${status}): ${msg}`);
+    }
   }
 
   private parseResponse(data: any): QualitasQuoteResult {

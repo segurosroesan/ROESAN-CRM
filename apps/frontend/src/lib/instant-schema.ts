@@ -46,6 +46,13 @@ const schema = i.schema({
       notes: i.string().optional(),
       asesorId: i.string().optional(),
       
+      // Pipeline type
+      pipeline_tipo: i.string().optional(), // 'preventa' | 'renovacion' | 'crosssell'
+
+      // Vehicle shorthand (for email generation / cotizador)
+      placa: i.string().optional(),
+      vehiculo: i.string().optional(), // "Toyota Corolla 2022"
+
       // Soft Seguros Integration
       soft_cliente_id: i.string().optional(),
       soft_poliza_id: i.string().optional(),
@@ -77,8 +84,15 @@ const schema = i.schema({
     cotizaciones: i.entity({
       valor: i.number(),
       prima_total: i.number().optional(),
+      prima_neta: i.number().optional(),
+      iva: i.number().optional(),
+      gastos_expedicion: i.number().optional(),
+      valor_asegurado: i.number().optional(),
       aseguradora: i.string(),
+      nombre_plan: i.string().optional(),
       cobertura: i.string().optional(),
+      coberturas: i.json().optional(),   // array de coberturas detalladas
+      deducibles: i.json().optional(),   // array de deducibles
       fuente: i.string().optional(),
       estado: i.string(), // 'pendiente', 'enviada', 'aceptada', 'rechazada'
       es_renovacion: i.boolean().optional(),

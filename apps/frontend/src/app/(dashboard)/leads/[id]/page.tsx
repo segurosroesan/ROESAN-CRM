@@ -733,9 +733,10 @@ export default function LeadDetailPage() {
               </div>
 
               {showAddCotizacion && (
-                <AddCotizacionForm 
-                  leadId={leadId} 
-                  onClose={() => setShowAddCotizacion(false)} 
+                <AddCotizacionForm
+                  leadId={leadId}
+                  onClose={() => setShowAddCotizacion(false)}
+                  lead={lead}
                 />
               )}
 
@@ -1080,7 +1081,7 @@ function AddInteraccionForm({ leadId, onClose }: { leadId: string; onClose: () =
   );
 }
 
-function AddCotizacionForm({ leadId, onClose }: { leadId: string; onClose: () => void }) {
+function AddCotizacionForm({ leadId, onClose, lead }: { leadId: string; onClose: () => void; lead: any }) {
   const [form, setForm] = useState({
     aseguradora: "",
     valor: "",

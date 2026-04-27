@@ -32,4 +32,13 @@ export class RenovacionesController {
   async getLogs(@Query('limit') limit?: string) {
     return this.renovacionesService.getImportLogs(Number(limit) || 10);
   }
+
+  /**
+   * POST /renovaciones/import/direct
+   * Run import synchronously (no queue/Redis required — for admin/testing)
+   */
+  @Post('import/direct')
+  async triggerImportDirect(@Body('diasRango') diasRango?: number) {
+    return this.renovacionesService.runImportJob(diasRango || 60);
+  }
 }

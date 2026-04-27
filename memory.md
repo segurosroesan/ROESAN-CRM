@@ -79,6 +79,27 @@
 
 ---
 
+## 📄 Módulo de Documentos e IA ✅ NUEVO (2026-04-27)
+
+Este módulo permite procesar documentos legales y técnicos para automatizar la captura de datos y la sincronización con Soft Seguros.
+
+### Documentos Soportados
+- **Cédula:** Extrae Nombres, Apellidos, ID, Género y Fecha de Nacimiento. Actualiza el nombre y documento del Lead.
+- **RUT:** Extrae NIT, Razón Social, Dirección y Ciudad. Actualiza el Lead.
+- **Sarlaft:** Extrae datos de ocupación y financieros para el perfil del cliente.
+- **Póliza:** Extrae Aseguradora, Número de Póliza, Vigencias, Prima y Coberturas.
+
+### Lógica de "Actualización con Póliza Actual"
+Cuando se procesa una **Póliza**, el sistema realiza dos acciones automáticas al darle a "Actualizar":
+1. **Lead:** Actualiza los campos del vehículo (`vehiclePlate`, `vehicleYear`, `vehicleFasecolda`) con la info extraída.
+2. **Comparador:** Crea un registro en la tabla `cotizaciones` marcado con `es_renovacion: true`. Esto permite que la IA compare esta póliza vigente contra las nuevas cotizaciones de Allianz/Qualitas.
+
+### Sincronización (SYNC-6)
+- Permite subir el archivo PDF/Imagen directamente a Soft Seguros como un **Anexo**.
+- El sistema detecta si debe asociarse al Cliente (C) o a la Póliza (P) según el tipo de documento.
+
+---
+
 ## 🏗️ Arquitectura de Datos
 
 - **InstantDB** (no Prisma, no PostgreSQL). Schema en `apps/frontend/src/lib/instant-schema.ts`

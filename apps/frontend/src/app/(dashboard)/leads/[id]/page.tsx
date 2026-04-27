@@ -217,7 +217,7 @@ export default function LeadDetailPage() {
       
       if (results.qualitas && !results.qualitas.error) {
         const qId = crypto.randomUUID();
-        const prima = results.qualitas.total_a_pagar || results.qualitas.prima_total || 0;
+        const prima = results.qualitas.primaTotal || results.qualitas.prima_total || 0;
         transactions.push(db.tx.cotizaciones[qId].update({
           leadId,
           aseguradora: "Qualitas",
@@ -252,10 +252,17 @@ export default function LeadDetailPage() {
 
       if (transactions.length > 0) {
         await db.transact(transactions);
-        alert(`Se han generado ${transactions.length / 2} cotizaciones nuevas.`);
+        const lines: string[] = [`✅ ${transactions.length / 2} cotización(es) guardada(s).`];
+        if (results.qualitas?.error) lines.push(`⚠️ Qualitas: ${results.qualitas.error}`);
+        if (results.allianz?.error) lines.push(`⚠️ Allianz: ${results.allianz.error}`);
+        alert(lines.join("\n"));
       } else {
-        const errMsg = results.qualitas?.error || results.allianz?.error || "No se encontraron ofertas.";
-        alert(`Error al cotizar: ${errMsg}`);
+        const lines: string[] = ["No se guardaron cotizaciones."];
+        if (results.qualitas?.error) lines.push(`Qualitas: ${results.qualitas.error}`);
+        else lines.push("Qualitas: sin respuesta");
+        if (results.allianz?.error) lines.push(`Allianz: ${results.allianz.error}`);
+        else if (!results.allianz?.paquetes?.length) lines.push("Allianz: sin paquetes");
+        alert(lines.join("\n"));
       }
     } catch (err) {
       console.error("Error en auto-quote:", err);

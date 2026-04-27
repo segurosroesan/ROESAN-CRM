@@ -175,10 +175,12 @@ export class AllianzApi {
   }
 
   private async parseResponse(soapResponse: string): Promise<AllianzQuoteResult> {
-    // Extract inner XML string from SOAP call4Response wrapper
-    const match = soapResponse.match(/ns:return>([\s\S]*?)<\/ns:return/);
+    // namespace prefix can vary (ns, ns2, return, etc.) — match any or none
+    const match = soapResponse.match(/(?:[a-zA-Z0-9]*:)?return>([\s\S]*?)<\/(?:[a-zA-Z0-9]*:)?return/);
     if (!match) {
-      throw new Error('Respuesta inesperada de Allianz: sin ns:return en SOAP response');
+      const snippet = soapResponse.slice(0, 500);
+      this.logger.error(`Allianz SOAP sin return tag. Fragmento: ${snippet}`);
+      throw new Error(`Respuesta inesperada de Allianz: sin return en SOAP. Inicio: ${snippet}`);
     }
     const xml = match[1]
       .replace(/&lt;/g, '<')
@@ -187,10 +189,12 @@ export class AllianzApi {
       .replace(/&quot;/g, '"');
 
     const parsed = await parseStringPromise(xml, { explicitArray: false });
-    const res = parsed?.ChargeResponse;
+    // Root element can be ChargeResponse or chargerequest depending on env
+    const res = parsed?.ChargeResponse ?? parsed?.chargerequest ?? Object.values(parsed ?? {})[0];
 
     if (!res) {
-      throw new Error('Respuesta inesperada de Allianz: sin ChargeResponse');
+      this.logger.error(`Allianz XML parseado sin ChargeResponse: ${JSON.stringify(parsed).slice(0, 500)}`);
+      throw new Error(`Respuesta inesperada de Allianz: sin ChargeResponse. Keys: ${Object.keys(parsed ?? {}).join(', ')}`);
     }
 
     if (res.Status === 'E') {

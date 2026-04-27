@@ -78,8 +78,8 @@ export function generarCorreo(params: GenerarCorreoParams): string {
 
   lineas.push("");
 
-  // ── Cuerpo: CORTO Y AMABLE ──
-  const nombreCorto = tomador.split(" ")[0]; // Solo primer nombre
+  // ── Cuerpo ──
+  const nombreCorto = tomador.split(" ")[0];
   const nombreTrato = nombreCorto.charAt(0).toUpperCase() + nombreCorto.slice(1).toLowerCase();
 
   lineas.push(`Buenas tardes ${nombreTrato},`);
@@ -87,39 +87,46 @@ export function generarCorreo(params: GenerarCorreoParams): string {
 
   if (esNuevo) {
     lineas.push(
-      `Le envío la propuesta de póliza TODO RIESGO para el vehículo ${descripcion.toUpperCase()} placa ${placa.toUpperCase()} a nombre de ${tomador.toUpperCase()}, para su revisión y aprobación.`
+      `Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`
     );
+    lineas.push("");
+    lineas.push(
+      `Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}, que ofrece la mejor relación precio-cobertura del mercado.`
+    );
+  } else if (accionIA === "CAMBIAR" && aseguradoraRenovacion) {
+    lineas.push(
+      `Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer y le tenemos una buena noticia.`
+    );
+    lineas.push("");
+    lineas.push(
+      `Cotizamos con varias aseguradoras y encontramos que ${aseguradora} le ofrece mejor precio: ${primaTotal} anuales — por debajo de lo que paga hoy con ${aseguradoraRenovacion.toUpperCase()}.`
+    );
+    lineas.push("");
+    lineas.push(`Para hacer el cambio necesitamos:`);
+    lineas.push(`  → Formato adjunto diligenciado`);
+    lineas.push(`  → Copia cédula y tarjeta de propiedad`);
+    lineas.push(`  → Inspección del vehículo (coordinamos nosotros)`);
+    lineas.push("");
+    lineas.push(`Si prefiere quedarse con ${aseguradoraRenovacion.toUpperCase()}, con solo confirmarnos gestionamos la renovación.`);
+  } else if (accionIA === "RENOVAR" && aseguradoraRenovacion) {
+    lineas.push(
+      `Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer.`
+    );
+    lineas.push("");
+    lineas.push(
+      `Revisamos el mercado y ${aseguradora} sigue siendo la mejor opción para usted — prima anual de ${primaTotal} con excelentes coberturas.`
+    );
+    lineas.push("");
+    lineas.push(`Con solo confirmarnos por este medio, gestionamos la renovación.`);
   } else {
     lineas.push(
-      `Confirmo que se aproxima la renovación de la póliza TODO RIESGO del vehículo ${descripcion.toUpperCase()} placa ${placa.toUpperCase()} a nombre de ${tomador.toUpperCase()}, envío propuesta para su revisión y aprobación.`
+      `Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`
+    );
+    lineas.push("");
+    lineas.push(
+      `Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}.`
     );
   }
-  lineas.push("");
-
-  // ── Recomendación con estilo Adriana ──
-  if (accionIA === "CAMBIAR" && aseguradoraRenovacion && !esNuevo) {
-    lineas.push(
-      `Revisando con las demás compañías, ${aseguradora} le ofrece una opción más económica, con excelentes coberturas y un valor de prima de ${primaTotal} anual.`
-    );
-    lineas.push("");
-    lineas.push(
-      `Si desea realizar el cambio de compañía, se debe diligenciar completamente el formato adjunto y enviarlo por este medio con copia de la cédula y tarjeta de propiedad. El vehículo debe ser inspeccionado.`
-    );
-    lineas.push("");
-    lineas.push(`Si desea continuar con seguros ${aseguradoraRenovacion.toUpperCase()}, solo debe confirmar por este medio.`);
-  } else if (accionIA === "RENOVAR" && !esNuevo) {
-    lineas.push(
-      `Revisando con las demás compañías, le recomendamos continuar con seguros ${aseguradora}, ya que sigue ofreciendo la mejor relación precio-cobertura con una prima de ${primaTotal}.`
-    );
-    lineas.push("");
-    lineas.push(`Para renovar, solo debe confirmar por este medio.`);
-  } else {
-    lineas.push(
-      `Revisando las mejores opciones del mercado, le recomendamos ${aseguradora} con una prima anual de ${primaTotal}.`
-    );
-  }
-  lineas.push("");
-  // lineas.push(justificacionIA || "");
   lineas.push("");
 
   // ── Link PSE ──
@@ -191,7 +198,7 @@ export function generarCorreo(params: GenerarCorreoParams): string {
 
   // ── Nota adjunto ──
   lineas.push("");
-  lineas.push("En el archivo adjunto encontrará el cuadro comparativo detallado con todas las opciones cotizadas para su revisión.");
+  lineas.push("Adjunto el comparativo completo con todas las opciones para que tenga el panorama claro.");
   lineas.push("");
   lineas.push("RESUMEN DE OPCIONES:");
   lineas.push("");
@@ -216,7 +223,7 @@ export function generarCorreo(params: GenerarCorreoParams): string {
     lineas.push(`  • ${etiqueta.padEnd(30)} ${fmtPeso(c.prima_total).padStart(15)}${marca}`);
   }
   lineas.push("");
-  lineas.push("Quedamos atentos a sus comentarios.");
+  lineas.push("Cualquier duda, con gusto la atendemos.");
   lineas.push("");
 
   return lineas.join("\n");

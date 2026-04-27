@@ -59,7 +59,7 @@ export class ComparadorService {
     if (!apiKey) {
       this.logger.warn('GEMINI_API_KEY is not defined. Comparison AI will fail.');
     } else {
-      this.genAI = new GoogleGenAI({ apiKey });
+      this.genAI = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1' } });
     }
   }
 
@@ -119,7 +119,7 @@ export class ComparadorService {
 
     // Llamar a Gemini
     const result = await this.genAI.models.generateContent({
-      model: "gemini-2.5-flash-preview-04-17",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
@@ -223,7 +223,7 @@ REGLAS:
     this.logger.log(`Parseando PDF con Gemini Flash (size: ${buffer.length} bytes)`);
 
     const result = await this.genAI.models.generateContent({
-      model: "gemini-2.5-flash-preview-04-17",
+      model: "gemini-2.5-flash",
       contents: [
         {
           role: "user",

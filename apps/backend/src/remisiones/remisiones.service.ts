@@ -89,23 +89,36 @@ export class RemisionesService {
     // STEP A: Create client if not found, otherwise update with extracted data
     if (!soft_cliente_id) {
       this.logger.log('SYNC-2: Creando cliente en Soft Seguros');
-      const newClient = await this.softApi.createClient({
-        numero_documento: clientData.numero_documento,
-        tipo_documento: clientData.tipo_documento || '01',
-        nombres: clientData.nombres || '',
-        apellidos: clientData.apellidos || '',
-        correo: clientData.email,
-        celular: clientData.telefono,
-        telefono: clientData.telefono,
-        genero: clientData.genero || 'MASCULINO',
-        fecha_nacimiento: clientData.fecha_nacimiento || '1990-01-01',
-        direccion: clientData.direccion,
-        ciudad: clientData.ciudad,
-        provincia: clientData.provincia,
-      });
-      soft_cliente_id = String(newClient.id);
-      steps.clientCreate = { soft_cliente_id };
-      this.logger.log(`Cliente creado con ID: ${soft_cliente_id}`);
+      try {
+        const newClient = await this.softApi.createClient({
+          numero_documento: clientData.numero_documento,
+          tipo_documento: clientData.tipo_documento || '01',
+          nombres: clientData.nombres || '',
+          apellidos: clientData.apellidos || '',
+          correo: clientData.email,
+          celular: clientData.telefono,
+          telefono: clientData.telefono,
+          genero: clientData.genero || 'MASCULINO',
+          fecha_nacimiento: clientData.fecha_nacimiento || '1990-01-01',
+          direccion: clientData.direccion,
+          ciudad: clientData.ciudad,
+          provincia: clientData.provincia,
+        });
+        soft_cliente_id = String(newClient.id);
+        steps.clientCreate = { soft_cliente_id };
+        this.logger.log(`Cliente creado con ID: ${soft_cliente_id}`);
+      } catch (createErr: any) {
+        // Si la creación falla (p.ej. el cliente ya existe), buscarlo por documento
+        this.logger.warn(`SYNC-2 falló: ${createErr.message}. Intentando buscar por documento...`);
+        const existing = await this.softApi.getClientByDocument(clientData.numero_documento);
+        if (existing) {
+          soft_cliente_id = String(existing.id);
+          steps.clientFoundOnRetry = { soft_cliente_id };
+          this.logger.log(`Cliente recuperado por documento: ${soft_cliente_id}`);
+        } else {
+          throw createErr; // No existe → relanzar el error original
+        }
+      }
     } else {
       this.logger.log(`Actualizando cliente ${soft_cliente_id} con datos extraídos`);
       const clientUpdate: Record<string, any> = {};

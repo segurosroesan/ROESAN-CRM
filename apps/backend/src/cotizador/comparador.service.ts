@@ -360,7 +360,12 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
   "placa": "placa del vehículo si aplica, null si no",
   "marca": "marca del vehículo si aplica",
   "linea": "línea/modelo del vehículo si aplica",
-  "modelo": 0
+  "modelo": 0,
+  "tomador_nombres": "nombres del tomador o asegurado principal (sin apellidos)",
+  "tomador_apellidos": "apellidos del tomador o asegurado principal",
+  "tomador_documento": "número de cédula o NIT del tomador si aparece, null si no",
+  "tomador_direccion": "dirección de residencia del tomador si aparece, null si no",
+  "tomador_ciudad": "ciudad del tomador si aparece, null si no"
 }
 `;
         break;

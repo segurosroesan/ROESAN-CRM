@@ -346,12 +346,14 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
 {
   "numero_poliza": "número de la póliza",
   "aseguradora": "nombre de la aseguradora",
+  "ramo": "rama del seguro en minúsculas: auto, hogar, vida, salud, soat, empresarial o cumplimiento",
   "fecha_inicio": "YYYY-MM-DD",
   "fecha_fin": "YYYY-MM-DD",
   "prima_total": 0,
-  "placa": "placa del vehículo",
-  "marca": "marca del vehículo",
-  "linea": "línea del vehículo",
+  "objeto_asegurado": "descripción corta del bien: placa del vehículo, dirección del inmueble, nombre del asegurado, etc.",
+  "placa": "placa del vehículo si aplica, null si no",
+  "marca": "marca del vehículo si aplica",
+  "linea": "línea/modelo del vehículo si aplica",
   "modelo": 0
 }
 `;

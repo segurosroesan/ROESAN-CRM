@@ -3,7 +3,13 @@ import {
   UseInterceptors, UploadedFiles, BadRequestException, HttpException, HttpStatus,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { RemisionesService } from './remisiones.service';
+
+const MULTER_OPTS = {
+  storage: memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB por archivo
+};
 
 @Controller('remisiones')
 export class RemisionesController {
@@ -20,7 +26,7 @@ export class RemisionesController {
 
   @Post('parsear')
   @HttpCode(200)
-  @UseInterceptors(FilesInterceptor('files', 4))
+  @UseInterceptors(FilesInterceptor('files', 4, MULTER_OPTS))
   async parsearDocumentos(
     @UploadedFiles() files: any[],
     @Body('tipos') tiposRaw: string,
@@ -50,7 +56,7 @@ export class RemisionesController {
 
   @Post('remisionar')
   @HttpCode(200)
-  @UseInterceptors(FilesInterceptor('files', 4))
+  @UseInterceptors(FilesInterceptor('files', 4, MULTER_OPTS))
   async remisionar(
     @UploadedFiles() files: any[],
     @Body('soft_cliente_id') soft_cliente_id: string,

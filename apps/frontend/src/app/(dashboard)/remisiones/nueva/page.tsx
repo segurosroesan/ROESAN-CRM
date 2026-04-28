@@ -126,6 +126,9 @@ export default function RemisionarPage() {
           email:     data.cliente.email    || prev.email,
           telefono:  data.cliente.celular  || prev.telefono,
         }));
+      } else {
+        // Cliente no existe — ir directamente a subir documentos
+        setStep(2);
       }
     } catch {
       setError("Error conectando con el servidor");

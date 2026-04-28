@@ -39,5 +39,6 @@ import { AllianzApi } from '../lib/allianz-api';
       inject: [ConfigService],
     },
   ],
+  exports: [ComparadorService],
 })
 export class CotizadorModule {}

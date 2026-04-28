@@ -177,8 +177,9 @@ export class SoftSegurosApi {
       this.logger.log(`Client created successfully with ID: ${response.id}`);
       return response;
     } catch (error) {
-       this.logger.error(`Failed to create client in Soft Seguros: ${JSON.stringify(error.response?.data || error.message)}`);
-       throw new Error(`Error en SYNC-2: No se pudo crear el cliente. ${JSON.stringify(error.response?.data)}`);
+       const detail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+       this.logger.error(`Failed to create client in Soft Seguros: ${detail}`);
+       throw new Error(`Error en SYNC-2: No se pudo crear el cliente. ${detail}`);
     }
   }
 

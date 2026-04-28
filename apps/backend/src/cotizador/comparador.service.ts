@@ -364,8 +364,11 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
   "tomador_nombres": "nombres del tomador o asegurado principal (sin apellidos)",
   "tomador_apellidos": "apellidos del tomador o asegurado principal",
   "tomador_documento": "número de cédula o NIT del tomador si aparece, null si no",
+  "tomador_telefono": "teléfono o celular del tomador si aparece, null si no",
+  "tomador_correo": "correo electrónico del tomador si aparece, null si no",
   "tomador_direccion": "dirección de residencia del tomador si aparece, null si no",
-  "tomador_ciudad": "ciudad del tomador si aparece, null si no"
+  "tomador_ciudad": "ciudad del tomador si aparece, null si no",
+  "tomador_departamento": "departamento del tomador si aparece, null si no"
 }
 `;
         break;

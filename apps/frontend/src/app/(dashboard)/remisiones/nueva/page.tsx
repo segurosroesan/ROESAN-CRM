@@ -184,20 +184,24 @@ export default function RemisionarPage() {
         if (data.CEDULA.fecha_nacimiento) cd.fecha_nacimiento = data.CEDULA.fecha_nacimiento;
         if (data.CEDULA.genero)           cd.genero           = data.CEDULA.genero;
       } else if (data.POLIZA) {
-        // Sin cédula: tomar nombre del tomador desde la carátula de póliza
+        // Sin cédula: tomar datos del tomador desde la carátula de póliza
         if (data.POLIZA.tomador_nombres)   cd.nombres   = data.POLIZA.tomador_nombres;
         if (data.POLIZA.tomador_apellidos) cd.apellidos = data.POLIZA.tomador_apellidos;
         if (data.POLIZA.tomador_documento && !formCliente.numero_documento)
           cd.numero_documento = data.POLIZA.tomador_documento;
       }
+      // Teléfono/correo: póliza como fallback si el usuario no los ingresó
+      if (!cd.telefono && data.POLIZA?.tomador_telefono) cd.telefono = data.POLIZA.tomador_telefono;
+      if (!cd.email    && data.POLIZA?.tomador_correo)   cd.email    = data.POLIZA.tomador_correo;
       if (data.RUT) {
         if (data.RUT.direccion)    cd.direccion = data.RUT.direccion;
         if (data.RUT.ciudad)       cd.ciudad    = data.RUT.ciudad;
         if (data.RUT.departamento) cd.provincia = data.RUT.departamento;
       } else if (data.POLIZA) {
-        // Sin RUT: tomar dirección/ciudad del tomador desde la carátula
-        if (data.POLIZA.tomador_direccion) cd.direccion = data.POLIZA.tomador_direccion;
-        if (data.POLIZA.tomador_ciudad)    cd.ciudad    = data.POLIZA.tomador_ciudad;
+        // Sin RUT: tomar dirección/ciudad/departamento del tomador desde la carátula
+        if (data.POLIZA.tomador_direccion)   cd.direccion = data.POLIZA.tomador_direccion;
+        if (data.POLIZA.tomador_ciudad)      cd.ciudad    = data.POLIZA.tomador_ciudad;
+        if (data.POLIZA.tomador_departamento) cd.provincia = data.POLIZA.tomador_departamento;
       }
       if (data.SARLAFT?.ocupacion) cd.ocupacion_descripcion = data.SARLAFT.ocupacion;
       setClientData(cd);

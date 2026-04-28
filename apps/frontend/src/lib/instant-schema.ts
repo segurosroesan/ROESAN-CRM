@@ -65,6 +65,8 @@ const schema = i.schema({
       prima_actual: i.number().optional(),
       dias_para_vencer: i.number().optional(),
       objeto_asegurado: i.string().optional(),
+      fecha_inicio_poliza: i.string().optional(),
+      tipo_documento: i.string().optional(), // '01'=Cédula, '02'=NIT, '03'=Pasaporte
       
       // Legal
       consentimiento_datos: i.boolean().optional(),

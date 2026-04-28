@@ -373,7 +373,7 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
     this.logger.log(`Parseando documento legal (${tipoDocumento}) con Gemini Files API`);
 
     const model = this.genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-flash-latest",
       generationConfig: { responseMimeType: "application/json" },
     });
 

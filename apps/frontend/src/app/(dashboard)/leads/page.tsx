@@ -177,56 +177,56 @@ export default function LeadsPage() {
     <div className="space-y-6 flex flex-col h-full w-full relative">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-slate-900">Pipeline Pre-Venta</h2>
-          <p className="text-slate-400 mt-0.5 text-sm font-medium">Arrastra los prospectos entre etapas para gestionar tu embudo.</p>
+          <h2 className="text-xl font-black tracking-tight text-slate-900">Pipeline Pre-Venta</h2>
+          <p className="text-slate-400 mt-0.5 text-[13px] font-medium">Arrastra los prospectos entre etapas para gestionar tu embudo.</p>
         </div>
-        
-        <div className="flex items-center space-x-3">
+
+        <div className="flex items-center space-x-2">
           <div className="relative group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-            <input 
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+            <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar prospecto…" 
-              className="pl-10 pr-4 py-2.5 bg-white/70 backdrop-blur-lg border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white w-60 transition-all shadow-sm"
+              placeholder="Buscar prospecto…"
+              className="pl-9 pr-4 py-1.5 bg-white/70 backdrop-blur-lg border border-slate-200/80 rounded-lg text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white w-52 transition-all shadow-sm"
             />
           </div>
-          <button 
+          <button
             onClick={() => setShowAll(!showAll)}
-            className="px-3 py-2.5 text-xs font-bold rounded-xl text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
+            className="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
           >
             {showAll ? "Ocultar terminados" : "Ver todas las etapas"}
           </button>
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-all shadow-[0_8px_20px_-6px_rgba(37,99,235,0.5)] hover:shadow-[0_12px_25px_-8px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 active:translate-y-0"
+            className="flex items-center px-4 py-1.5 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 transition-all"
           >
-            <Plus className="mr-2 h-4 w-4" strokeWidth={3} />
+            <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={3} />
             Crear Prospecto
           </button>
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-3">
         {[
           { label: "Total Leads", value: totalLeads, color: "text-slate-800" },
           { label: "Nuevos hoy", value: totalNuevos, color: "text-blue-600" },
           { label: "Ganados", value: totalGanados, color: "text-emerald-600" },
           { label: "Conversión", value: `${tasaConversion}%`, color: "text-indigo-600" },
         ].map(stat => (
-          <div key={stat.label} className="bg-white/60 backdrop-blur-md rounded-2xl border border-white/80 shadow-sm p-4">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">{stat.label}</p>
-            <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+          <div key={stat.label} className="bg-white/60 backdrop-blur-md rounded-xl border border-white/80 shadow-sm p-3">
+            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">{stat.label}</p>
+            <p className={`text-xl font-black ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
 
       {/* Kanban */}
-      <div className="flex space-x-5 overflow-x-auto pb-8 -mx-10 px-10 flex-1">
+      <div className="flex space-x-3 overflow-x-auto pb-6 -mx-6 px-6 flex-1">
         <DndContext 
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -241,10 +241,10 @@ export default function LeadsPage() {
               <div 
                 key={stage}
                 id={stage}
-                className={`flex-shrink-0 w-72 flex flex-col bg-white/50 backdrop-blur-2xl rounded-2xl border-t-[3px] ${cfg.color} border border-white shadow-sm transition-all duration-300 hover:shadow-md overflow-hidden`}
+                className={`flex-shrink-0 w-64 flex flex-col bg-white/50 backdrop-blur-2xl rounded-xl border-t-[3px] ${cfg.color} border border-white shadow-sm overflow-hidden`}
               >
                 {/* Column Header */}
-                <div className="p-4 flex items-center justify-between bg-white/40 border-b border-slate-200/30">
+                <div className="px-3 py-2.5 flex items-center justify-between bg-white/40 border-b border-slate-200/30">
                   <div className="flex items-center space-x-2">
                     <div className={`h-2 w-2 rounded-full ${cfg.dotColor}`} />
                     <h3 className="font-bold text-slate-700 text-xs tracking-wide">{stage}</h3>
@@ -258,9 +258,9 @@ export default function LeadsPage() {
                 </div>
                 
                 {/* Cards */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[120px]">
+                <div className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[120px]">
                   {stageLeads.length === 0 && (
-                    <div className="flex items-center justify-center h-16 rounded-xl border-2 border-dashed border-slate-200/60">
+                    <div className="flex items-center justify-center h-14 rounded-lg border-2 border-dashed border-slate-200/60">
                       <p className="text-[11px] text-slate-300 font-medium">Sin prospectos</p>
                     </div>
                   )}
@@ -284,11 +284,11 @@ function LeadCard({ lead, onClick }: { lead: any; onClick: () => void }) {
   const RamoIcon = RAMO_ICONS[lead.type] || Shield;
 
   return (
-    <div 
+    <div
       onClick={onClick}
-      className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 hover:border-blue-300/60 hover:shadow-[0_4px_20px_-4px_rgba(59,130,246,0.12)] transition-all duration-200 cursor-pointer group"
+      className="bg-white p-3 rounded-lg shadow-sm border border-slate-100 hover:border-blue-300/60 hover:shadow-sm transition-all duration-200 cursor-pointer group"
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-black text-white shadow-sm">
             {initial}
@@ -321,7 +321,7 @@ function LeadCard({ lead, onClick }: { lead: any; onClick: () => void }) {
         )}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-slate-100/80 flex items-center justify-between">
+      <div className="mt-2 pt-2 border-t border-slate-100/80 flex items-center justify-between">
         <div className="flex items-center text-[9px] text-slate-300 font-bold uppercase tracking-wider">
           <Calendar className="h-3 w-3 mr-1 opacity-60" />
           {new Date(lead.createdAt || Date.now()).toLocaleDateString('es-CO', { month: 'short', day: 'numeric' })}

@@ -35,6 +35,7 @@ import {
   User,
   ExternalLink,
   Copy,
+  Search,
 } from "lucide-react";
 import { EmailComposer } from "@/components/EmailComposer";
 import { CotizacionComparativo } from "@/components/CotizacionComparativo";
@@ -152,6 +153,7 @@ export default function LeadDetailPage() {
   const [comparativoData, setComparativoData] = useState<any>(null);
   const [isAutoQuoting, setIsAutoQuoting] = useState(false);
   const [uploadingBulk, setUploadingBulk] = useState(false);
+  const [isSearchingPlaca, setIsSearchingPlaca] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   if (isLoading) return (
@@ -382,6 +384,52 @@ export default function LeadDetailPage() {
     }
   };
 
+  const handleSearchPlaca = async (placaBuscada?: string) => {
+    const placaAUsar = placaBuscada || (isEditingInfo ? editData?.vehiclePlate : lead?.vehiclePlate);
+    if (!placaAUsar) {
+      alert("Por favor ingresa una placa primero.");
+      return;
+    }
+
+    setIsSearchingPlaca(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const response = await fetch(`${backendUrl}/vehiculos/placa/${placaAUsar}`);
+      const result = await response.json();
+
+      if (response.ok && result.success && result.data) {
+        const { modelo, fasecolda, marca, linea } = result.data;
+        const infoMsg = `Vehículo encontrado: ${marca} ${linea} ${modelo}`;
+        
+        if (isEditingInfo) {
+          setEditData({
+            ...editData,
+            vehicleYear: modelo,
+            vehicleFasecolda: fasecolda,
+          });
+          alert(`${infoMsg}\n(Datos actualizados en el formulario, recuerda Guardar)`);
+        } else {
+          // Guardar directamente
+          await db.transact([
+            db.tx.leads[leadId].update({
+              vehicleYear: modelo,
+              vehicleFasecolda: fasecolda,
+              updatedAt: Date.now()
+            })
+          ]);
+          alert(`${infoMsg}\n(Datos guardados exitosamente)`);
+        }
+      } else {
+        alert(result.error || "No se encontraron datos para esta placa.");
+      }
+    } catch (err) {
+      console.error("Error consultando placa:", err);
+      alert("Error de conexión al consultar la placa.");
+    } finally {
+      setIsSearchingPlaca(false);
+    }
+  };
+
   const handleCompararCotizaciones = async () => {
     if (!cotizaciones || cotizaciones.length === 0) return;
     setIsComparing(true);
@@ -436,32 +484,32 @@ export default function LeadDetailPage() {
   const progressPct = Math.round(((stageIdx + 1) / STAGES.length) * 100);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-4">
 
       {/* Back button */}
       <button
         onClick={() => router.push("/leads")}
-        className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-amber-600 transition-colors group"
+        className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-400 hover:text-amber-600 transition-colors group"
       >
         <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
         <span style={{ fontFamily: "var(--font-outfit)" }}>Pipeline Pre-Venta</span>
       </button>
 
       {/* Lead Hero Card */}
-      <div className="bento-card bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         {/* Gradient header */}
-        <div className={`h-1.5 bg-gradient-to-r ${ramoMeta.color}`} />
-        
-        <div className="p-6 flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="flex items-start gap-5">
+        <div className={`h-1 bg-gradient-to-r ${ramoMeta.color}`} />
+
+        <div className="p-5 flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
             {/* Avatar */}
-            <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${ramoMeta.color} flex items-center justify-center text-2xl font-black text-white shadow-lg flex-shrink-0`}>
+            <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${ramoMeta.color} flex items-center justify-center text-xl font-black text-white flex-shrink-0`}>
               {lead.name?.charAt(0)?.toUpperCase() || "?"}
             </div>
-            
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-black text-slate-900">{lead.name || "Sin nombre"}</h1>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl font-black text-slate-900">{lead.name || "Sin nombre"}</h1>
                 {lead.sincronizado_soft && (
                   <span className="flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Sincronizado Soft
@@ -469,8 +517,8 @@ export default function LeadDetailPage() {
                 )}
               </div>
               
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className={`flex items-center gap-1.5 text-xs font-bold text-white px-3 py-1 rounded-full ${stageColor}`}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`flex items-center gap-1 text-xs font-bold text-white px-2.5 py-0.5 rounded-full ${stageColor}`}>
                   <RamoIcon className="h-3.5 w-3.5" />
                   {ramoMeta.label}
                 </span>
@@ -485,22 +533,22 @@ export default function LeadDetailPage() {
               </div>
 
               {/* Contact info */}
-              <div className="flex items-center gap-4 flex-wrap mt-1">
+              <div className="flex items-center gap-3 flex-wrap">
                 {lead.phone && (
-                  <button onClick={copyPhone} className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors group/phone">
+                  <button onClick={copyPhone} className="flex items-center gap-1 text-[13px] font-semibold text-slate-600 hover:text-blue-600 transition-colors group/phone">
                     <Phone className="h-3.5 w-3.5" />
                     {lead.phone}
                     <Copy className={`h-3 w-3 opacity-0 group-hover/phone:opacity-100 transition-opacity ${copied ? "text-green-500 opacity-100" : ""}`} />
                   </button>
                 )}
                 {lead.email && (
-                  <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors">
+                  <a href={`mailto:${lead.email}`} className="flex items-center gap-1 text-[13px] font-semibold text-slate-500 hover:text-blue-600 transition-colors">
                     <Mail className="h-3.5 w-3.5" />
                     {lead.email}
                   </a>
                 )}
                 {lead.city && (
-                  <span className="flex items-center gap-1.5 text-sm text-slate-400 font-medium">
+                  <span className="flex items-center gap-1 text-[13px] text-slate-400 font-medium">
                     <MapPin className="h-3.5 w-3.5" />
                     {lead.city}
                   </span>
@@ -510,25 +558,25 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col gap-3 items-end flex-shrink-0">
+          <div className="flex flex-col gap-2 items-end flex-shrink-0">
             {/* Stage selector */}
             <div className="relative">
               <button
                 onClick={() => setIsEditingStage(!isEditingStage)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white ${stageColor} shadow-sm hover:opacity-90 transition-opacity`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold text-white ${stageColor} hover:opacity-90 transition-opacity`}
               >
                 {lead.status || "Sin etapa"}
                 <ChevronDown className={`h-4 w-4 transition-transform ${isEditingStage ? "rotate-180" : ""}`} />
               </button>
               
               {isEditingStage && (
-                <div className="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-30">
-                  <div className="p-2 max-h-72 overflow-y-auto">
+                <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-30">
+                  <div className="p-1.5 max-h-72 overflow-y-auto">
                     {STAGES.map(stage => (
                       <button
                         key={stage}
                         onClick={() => handleStageChange(stage)}
-                        className={`w-full text-left px-3 py-2.5 text-sm rounded-xl font-semibold transition-colors hover:bg-slate-50 flex items-center gap-2 ${lead.status === stage ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}
+                        className={`w-full text-left px-2.5 py-2 text-[13px] rounded-lg font-semibold transition-colors hover:bg-slate-50 flex items-center gap-2 ${lead.status === stage ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}
                       >
                         <span className={`h-2 w-2 rounded-full flex-shrink-0 ${STAGE_COLORS[stage] || "bg-slate-300"}`} />
                         {stage}
@@ -544,7 +592,7 @@ export default function LeadDetailPage() {
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all disabled:opacity-50"
               >
                 <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
                 {isSyncing ? "Sincronizando…" : "Enviar a Soft Seguros"}
@@ -556,7 +604,7 @@ export default function LeadDetailPage() {
                 href={`https://app.softseguros.com/cliente/${lead.soft_cliente_id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
               >
                 <ExternalLink className="h-4 w-4" />
                 Ver en Soft Seguros
@@ -566,7 +614,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Score + Progress */}
-        <div className="px-6 pb-5 space-y-3 border-t border-slate-100 pt-4">
+        <div className="px-5 pb-4 space-y-2 border-t border-slate-100 pt-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Score del prospecto</span>
             <span className="text-xs font-bold text-slate-500">Progreso en pipeline: {progressPct}%</span>
@@ -586,12 +634,12 @@ export default function LeadDetailPage() {
       </div>
 
       {/* Main content: Tabs */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+
         {/* Left: Timeline + Cotizaciones */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-3 space-y-3">
           {/* Tab Bar */}
-          <div className="flex items-center gap-1 bg-white/70 backdrop-blur rounded-2xl p-1 border border-slate-100 w-fit shadow-sm">
+          <div className="flex items-center gap-0.5 bg-white/70 backdrop-blur rounded-xl p-1 border border-slate-100 w-fit shadow-sm">
             {[
               { id: "timeline", label: "Timeline", icon: Clock },
               { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
@@ -602,14 +650,14 @@ export default function LeadDetailPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all ${
                   activeTab === tab.id
                     ? "bg-white text-slate-800 shadow-sm border border-amber-100"
                     : "text-slate-400 hover:text-slate-700 hover:bg-white/50"
                 }`}
                 style={activeTab === tab.id ? { fontFamily: "var(--font-outfit)" } : {}}
               >
-                <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-amber-500" : ""}`} />
+                <tab.icon className={`h-3.5 w-3.5 ${activeTab === tab.id ? "text-amber-500" : ""}`} />
                 {tab.label}
               </button>
             ))}
@@ -617,10 +665,10 @@ export default function LeadDetailPage() {
 
           {/* Timeline Tab */}
           {activeTab === "timeline" && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <button
                 onClick={() => setShowAddInteraccion(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-sm font-bold text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-white border-2 border-dashed border-slate-200 rounded-xl text-[13px] font-bold text-slate-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all"
               >
                 <Plus className="h-4 w-4" />
                 Registrar interacción
@@ -634,27 +682,27 @@ export default function LeadDetailPage() {
               )}
 
               {interacciones.length === 0 && (
-                <div className="text-center py-12 bg-white rounded-2xl border border-slate-100">
-                  <MessageSquare className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-slate-400 font-medium text-sm">Sin interacciones registradas</p>
-                  <p className="text-slate-300 text-xs mt-1">Registra llamadas, mensajes y reuniones aquí.</p>
+                <div className="text-center py-8 bg-white rounded-xl border border-slate-100">
+                  <MessageSquare className="h-8 w-8 text-slate-200 mx-auto mb-2" />
+                  <p className="text-slate-400 font-medium text-[13px]">Sin interacciones registradas</p>
+                  <p className="text-slate-300 text-xs mt-0.5">Registra llamadas, mensajes y reuniones aquí.</p>
                 </div>
               )}
 
               <div className="relative">
                 {interacciones.length > 0 && (
-                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-100" />
+                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-100" />
                 )}
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {interacciones.map((interaccion) => {
                     const TipoIcon = TIPO_ICONS[interaccion.tipo] || FileText;
                     const colorClass = TIPO_COLORS[interaccion.tipo] || "bg-slate-100 text-slate-500 border-slate-200";
                     return (
-                      <div key={interaccion.id} className="flex gap-4 relative">
-                        <div className={`h-10 w-10 rounded-full border-2 flex items-center justify-center flex-shrink-0 z-10 bg-white ${colorClass}`}>
-                          <TipoIcon className="h-4 w-4" />
+                      <div key={interaccion.id} className="flex gap-3 relative">
+                        <div className={`h-8 w-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 z-10 bg-white ${colorClass}`}>
+                          <TipoIcon className="h-3.5 w-3.5" />
                         </div>
-                        <div className="flex-1 bg-white rounded-2xl border border-slate-100 p-4 shadow-sm">
+                        <div className="flex-1 bg-white rounded-xl border border-slate-100 p-3 shadow-sm">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{interaccion.tipo}</span>
                             <span className="text-[10px] text-slate-300 font-medium">
@@ -712,7 +760,7 @@ export default function LeadDetailPage() {
 
           {/* Documentos Tab */}
           {activeTab === "documentos" && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                <DocumentosLegales lead={lead} leadId={leadId} />
             </div>
           )}
@@ -728,17 +776,15 @@ export default function LeadDetailPage() {
                   <Plus className="h-4 w-4" />
                   Agregar manual
                 </button>
-                {lead.type === "auto" && (
-                  <button
-                    onClick={handleAutoQuote}
-                    disabled={isAutoQuoting}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all shadow-md disabled:opacity-50 hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", fontFamily: "var(--font-outfit)" }}
-                  >
-                    <Zap className={`h-4 w-4 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                    {isAutoQuoting ? "Cotizando..." : "Cotizar Allianz / Qualitas"}
-                  </button>
-                )}
+                <button
+                  onClick={handleAutoQuote}
+                  disabled={isAutoQuoting}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all shadow-md disabled:opacity-50 hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", fontFamily: "var(--font-outfit)" }}
+                >
+                  <Zap className={`h-4 w-4 ${isAutoQuoting ? "animate-spin" : ""}`} />
+                  {isAutoQuoting ? "Cotizando..." : "Cotizar Allianz / Qualitas"}
+                </button>
                 <button
                   onClick={() => bulkFileInputRef.current?.click()}
                   disabled={uploadingBulk}
@@ -759,7 +805,7 @@ export default function LeadDetailPage() {
               )}
 
               {cotizaciones.length === 0 && (
-                <div className="text-center py-12 bg-white rounded-2xl border border-slate-100">
+                <div className="text-center py-8 bg-white rounded-xl border border-slate-100">
                   <DollarSign className="h-10 w-10 text-slate-200 mx-auto mb-3" />
                   <p className="text-slate-400 font-medium text-sm">Sin cotizaciones registradas</p>
                 </div>
@@ -826,8 +872,8 @@ export default function LeadDetailPage() {
                 };
                 const eConf = estadoConfig[cot.estado] || estadoConfig["borrador"];
                 return (
-                  <div key={cot.id} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
+                  <div key={cot.id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-2.5">
                       <div>
                         <h4 className="font-bold text-slate-800">{cot.aseguradora}</h4>
                         <p className="text-xs text-slate-400 mt-0.5">{cot.cobertura || "Sin descripción de cobertura"}</p>
@@ -870,8 +916,8 @@ export default function LeadDetailPage() {
 
           {/* Datos completos Tab */}
           {activeTab === "datos" && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                 <h3 className="font-bold text-slate-700">Datos del prospecto</h3>
                 {!isEditingInfo ? (
                   <button
@@ -914,7 +960,19 @@ export default function LeadDetailPage() {
                   { label: "ID Soft Cliente", field: "soft_cliente_id", value: lead.soft_cliente_id },
                 ].map(({ label, field, value }) => (
                   <div key={field} className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</label>
+                      {field === "vehiclePlate" && (
+                        <button
+                          onClick={() => handleSearchPlaca()}
+                          disabled={isSearchingPlaca}
+                          className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded transition-all disabled:opacity-50"
+                        >
+                          <Search className={`h-3 w-3 ${isSearchingPlaca ? "animate-spin" : ""}`} />
+                          {isSearchingPlaca ? "Buscando..." : "Buscar RUNT"}
+                        </button>
+                      )}
+                    </div>
                     {isEditingInfo ? (
                       <input
                         value={editData?.[field] || ""}
@@ -932,10 +990,10 @@ export default function LeadDetailPage() {
         </div>
 
         {/* Right: Quick actions sidebar */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Quick actions */}
-          <div className="bento-card bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Acciones rápidas</h3>
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Acciones rápidas</h3>
             <div className="space-y-2">
               {lead.phone && (
                 <a
@@ -970,9 +1028,9 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Meta */}
-          <div className="bento-card bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Información del registro</h3>
-            <div className="space-y-2 text-sm">
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-2.5">
+            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Información del registro</h3>
+            <div className="space-y-1.5 text-[13px]">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 font-medium">Creado</span>
                 <span className="font-semibold text-slate-700 text-xs">
@@ -997,8 +1055,8 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Sync status */}
-          <div className={`bento-card rounded-2xl border p-5 ${lead.sincronizado_soft ? "bg-green-50 border-green-100" : "bg-slate-50 border-slate-100"}`}>
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Estado Soft Seguros</h3>
+          <div className={`rounded-xl border p-4 ${lead.sincronizado_soft ? "bg-green-50 border-green-100" : "bg-slate-50 border-slate-100"}`}>
+            <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-2.5" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Estado Soft Seguros</h3>
             {lead.sincronizado_soft ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-green-700 font-bold text-sm">

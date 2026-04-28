@@ -75,16 +75,16 @@ function StatCard({
   trend?: { value: string; up: boolean };
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex flex-col gap-2.5 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</span>
-        <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${color}`}>
-          <Icon className="h-4.5 w-4.5 h-5 w-5" />
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</span>
+        <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${color}`}>
+          <Icon className="h-4 w-4" />
         </div>
       </div>
       <div>
-        <p className="text-3xl font-black text-slate-900">{value}</p>
-        {sub && <p className="text-xs text-slate-400 font-medium mt-0.5">{sub}</p>}
+        <p className="text-2xl font-black text-slate-900">{value}</p>
+        {sub && <p className="text-[11px] text-slate-400 font-medium mt-0.5">{sub}</p>}
       </div>
       {trend && (
         <div className={`flex items-center gap-1 text-xs font-bold ${trend.up ? "text-emerald-600" : "text-rose-500"}`}>
@@ -155,20 +155,20 @@ export default function DashboardPage() {
   const ramoSorted = Object.entries(ramoCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-5 max-w-7xl mx-auto">
       {/* Greeting */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-slate-900">
+          <h2 className="text-xl font-black text-slate-900">
             Buenos {new Date().getHours() < 12 ? "días" : new Date().getHours() < 18 ? "tardes" : "noches"} 👋
           </h2>
-          <p className="text-slate-400 text-sm font-medium mt-0.5">
+          <p className="text-slate-400 text-[13px] font-medium mt-0.5">
             {new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
         <Link
           href="/leads"
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-all shadow-blue-600/30 shadow-lg"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-[13px] font-bold rounded-lg hover:bg-blue-700 transition-all"
         >
           <Users className="h-4 w-4" />
           Ir al Pipeline
@@ -210,12 +210,12 @@ export default function DashboardPage() {
 
       {/* Alerta de leads sin contacto */}
       {sinContacto.length > 0 && (
-        <div className="flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
-          <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-amber-800">
+            <p className="text-[13px] font-bold text-amber-800">
               {sinContacto.length} {sinContacto.length === 1 ? "lead necesita" : "leads necesitan"} contacto inmediato
             </p>
             <p className="text-xs text-amber-600 font-medium mt-0.5">
@@ -224,17 +224,17 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/leads"
-            className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-xl hover:bg-amber-700 transition-all flex-shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-all flex-shrink-0"
           >
             Ver ahora <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Embudo de conversión */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-5">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-blue-500" />
               Embudo de Conversión
@@ -290,8 +290,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Leads urgentes / calientes */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-5">
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
               <Flame className="h-4 w-4 text-red-500" />
               Prospectos calientes
@@ -346,8 +346,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Recientes */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
             <Clock className="h-4 w-4 text-slate-400" />
             Últimos prospectos agregados
@@ -383,9 +383,9 @@ export default function DashboardPage() {
                 <Link
                   key={lead.id}
                   href={`/leads/${lead.id}`}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/70 transition-colors group"
+                  className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/70 transition-colors group"
                 >
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm font-black text-slate-600 flex-shrink-0 shadow-sm">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-[13px] font-black text-slate-600 flex-shrink-0">
                     {lead.name?.charAt(0)?.toUpperCase() || "?"}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -419,7 +419,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Acciones rápidas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { href: "/leads", icon: Users, label: "Pipeline", sub: "Ver todos los leads", color: "from-blue-500 to-indigo-600" },
           { href: "/leads", icon: PhoneCall, label: "Registrar llamada", sub: "Agregar interacción", color: "from-violet-500 to-purple-600" },
@@ -431,12 +431,12 @@ export default function DashboardPage() {
             <Link
               key={item.href + item.label}
               href={item.href}
-              className={`flex flex-col gap-3 p-5 rounded-2xl bg-gradient-to-br ${item.color} text-white hover:scale-[1.02] transition-all shadow-sm hover:shadow-md`}
+              className={`flex flex-col gap-2 p-4 rounded-xl bg-gradient-to-br ${item.color} text-white transition-all shadow-sm hover:shadow-md`}
             >
-              <Icon className="h-6 w-6 opacity-90" />
+              <Icon className="h-5 w-5 opacity-90" />
               <div>
-                <p className="font-bold text-sm">{item.label}</p>
-                <p className="text-[11px] opacity-70 font-medium mt-0.5">{item.sub}</p>
+                <p className="font-bold text-[13px]">{item.label}</p>
+                <p className="text-[11px] opacity-70 font-medium">{item.sub}</p>
               </div>
             </Link>
           );

@@ -12,6 +12,7 @@ import { CotizadorModule } from './cotizador/cotizador.module';
 import { GmailModule } from './gmail/gmail.module';
 import { DocumentosModule } from './documentos/documentos.module';
 import { RemisionesModule } from './remisiones/remisiones.module';
+import { VehiculosModule } from './vehiculos/vehiculos.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { RemisionesModule } from './remisiones/remisiones.module';
     GmailModule,
     DocumentosModule,
     RemisionesModule,
+    VehiculosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

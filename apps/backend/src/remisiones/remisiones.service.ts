@@ -16,14 +16,19 @@ export class RemisionesService {
 
   async buscarCliente(documento: string) {
     this.logger.log(`Buscando cliente en Soft Seguros: ${documento}`);
-    const cliente = await this.softApi.getClientByDocument(documento);
-    return {
-      found: !!cliente,
-      cliente: cliente ?? null,
-      message: cliente
-        ? `Cliente encontrado en Soft Seguros (ID: ${cliente.id})`
-        : 'Cliente no encontrado — se creará al remisionar.',
-    };
+    try {
+      const cliente = await this.softApi.getClientByDocument(documento);
+      return {
+        found: !!cliente,
+        cliente: cliente ?? null,
+        message: cliente
+          ? `Cliente encontrado en Soft Seguros (ID: ${cliente.id})`
+          : 'Cliente no encontrado — se creará al remisionar.',
+      };
+    } catch (error) {
+      this.logger.warn(`Error buscando cliente ${documento}: ${error.message}. Asumiendo no existe.`);
+      return { found: false, cliente: null, message: 'Cliente no encontrado — se creará al remisionar.' };
+    }
   }
 
   async parsearDocumentos(

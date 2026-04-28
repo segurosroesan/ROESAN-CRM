@@ -116,6 +116,10 @@ export class SoftSegurosApi {
         }
         return response ?? null;
     } catch (error) {
+        if (error.response?.status === 404) {
+          this.logger.log(`Client ${documento} not found in Soft Seguros (404).`);
+          return null;
+        }
         this.logger.warn(`Direct client search failed for ${documento}, trying exhaustive loop...`);
         return this.exhaustiveSearch('/api/cliente/', 'numero_documento', documento);
     }

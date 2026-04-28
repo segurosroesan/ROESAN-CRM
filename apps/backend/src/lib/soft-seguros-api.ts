@@ -106,23 +106,41 @@ export class SoftSegurosApi {
    * Specific methods for SYNC flows
    */
   async getClientByDocument(documento: string) {
+    // Attempt 1: dedicated endpoint
     try {
-        const response = await this.request('GET', '/api/cliente/listar_cliente_por_documento/', undefined, {
-            numero_documento: documento
-        });
-        // API may return paginated { count, results: [...] } or a direct object
-        if (response?.results !== undefined) {
-          return response.results?.[0] ?? null;
-        }
-        return response ?? null;
+      const response = await this.request('GET', '/api/cliente/listar_cliente_por_documento/', undefined, {
+        numero_documento: documento,
+      });
+      if (response?.results !== undefined) {
+        if (response.results?.[0]) return response.results[0];
+        // count=0 here doesn't always mean "not exists" — some old clients are missed by this endpoint
+      } else if (response) {
+        return response;
+      }
     } catch (error) {
-        if (error.response?.status === 404) {
-          this.logger.log(`Client ${documento} not found in Soft Seguros (404).`);
-          return null;
-        }
-        this.logger.warn(`Direct client search failed for ${documento}, trying exhaustive loop...`);
-        return this.exhaustiveSearch('/api/cliente/', 'numero_documento', documento);
+      if (error.response?.status === 404) {
+        this.logger.log(`Client ${documento} not found in Soft Seguros (404).`);
+        return null;
+      }
+      this.logger.warn(`Dedicated endpoint failed for ${documento}: ${error.message}`);
     }
+
+    // Attempt 2: main /api/cliente/ with filter (more reliable for older records)
+    try {
+      this.logger.log(`Trying main endpoint filter for document ${documento}`);
+      const response = await this.request('GET', '/api/cliente/', undefined, {
+        numero_documento: documento,
+        page_size: 10,
+      });
+      if (response?.results?.length > 0) {
+        this.logger.log(`Found client via main endpoint filter: ${response.results[0].id}`);
+        return response.results[0];
+      }
+    } catch (error) {
+      this.logger.warn(`Main endpoint filter also failed for ${documento}: ${error.message}`);
+    }
+
+    return null;
   }
 
   /**

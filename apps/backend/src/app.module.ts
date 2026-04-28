@@ -11,6 +11,7 @@ import { RenovacionesModule } from './renovaciones/renovaciones.module';
 import { CotizadorModule } from './cotizador/cotizador.module';
 import { GmailModule } from './gmail/gmail.module';
 import { DocumentosModule } from './documentos/documentos.module';
+import { RemisionesModule } from './remisiones/remisiones.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { DocumentosModule } from './documentos/documentos.module';
     CotizadorModule,
     GmailModule,
     DocumentosModule,
+    RemisionesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

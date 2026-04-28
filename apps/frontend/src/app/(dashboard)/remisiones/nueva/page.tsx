@@ -146,7 +146,14 @@ export default function RemisionarPage() {
 
   // ── Step 2 ────────────────────────────────────────────────────────────────
 
+  const MAX_FILE_MB = 12;
+
   function handleFileSelect(tipo: DocTipo, file: File | null) {
+    if (file && file.size > MAX_FILE_MB * 1024 * 1024) {
+      setError(`El archivo ${file.name} pesa más de ${MAX_FILE_MB} MB. Comprime el PDF o usa una imagen de menor resolución.`);
+      return;
+    }
+    setError("");
     setUploadedFiles(prev => ({ ...prev, [tipo]: file }));
   }
 
@@ -460,6 +467,12 @@ export default function RemisionarPage() {
                 );
               })}
             </div>
+
+            {Object.values(extracted).some((v: any) => v?.error) && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-700">
+                Algunos documentos no pudieron procesarse. Puedes <strong>continuar</strong> e ingresar los datos manualmente en el paso 3.
+              </div>
+            )}
 
             <div className="flex justify-center mb-6">
               <button

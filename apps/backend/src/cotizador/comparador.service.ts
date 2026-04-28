@@ -377,7 +377,10 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
     } catch (geminiErr: any) {
       const msg = geminiErr?.message || String(geminiErr);
       this.logger.error(`Gemini rechazó el documento ${tipoDocumento}: ${msg}`);
-      throw new Error(`Gemini no pudo procesar el documento: ${msg}`);
+      const hint = msg.includes('fetch') || msg.includes('size') || msg.includes('large')
+        ? 'El archivo es muy grande para la IA (máx ~12 MB). Comprime el PDF antes de subirlo.'
+        : `Gemini no pudo procesar el documento: ${msg}`;
+      throw new Error(hint);
     }
 
     try {

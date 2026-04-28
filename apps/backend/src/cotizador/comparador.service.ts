@@ -125,7 +125,7 @@ export class ComparadorService {
 
     // Llamar a Gemini
     const model = this.genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
+      model: "gemini-2.0-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
     const result = await model.generateContent(prompt);
@@ -268,7 +268,7 @@ GUÍA DE EXTRACCIÓN:
     this.logger.log(`Parseando PDF con Gemini Flash (size: ${buffer.length} bytes)`);
 
     const model = this.genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
+      model: "gemini-2.0-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
     const result = await model.generateContent([
@@ -373,7 +373,7 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
     this.logger.log(`Parseando documento legal (${tipoDocumento}) con Gemini Files API`);
 
     const model = this.genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-2.0-flash",
       generationConfig: { responseMimeType: "application/json" },
     });
 

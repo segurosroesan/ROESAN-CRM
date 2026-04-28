@@ -146,13 +146,7 @@ export default function RemisionarPage() {
 
   // ── Step 2 ────────────────────────────────────────────────────────────────
 
-  const MAX_FILE_MB = 12;
-
   function handleFileSelect(tipo: DocTipo, file: File | null) {
-    if (file && file.size > MAX_FILE_MB * 1024 * 1024) {
-      setError(`El archivo ${file.name} pesa más de ${MAX_FILE_MB} MB. Comprime el PDF o usa una imagen de menor resolución.`);
-      return;
-    }
     setError("");
     setUploadedFiles(prev => ({ ...prev, [tipo]: file }));
   }

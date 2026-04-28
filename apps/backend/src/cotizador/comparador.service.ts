@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleAIFileManager, FileState } from '@google/generative-ai/server';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 const COMPARACION_PROMPT = `\
 Eres Adriana, una ejecutiva de seguros de autos con amplia experiencia en ROESAN, Colombia.
@@ -53,6 +57,7 @@ function toInt(val: any): number {
 export class ComparadorService {
   private readonly logger = new Logger(ComparadorService.name);
   private genAI: GoogleGenerativeAI | null = null;
+  private fileManager: GoogleAIFileManager | null = null;
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -60,6 +65,7 @@ export class ComparadorService {
       this.logger.warn('GEMINI_API_KEY is not defined. Comparison AI will fail.');
     } else {
       this.genAI = new GoogleGenerativeAI(apiKey);
+      this.fileManager = new GoogleAIFileManager(apiKey);
     }
   }
 
@@ -360,27 +366,55 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
         break;
     }
 
-    this.logger.log(`Parseando documento legal (${tipoDocumento}) con Gemini Flash`);
+    if (!this.fileManager) {
+      throw new Error("GEMINI_API_KEY no configurada");
+    }
+
+    this.logger.log(`Parseando documento legal (${tipoDocumento}) con Gemini Files API`);
 
     const model = this.genAI.getGenerativeModel({
       model: "gemini-1.5-flash-latest",
       generationConfig: { responseMimeType: "application/json" },
     });
 
+    // Escribir buffer a archivo temporal para subir via Files API (soporta hasta 2 GB)
+    const tempFile = path.join(os.tmpdir(), `roesan-${tipoDocumento}-${Date.now()}.tmp`);
+    fs.writeFileSync(tempFile, buffer);
+
     let rawText: string;
     try {
+      const uploadResult = await this.fileManager.uploadFile(tempFile, {
+        mimeType,
+        displayName: `${tipoDocumento}-${Date.now()}`,
+      });
+
+      // Esperar a que el archivo esté listo (usualmente inmediato para PDFs/imágenes)
+      let file = uploadResult.file;
+      let attempts = 0;
+      while (file.state === FileState.PROCESSING && attempts < 15) {
+        await new Promise(res => setTimeout(res, 1000));
+        file = await this.fileManager.getFile(file.name);
+        attempts++;
+      }
+
+      if (file.state !== FileState.ACTIVE) {
+        throw new Error(`El archivo no quedó listo en Gemini (estado: ${file.state})`);
+      }
+
+      this.logger.log(`Archivo subido al Files API: ${file.uri} (${file.sizeBytes} bytes)`);
+
       const result = await model.generateContent([
         prompt,
-        { inlineData: { data: buffer.toString("base64"), mimeType } },
+        { fileData: { fileUri: file.uri, mimeType: file.mimeType } },
       ]);
       rawText = result.response.text();
     } catch (geminiErr: any) {
       const msg = geminiErr?.message || String(geminiErr);
       this.logger.error(`Gemini rechazó el documento ${tipoDocumento}: ${msg}`);
-      const hint = msg.includes('fetch') || msg.includes('size') || msg.includes('large')
-        ? 'El archivo es muy grande para la IA (máx ~12 MB). Comprime el PDF antes de subirlo.'
-        : `Gemini no pudo procesar el documento: ${msg}`;
-      throw new Error(hint);
+      throw new Error(`Gemini no pudo procesar el documento: ${msg}`);
+    } finally {
+      // Limpiar archivo temporal siempre, incluso si hubo error
+      try { fs.unlinkSync(tempFile); } catch {}
     }
 
     try {

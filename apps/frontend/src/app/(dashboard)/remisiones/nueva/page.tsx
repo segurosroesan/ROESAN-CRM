@@ -442,7 +442,9 @@ export default function RemisionarPage() {
                           <p className="text-xs text-emerald-600 mt-1 font-medium">✓ Datos extraídos</p>
                         )}
                         {extractedForType?.error && (
-                          <p className="text-xs text-red-500 mt-1">Error al extraer</p>
+                          <p className="text-xs text-red-500 mt-1 break-words" title={extractedForType.error}>
+                            ✗ {String(extractedForType.error).slice(0, 80)}
+                          </p>
                         )}
                       </div>
                       {file && (

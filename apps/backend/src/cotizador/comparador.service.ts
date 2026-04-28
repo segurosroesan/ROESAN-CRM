@@ -360,25 +360,35 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
         break;
     }
 
-    this.logger.log(`Parseando documento legal (\${tipoDocumento}) con Gemini Flash`);
+    this.logger.log(`Parseando documento legal (${tipoDocumento}) con Gemini Flash`);
 
     const model = this.genAI.getGenerativeModel({
       model: "gemini-1.5-flash-latest",
       generationConfig: { responseMimeType: "application/json" },
     });
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { data: buffer.toString("base64"), mimeType } },
-    ]);
+    let rawText: string;
+    try {
+      const result = await model.generateContent([
+        prompt,
+        { inlineData: { data: buffer.toString("base64"), mimeType } },
+      ]);
+      rawText = result.response.text();
+    } catch (geminiErr: any) {
+      const msg = geminiErr?.message || String(geminiErr);
+      this.logger.error(`Gemini rechazó el documento ${tipoDocumento}: ${msg}`);
+      throw new Error(`Gemini no pudo procesar el documento: ${msg}`);
+    }
 
-    const rawText = result.response.text();
     try {
       return JSON.parse(rawText);
     } catch {
       const match = rawText.match(/\{[\s\S]*\}/);
-      if (match) return JSON.parse(match[0]);
-      throw new Error(`Error parseando documento IA (\${tipoDocumento})`);
+      if (match) {
+        try { return JSON.parse(match[0]); } catch { /* fall through */ }
+      }
+      this.logger.warn(`Gemini no devolvió JSON válido para ${tipoDocumento}. Raw: ${rawText?.slice(0, 200)}`);
+      throw new Error(`Gemini no devolvió JSON válido para ${tipoDocumento}`);
     }
   }
 

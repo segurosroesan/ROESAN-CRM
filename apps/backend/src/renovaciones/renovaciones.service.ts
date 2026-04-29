@@ -5,6 +5,21 @@ import { SoftSegurosApi } from '../lib/soft-seguros-api';
 import { getInstantAdmin } from '../lib/instant-admin';
 import { tx, id } from '@instantdb/admin';
 
+const SOFT_RAMO_TO_TYPE: Record<number | string, string> = {
+  502: 'auto',
+  503: 'soat',
+  700: 'hogar',
+  200: 'vida',
+  300: 'salud',
+  600: 'empresarial',
+  800: 'cumplimiento',
+};
+
+function derivarTipo(poliza: any): string {
+  const ramoId = poliza.ramo?.id || poliza.codigo_ramo || poliza.codio_objeto_asegurado;
+  return SOFT_RAMO_TO_TYPE[ramoId] || 'auto';
+}
+
 export interface ImportJobResult {
   ejecutadoEn: number;
   totalConsultadas: number;
@@ -130,6 +145,7 @@ export class RenovacionesService {
             const newId = id();
             const renovacionData = {
               // Lead base fields
+              type: derivarTipo(poliza),
               name: poliza.nombre_tomador || clienteData.nombres || `Cliente ${poliza.id}`,
               phone: clienteData.celular || clienteData.telefono || '',
               email: clienteData.correo || '',

@@ -1,54 +1,69 @@
 [
   {
-    "id": 27931,
-    "nombre": "ORGANIZACION DE SEGUROS ROESAN LIMITADA"
-  },
-  {
-    "id": 30806,
-    "nombre": "JRV Y COMPAÑIA LTDA"
-  },
-  {
     "id": 30808,
-    "nombre": "MARTHA MARINA NOGUERA RODRIGUEZ"
+    "nombre": "MARTHA MARINA NOGUERA RODRIGUEZ",
+    "puede_crear_polizas": true
   },
   {
     "id": 30809,
-    "nombre": "ADRIANA CAMPO DE MUÑOZ"
+    "nombre": "ADRIANA CAMPO DE MUÑOZ",
+    "puede_crear_polizas": true
   },
   {
     "id": 30811,
-    "nombre": "BLANCA CECILIA FLOREZ URREA"
+    "nombre": "BLANCA CECILIA FLOREZ URREA",
+    "puede_crear_polizas": true
   },
   {
     "id": 31215,
-    "nombre": "MYRIAM ZAMUDIO BASABE"
+    "nombre": "MYRIAM ZAMUDIO BASABE",
+    "puede_crear_polizas": true
   },
   {
     "id": 31216,
-    "nombre": "JONATHAN JORDAN RUBIO"
+    "nombre": "JONATHAN JORDAN RUBIO",
+    "puede_crear_polizas": true
   },
   {
     "id": 31217,
-    "nombre": "LUZ STELLA GUAYACAN AGUDELO"
+    "nombre": "LUZ STELLA GUAYACAN AGUDELO",
+    "puede_crear_polizas": true
   },
   {
     "id": 31858,
-    "nombre": "INES SERRANO PARDO"
+    "nombre": "INES SERRANO PARDO",
+    "puede_crear_polizas": true
   },
   {
     "id": 32163,
-    "nombre": "CLAUDIA MARCELA CASTRO RUBIANO"
+    "nombre": "CLAUDIA MARCELA CASTRO RUBIANO",
+    "puede_crear_polizas": true
   },
   {
     "id": 32235,
-    "nombre": "DAVID MAURICIO DELGADO ARIAS"
+    "nombre": "DAVID MAURICIO DELGADO ARIAS",
+    "puede_crear_polizas": true
   },
   {
     "id": 35881,
-    "nombre": "MARIA DEL ROCIO ESCOBAR ROMERO"
+    "nombre": "MARIA DEL ROCIO ESCOBAR ROMERO",
+    "puede_crear_polizas": true
   },
   {
     "id": 99866,
-    "nombre": "Federico Lopez"
+    "nombre": "Federico Lopez",
+    "puede_crear_polizas": true
+  },
+  {
+    "id": 27931,
+    "nombre": "ORGANIZACION DE SEGUROS ROESAN LIMITADA",
+    "puede_crear_polizas": false,
+    "nota": "Entidad organizacional — NO puede crear pólizas directamente"
+  },
+  {
+    "id": 30806,
+    "nombre": "JRV Y COMPAÑIA LTDA",
+    "puede_crear_polizas": false,
+    "nota": "Entidad jurídica"
   }
 ]

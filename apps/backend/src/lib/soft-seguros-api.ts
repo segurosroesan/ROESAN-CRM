@@ -218,12 +218,20 @@ export class SoftSegurosApi {
       const payload: Record<string, any> = {
         cliente: data.id_cliente ?? data.cliente,
         renovable: data.renovable ?? true,
-        estado_poliza: data.estado_poliza ?? { codigo_generico: '01' },
+        // estado_poliza MUST be an integer ID: 45909=Vigente, 45910=Cotización, 45911=Devengada
+        // Using {codigo_generico:'01'} causes 500 "Problemas internos del servidor"
+        estado_poliza: typeof data.estado_poliza === 'number'
+          ? data.estado_poliza
+          : 45909, // 45909 = Vigente
         sede: data.sede ?? Number(process.env.SOFT_SEDE_ID ?? 6787),
       };
 
-      if (data.vendedor ?? process.env.SOFT_VENDEDOR_ID) {
-        payload.vendedor = data.vendedor ?? Number(process.env.SOFT_VENDEDOR_ID);
+      // vendedor: explicit from payload OR from env SOFT_VENDEDOR_ID
+      // IMPORTANT: the org-level vendedor (27931) cannot create policies.
+      // Must use an individual asesor ID (e.g., 30808).
+      const vendedorId = data.vendedor ?? Number(process.env.SOFT_VENDEDOR_ID);
+      if (vendedorId) {
+        payload.vendedor = vendedorId;
       }
       if (data.ramo ?? data.ramo_soft_id) payload.ramo = data.ramo_soft_id ?? data.ramo;
       if (data.numero_poliza) payload.numero_poliza = data.numero_poliza;

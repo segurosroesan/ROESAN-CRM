@@ -56,7 +56,7 @@ const inputSmCls = "w-full px-3 py-2 bg-slate-50 rounded-lg border border-slate-
 const labelCls = "block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5";
 const labelSmCls = "block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1";
 
-interface VendedorItem { id: number; nombre: string; }
+interface VendedorItem { id: number; nombre: string; puede_crear_polizas?: boolean; }
 
 export default function RemisionarPage() {
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function RemisionarPage() {
   useEffect(() => {
     fetch(`${BACKEND}/remisiones/catalogs`)
       .then(r => r.json())
-      .then(d => { if (d.vendedores) setVendedores(d.vendedores); })
+      .then(d => { if (d.vendedores) setVendedores(d.vendedores.filter((v: VendedorItem) => v.puede_crear_polizas !== false)); })
       .catch(() => {});
   }, []);
 

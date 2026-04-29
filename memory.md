@@ -49,12 +49,16 @@
 ### Soft Seguros API ✅ PERMISOS CONFIRMADOS (2026-04-26)
 - **Base URL:** `https://app.softseguros.com`
 - **Auth:** `POST /api-token-auth/` → `Authorization: Token <token>`
-- **Permisos habilitados:** `/api/cliente/` (listar, crear, buscar por documento y por ID)
-- **Campos obligatorios POST `/api/cliente/`:**
-  - `numero_documento`, `tipo_documento` (ej: "01"), `nombres`, `apellidos`
-  - `email`, `telefono`, `genero` (MASCULINO/FEMENINO)
-  - `fecha_nacimiento`, `ocupacion` (ID, ej: 4 = Independiente)
-  - `es_prospecto: true`, `sede` (6787), `marca` (6751)
+- **Permisos habilitados:** `/api/cliente/` (listar, crear, buscar por documento y por ID), `/api/poliza/` (crear)
+- **Campos obligatorios POST `/api/poliza/`:**
+  - `cliente` (ID), `sede` (6787), `vendedor` (ID asesor personal), `ramo` (ID del catálogo)
+  - `estado_poliza` (ID entero, **NO** objeto), `numero_poliza`, `codio_objeto_asegurado`
+  - `nombre_tomador`, `cedula_tomador`, `nombre_asegurado`, `cedula_asegurado`
+- **🚨 CRÍTICO — estado_poliza:** Debe ser un **ID entero**, no el objeto `{codigo_generico:'01'}`
+  - `45909` = Vigente ✓ | `45910` = Cotización | `45911` = Devengada
+- **🚨 CRÍTICO — vendedor:** El ID `27931` (Org Roesan) **NO puede crear pólizas** → `400 "Ningún vendedor enviado"`
+  - Usar asesores personales: `30808` (Martha Noguera), `30809` (Adriana Campo), etc.
+  - Catálogo actualizado en `soft-catalogs/vendedores.json` con flag `puede_crear_polizas`
 - **Teléfonos:** Siempre E.164 Colombia: `+57XXXXXXXXXX`
 - **404 en búsqueda por documento** = cliente no existe (ya no devuelve 403)
 

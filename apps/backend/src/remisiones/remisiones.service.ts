@@ -326,34 +326,41 @@ export class RemisionesService {
     }
 
     // STEP D: Create lead in InstantDB for CRM traceability
-    const leadId = id();
-    await this.db.transact([
-      tx.leads[leadId].update({
-        name: fullName,
-        documento: clientData.numero_documento,
-        tipo_documento: clientData.tipo_documento || '01',
-        phone: clientData.telefono || '',
-        email: clientData.email || '',
-        city: clientData.ciudad || '',
-        type: policyData.ramo || 'auto',
-        source: 'Remisión directa',
-        status: 'Sincronizado ✓',
-        pipeline_tipo: 'preventa',
-        soft_cliente_id,
-        soft_poliza_id,
-        sincronizado_soft: true,
-        numero_poliza: policyData.numero_poliza || '',
-        aseguradora: policyData.aseguradora || '',
-        fecha_inicio_poliza: policyData.fecha_inicio || '',
-        fecha_fin_poliza: policyData.fecha_fin || '',
-        prima_actual: policyData.prima_total || 0,
-        objeto_asegurado: policyData.objeto_asegurado || '',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      }),
-    ]);
-    steps.leadCreated = { leadId };
-    this.logger.log(`Lead CRM creado: ${leadId}`);
+    // Non-blocking: if InstantDB is not configured locally, remision still succeeds
+    let leadId: string | null = null;
+    try {
+      leadId = id();
+      await this.db.transact([
+        tx.leads[leadId].update({
+          name: fullName,
+          documento: clientData.numero_documento,
+          tipo_documento: clientData.tipo_documento || '01',
+          phone: clientData.telefono || '',
+          email: clientData.email || '',
+          city: clientData.ciudad || '',
+          type: policyData.ramo || 'auto',
+          source: 'Remisión directa',
+          status: 'Sincronizado ✓',
+          pipeline_tipo: 'preventa',
+          soft_cliente_id,
+          soft_poliza_id,
+          sincronizado_soft: true,
+          numero_poliza: policyData.numero_poliza || '',
+          aseguradora: policyData.aseguradora || '',
+          fecha_inicio_poliza: policyData.fecha_inicio || '',
+          fecha_fin_poliza: policyData.fecha_fin || '',
+          prima_actual: policyData.prima_total || 0,
+          objeto_asegurado: policyData.objeto_asegurado || '',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }),
+      ]);
+      steps.leadCreated = { leadId };
+      this.logger.log(`Lead CRM creado: ${leadId}`);
+    } catch (dbErr: any) {
+      this.logger.error(`Error creando lead en InstantDB (no crítico): ${dbErr.message}`);
+      steps.leadCreated = { error: dbErr.message };
+    }
 
     return { success: true, leadId, soft_cliente_id, soft_poliza_id, steps };
   }

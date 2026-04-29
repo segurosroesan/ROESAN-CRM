@@ -122,7 +122,7 @@ export default function ConfigPage() {
   const [ramos, setRamos] = useState(DEFAULT_RAMOS);
 
   // Users — live from InstantDB
-  const { data: usersData } = db.useQuery({ users: {} });
+  const { data: usersData, error: usersQueryError } = db.useQuery({ users: {} });
   const users: UserRow[] = (usersData?.users ?? []) as UserRow[];
   const [showUserModal, setShowUserModal] = useState(false);
 
@@ -327,6 +327,10 @@ export default function ConfigPage() {
               Agregar usuario
             </button>
           </div>
+
+          {usersQueryError && (
+            <p className="text-xs text-red-500 font-medium">Error al cargar usuarios: {usersQueryError.message}</p>
+          )}
 
           <div className="rounded-xl border border-slate-100 overflow-hidden divide-y divide-slate-100">
             {users.map(user => (

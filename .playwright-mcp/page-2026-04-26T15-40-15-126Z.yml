@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - img "Roesan Logo Oficial" [ref=e5]
+      - navigation [ref=e6]:
+        - generic [ref=e7]: Menú Principal
+        - link "Dashboard" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e15]: Dashboard
+        - link "Pre-Venta" [ref=e16] [cursor=pointer]:
+          - /url: /leads
+          - img [ref=e18]
+          - generic [ref=e23]: Pre-Venta
+        - link "Renovaciones" [ref=e24] [cursor=pointer]:
+          - /url: /renovaciones
+          - img [ref=e26]
+          - generic [ref=e31]: Renovaciones
+        - link "Configuración" [ref=e32] [cursor=pointer]:
+          - /url: /config
+          - img [ref=e34]
+          - generic [ref=e37]: Configuración
+      - generic [ref=e38]:
+        - generic [ref=e40]:
+          - img "User" [ref=e44]
+          - generic [ref=e46]:
+            - generic [ref=e47]: John Doe
+            - generic [ref=e48]: Asesor Comercial
+        - button "Cerrar Sesión" [ref=e49]:
+          - img [ref=e50]
+          - text: Cerrar Sesión
+    - main [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56] [cursor=pointer]: Panel Comercial
+          - img [ref=e57]
+          - generic [ref=e59]: Dashboard
+        - generic [ref=e60]:
+          - button [ref=e61]:
+            - img [ref=e62]
+          - generic [ref=e66]: J
+      - img [ref=e72]
+  - alert [ref=e77]

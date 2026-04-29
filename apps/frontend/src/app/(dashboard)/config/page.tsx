@@ -3,14 +3,8 @@
 import { useState } from "react";
 import {
   Settings,
-  ShieldCheck,
   Users,
   Map,
-  Key,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  EyeOff,
   Save,
   RefreshCw,
   Plus,
@@ -20,14 +14,12 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
-  Zap,
   Car,
   Heart,
   Home,
   Building2,
   Shield,
   Globe,
-  Lock,
   Bell,
   Database,
   Mail,
@@ -120,13 +112,6 @@ function Section({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function ConfigPage() {
-  // Soft Seguros credentials state
-  const [softUrl, setSoftUrl] = useState("https://app.softseguros.com");
-  const [softUser, setSoftUser] = useState("");
-  const [softPass, setSoftPass] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [softStatus, setSoftStatus] = useState<"idle" | "testing" | "ok" | "error">("idle");
-
   // Ramos mapping
   const [ramos, setRamos] = useState(DEFAULT_RAMOS);
 
@@ -138,24 +123,6 @@ export default function ConfigPage() {
   const [importHour, setImportHour] = useState("07");
   const [importMinute, setImportMinute] = useState("00");
   const [importDays, setImportDays] = useState("60");
-  const [savingCreds, setSavingCreds] = useState(false);
-  const [credsSaved, setCredsSaved] = useState(false);
-
-  const testConnection = async () => {
-    setSoftStatus("testing");
-    // Simulate API test
-    await new Promise(r => setTimeout(r, 1800));
-    setSoftStatus(softUser && softPass ? "ok" : "error");
-    setTimeout(() => setSoftStatus("idle"), 4000);
-  };
-
-  const saveCreds = async () => {
-    setSavingCreds(true);
-    await new Promise(r => setTimeout(r, 800));
-    setSavingCreds(false);
-    setCredsSaved(true);
-    setTimeout(() => setCredsSaved(false), 3000);
-  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -197,122 +164,6 @@ export default function ConfigPage() {
             <p className="font-bold flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Sobre la privacidad</p>
             <p>• Solo accedemos a Gmail para enviar correos a tus leads y sincronizar hilos de conversación.</p>
             <p>• El CRM nunca leerá correos personales o externos al flujo comercial.</p>
-          </div>
-        </div>
-      </Section>
-
-      {/* ── Soft Seguros Credentials ── */}
-      <Section title="Integración Soft Seguros" icon={ShieldCheck}>
-        <div className="space-y-5">
-          {/* Status banner */}
-          {softStatus === "ok" && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm font-bold text-emerald-700">
-              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-              Conexión exitosa con Soft Seguros. Token recibido.
-            </div>
-          )}
-          {softStatus === "error" && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-rose-50 border border-rose-200 rounded-xl text-sm font-bold text-rose-700">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              No se pudo conectar. Revisa las credenciales.
-            </div>
-          )}
-          {credsSaved && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm font-bold text-blue-700">
-              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-              Credenciales guardadas en variables de entorno.
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-4">
-            {/* URL */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="h-3.5 w-3.5" /> URL Base
-              </label>
-              <input
-                value={softUrl}
-                onChange={e => setSoftUrl(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-sm font-mono transition-all"
-                placeholder="https://app.softseguros.com"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Usuario */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Users className="h-3.5 w-3.5" /> Usuario
-                </label>
-                <input
-                  value={softUser}
-                  onChange={e => setSoftUser(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-sm transition-all"
-                  placeholder="usuario@roesan.com"
-                  autoComplete="off"
-                />
-              </div>
-
-              {/* Contraseña */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Lock className="h-3.5 w-3.5" /> Contraseña
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPass ? "text" : "password"}
-                    value={softPass}
-                    onChange={e => setSoftPass(e.target.value)}
-                    className="w-full px-4 py-2.5 pr-10 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-sm transition-all"
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              onClick={testConnection}
-              disabled={softStatus === "testing"}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-all disabled:opacity-50 shadow-sm"
-            >
-              <RefreshCw className={`h-4 w-4 ${softStatus === "testing" ? "animate-spin" : ""}`} />
-              {softStatus === "testing" ? "Probando…" : "Probar conexión"}
-            </button>
-            <button
-              onClick={saveCreds}
-              disabled={savingCreds || !softUser || !softPass}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50"
-            >
-              <Save className={`h-4 w-4 ${savingCreds ? "animate-pulse" : ""}`} />
-              {savingCreds ? "Guardando…" : "Guardar credenciales"}
-            </button>
-            <a
-              href="https://app.softseguros.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Abrir Soft Seguros
-            </a>
-          </div>
-
-          {/* Token status info */}
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 text-xs text-slate-500 space-y-1.5">
-            <p className="font-bold text-slate-600 flex items-center gap-1.5"><Key className="h-3.5 w-3.5" /> Gestión del token</p>
-            <p>• El token se obtiene automáticamente via <code className="font-mono bg-white px-1 py-0.5 rounded border border-slate-100">POST /api-token-auth/</code> al reiniciar el servidor.</p>
-            <p>• Las credenciales se guardan en el archivo <code className="font-mono bg-white px-1 py-0.5 rounded border border-slate-100">.env</code> del backend y <strong>nunca en código fuente</strong>.</p>
-            <p>• Si el token expira, el sistema lo renueva automáticamente en el siguiente request fallido.</p>
           </div>
         </div>
       </Section>

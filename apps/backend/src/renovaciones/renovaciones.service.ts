@@ -6,13 +6,13 @@ import { getInstantAdmin } from '../lib/instant-admin';
 import { tx, id } from '@instantdb/admin';
 
 const SOFT_RAMO_TO_TYPE: Record<number | string, string> = {
-  502: 'auto',
-  503: 'soat',
-  700: 'hogar',
-  200: 'vida',
-  300: 'salud',
-  600: 'empresarial',
-  800: 'cumplimiento',
+  90828: 'auto',
+  90838: 'soat',
+  90835: 'hogar',
+  90830: 'vida',
+  90831: 'salud',
+  90850: 'empresarial',
+  90829: 'cumplimiento',
 };
 
 function derivarTipo(poliza: any): string {

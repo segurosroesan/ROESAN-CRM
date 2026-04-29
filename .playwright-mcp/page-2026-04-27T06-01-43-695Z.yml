@@ -1,0 +1,192 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - img "Roesan Logo" [ref=e5]
+      - navigation [ref=e6]:
+        - generic [ref=e7]: Menú Principal
+        - link "Dashboard" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e15]: Dashboard
+        - link "Pre-Venta" [ref=e16] [cursor=pointer]:
+          - /url: /leads
+          - img [ref=e18]
+          - generic [ref=e23]: Pre-Venta
+        - link "Renovaciones" [ref=e24] [cursor=pointer]:
+          - /url: /renovaciones
+          - img [ref=e26]
+          - generic [ref=e31]: Renovaciones
+        - link "Configuración" [ref=e32] [cursor=pointer]:
+          - /url: /config
+          - img [ref=e34]
+          - generic [ref=e37]: Configuración
+      - generic [ref=e38]:
+        - generic [ref=e40]:
+          - img "User" [ref=e44]
+          - generic [ref=e46]:
+            - paragraph [ref=e47]: Asesor Roesan
+            - paragraph [ref=e48]: Comercial
+        - button "Cerrar Sesión" [ref=e49]:
+          - img [ref=e50]
+          - text: Cerrar Sesión
+    - main [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56] [cursor=pointer]: Pre-Venta
+          - img [ref=e57]
+          - generic [ref=e59]: Ficha de Prospecto
+        - generic [ref=e60]:
+          - button [ref=e61]:
+            - img [ref=e62]
+          - generic [ref=e66]: R
+      - generic [ref=e68]:
+        - button "Pipeline Pre-Venta" [ref=e69]:
+          - img [ref=e70]
+          - generic [ref=e72]: Pipeline Pre-Venta
+        - generic [ref=e73]:
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]: J
+              - generic [ref=e78]:
+                - heading "Juan Perez" [level=1] [ref=e80]
+                - generic [ref=e81]:
+                  - generic [ref=e82]:
+                    - img [ref=e83]
+                    - text: Autos
+                  - generic [ref=e87]: Sitio Web
+                  - generic [ref=e88]: "1010123456"
+                - generic [ref=e89]:
+                  - button "+57+573101234567" [ref=e90]:
+                    - img [ref=e91]
+                    - text: +57+573101234567
+                    - img [ref=e93]
+                  - link "juan@ejemplo.com" [ref=e96] [cursor=pointer]:
+                    - /url: mailto:juan@ejemplo.com
+                    - img [ref=e97]
+                    - text: juan@ejemplo.com
+                  - generic [ref=e100]:
+                    - img [ref=e101]
+                    - text: Bogota
+            - generic [ref=e104]:
+              - button "Ganado / Aprobado" [ref=e106]:
+                - text: Ganado / Aprobado
+                - img [ref=e107]
+              - button "Enviar a Soft Seguros" [ref=e109]:
+                - img [ref=e110]
+                - text: Enviar a Soft Seguros
+          - generic [ref=e115]:
+            - generic [ref=e116]:
+              - generic [ref=e117]: Score del prospecto
+              - generic [ref=e118]: "Progreso en pipeline: 67%"
+            - generic [ref=e122]:
+              - img [ref=e123]
+              - text: Frío (20)
+            - generic [ref=e136]:
+              - generic "Nuevo" [ref=e137]
+              - generic "Contacto inmediato" [ref=e138]
+              - generic "Contactado" [ref=e139]
+              - generic "Calificado" [ref=e140]
+              - generic "Documentos pendientes" [ref=e141]
+              - generic "Cotización enviada" [ref=e142]
+              - generic "Seguimiento" [ref=e143]
+              - generic "Ganado / Aprobado" [ref=e144]
+              - generic "Enviando a Soft…" [ref=e145]
+              - generic "Sincronizado ✓" [ref=e146]
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - button "Timeline" [ref=e150]:
+                - img [ref=e151]
+                - text: Timeline
+              - button "Emails (0)" [ref=e154]:
+                - img [ref=e155]
+                - text: Emails (0)
+              - button "Cotizaciones (0)" [ref=e158]:
+                - img [ref=e159]
+                - text: Cotizaciones (0)
+              - button "Datos completos" [ref=e161]:
+                - img [ref=e162]
+                - text: Datos completos
+            - generic [ref=e165]:
+              - button "Registrar interacción" [ref=e166]:
+                - img [ref=e167]
+                - text: Registrar interacción
+              - generic [ref=e170]:
+                - generic [ref=e171]:
+                  - img [ref=e173]
+                  - generic [ref=e176]:
+                    - generic [ref=e177]:
+                      - generic [ref=e178]: nota
+                      - generic [ref=e179]: 26 de abr, 12:16 p. m.
+                    - paragraph [ref=e180]: "Etapa cambiada a: Ganado / Aprobado"
+                - generic [ref=e181]:
+                  - img [ref=e183]
+                  - generic [ref=e186]:
+                    - generic [ref=e187]:
+                      - generic [ref=e188]: nota
+                      - generic [ref=e189]: 20 de abr, 04:50 p. m.
+                    - paragraph [ref=e190]: "Etapa cambiada a: Nuevo"
+                - generic [ref=e191]:
+                  - img [ref=e193]
+                  - generic [ref=e196]:
+                    - generic [ref=e197]:
+                      - generic [ref=e198]: nota
+                      - generic [ref=e199]: 20 de abr, 04:49 p. m.
+                    - paragraph [ref=e200]: "Etapa cambiada a: Seguimiento"
+                - generic [ref=e201]:
+                  - img [ref=e203]
+                  - generic [ref=e206]:
+                    - generic [ref=e207]:
+                      - generic [ref=e208]: nota
+                      - generic [ref=e209]: 20 de abr, 04:49 p. m.
+                    - paragraph [ref=e210]: "Etapa cambiada a: Calificado"
+                - generic [ref=e211]:
+                  - img [ref=e213]
+                  - generic [ref=e216]:
+                    - generic [ref=e217]:
+                      - generic [ref=e218]: nota
+                      - generic [ref=e219]: 20 de abr, 04:49 p. m.
+                    - paragraph [ref=e220]: "Etapa cambiada a: Contactado"
+                - generic [ref=e221]:
+                  - img [ref=e223]
+                  - generic [ref=e226]:
+                    - generic [ref=e227]:
+                      - generic [ref=e228]: nota
+                      - generic [ref=e229]: 20 de abr, 04:49 p. m.
+                    - paragraph [ref=e230]: "Etapa cambiada a: Contacto inmediato"
+          - generic [ref=e231]:
+            - generic [ref=e232]:
+              - heading "Acciones rápidas" [level=3] [ref=e233]
+              - generic [ref=e234]:
+                - link "WhatsApp" [ref=e235] [cursor=pointer]:
+                  - /url: https://wa.me/57+573101234567
+                  - img [ref=e236]
+                  - text: WhatsApp
+                - link "Llamar" [ref=e238] [cursor=pointer]:
+                  - /url: tel:+57+573101234567
+                  - img [ref=e239]
+                  - text: Llamar
+                - button "Enviar correo" [ref=e241]:
+                  - img [ref=e242]
+                  - text: Enviar correo
+            - generic [ref=e245]:
+              - heading "Información del registro" [level=3] [ref=e246]
+              - generic [ref=e247]:
+                - generic [ref=e248]:
+                  - generic [ref=e249]: Creado
+                  - generic [ref=e250]: 18 de abril de 2026
+                - generic [ref=e251]:
+                  - generic [ref=e252]: Actualizado
+                  - generic [ref=e253]: 26 de abr, 12:16 p. m.
+                - generic [ref=e254]:
+                  - generic [ref=e255]: Interacciones
+                  - generic [ref=e256]: "6"
+                - generic [ref=e257]:
+                  - generic [ref=e258]: Cotizaciones
+                  - generic [ref=e259]: "0"
+            - generic [ref=e260]:
+              - heading "Estado Soft Seguros" [level=3] [ref=e261]
+              - generic [ref=e262]:
+                - img [ref=e263]
+                - text: Pendiente de sincronización
+  - alert [ref=e265]

@@ -42,7 +42,7 @@ The CRM operates in two modes:
 
 ### Infrastructure
 - Frontend → **Netlify**
-- Backend → Railway or Render
+- Backend → **Render**
 - DB → **InstantDB**
 - Source control → **GitHub**
 - CDN → Cloudflare

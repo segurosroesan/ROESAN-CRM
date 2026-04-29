@@ -5,7 +5,10 @@
       "Bash(powershell \"Get-Process -Id 69400 | Select-Object Name, Id, Path\")",
       "Read(//tmp/**)",
       "Bash(curl -sv -X POST http://localhost:3002/cotizador/qualitas -H 'Content-Type: application/json' -d '{\"claveFasecolda\":\"01601276\",\"modelo\":2016,\"tipoDocumento\":\"C\",\"documento\":\"12345678\",\"departamento\":\"11\",\"municipio\":\"11001\",\"fechaInicio\":\"2026-05-01\",\"fechaFin\":\"2027-05-01\"}' --max-time 30)",
-      "Bash(curl -s -X POST http://localhost:3010/cotizador/qualitas -H 'Content-Type: application/json' -d '{\"claveFasecolda\":\"01601276\",\"modelo\":2016,\"tipoDocumento\":\"C\",\"documento\":\"12345678\",\"departamento\":\"11\",\"municipio\":\"11001\",\"fechaInicio\":\"2026-05-01\",\"fechaFin\":\"2027-05-01\"}' --max-time 30)"
+      "Bash(curl -s -X POST http://localhost:3010/cotizador/qualitas -H 'Content-Type: application/json' -d '{\"claveFasecolda\":\"01601276\",\"modelo\":2016,\"tipoDocumento\":\"C\",\"documento\":\"12345678\",\"departamento\":\"11\",\"municipio\":\"11001\",\"fechaInicio\":\"2026-05-01\",\"fechaFin\":\"2027-05-01\"}' --max-time 30)",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_snapshot"
     ]
   }
 }

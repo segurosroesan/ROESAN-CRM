@@ -1,0 +1,951 @@
+{
+  "name": "Cliente List",
+  "description": "",
+  "renders": [
+    "application/json"
+  ],
+  "parses": [
+    "application/json",
+    "application/x-www-form-urlencoded",
+    "multipart/form-data"
+  ],
+  "actions": {
+    "POST": {
+      "id": {
+        "type": "integer",
+        "required": false,
+        "read_only": true,
+        "label": "ID"
+      },
+      "categorias": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Categorias",
+        "child": {
+          "type": "nested object",
+          "required": false,
+          "read_only": true,
+          "children": {
+            "id": {
+              "type": "integer",
+              "required": false,
+              "read_only": true,
+              "label": "ID"
+            },
+            "nombre": {
+              "type": "string",
+              "required": false,
+              "read_only": false,
+              "label": "Nombre",
+              "max_length": 100
+            },
+            "color": {
+              "type": "string",
+              "required": false,
+              "read_only": false,
+              "label": "Color",
+              "max_length": 30
+            }
+          }
+        }
+      },
+      "clientevendedor_tipo": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Clientevendedor tipo"
+      },
+      "ocupacion_model": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Ocupacion model"
+      },
+      "empresa_model": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Empresa model"
+      },
+      "ocupacion_string": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Ocupacion string"
+      },
+      "empresa_name": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Empresa name"
+      },
+      "sedes": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Sedes",
+        "child": {
+          "type": "nested object",
+          "required": false,
+          "read_only": true,
+          "children": {
+            "id": {
+              "type": "integer",
+              "required": false,
+              "read_only": true,
+              "label": "ID"
+            },
+            "nombre": {
+              "type": "string",
+              "required": false,
+              "read_only": false,
+              "label": "Nombre",
+              "max_length": 400
+            }
+          }
+        }
+      },
+      "model_tipo_documento_code": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Model tipo documento code"
+      },
+      "model_tipo_documento_name": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Model tipo documento name"
+      },
+      "datosExtras": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Datosextras"
+      },
+      "pais_phone_code": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Pais phone code"
+      },
+      "nombre_sedes": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Nombre sedes"
+      },
+      "nombre_categorias": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Nombre categorias"
+      },
+      "nombres": {
+        "type": "string",
+        "required": true,
+        "read_only": false,
+        "label": "Nombres",
+        "max_length": 200
+      },
+      "apellidos": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Apellidos",
+        "max_length": 200
+      },
+      "alias": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Alias",
+        "max_length": 100
+      },
+      "direccion": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Direccion",
+        "max_length": 300
+      },
+      "numero_documento": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Numero documento",
+        "max_length": 30
+      },
+      "digito_verificacion": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Digito verificacion",
+        "max_length": 5
+      },
+      "pais": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Pais",
+        "max_length": 2
+      },
+      "state": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "State",
+        "max_length": 100
+      },
+      "ciudad": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Ciudad",
+        "max_length": 50
+      },
+      "tipo_documento": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Tipo documento",
+        "max_length": 30
+      },
+      "telefono": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Telefono",
+        "max_length": 200
+      },
+      "email": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Email",
+        "max_length": 200
+      },
+      "celular": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Celular",
+        "max_length": 200
+      },
+      "codigo_postal": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Codigo postal",
+        "max_length": 10
+      },
+      "localidad": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Localidad",
+        "max_length": 50
+      },
+      "provincia": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Provincia",
+        "max_length": 100
+      },
+      "distrito": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Distrito",
+        "max_length": 100
+      },
+      "codigo_postal_secundario": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Codigo postal secundario",
+        "max_length": 10
+      },
+      "localidad_secundaria": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Localidad secundaria",
+        "max_length": 50
+      },
+      "provincia_secundaria": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Provincia secundaria",
+        "max_length": 100
+      },
+      "direccion_secundaria": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Direccion secundaria",
+        "max_length": 300
+      },
+      "perfil_social": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Perfil social",
+        "max_length": 100
+      },
+      "pagina_web": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Pagina web",
+        "max_length": 100
+      },
+      "condicion_fiscal": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Condicion fiscal",
+        "max_length": 100
+      },
+      "codigo_actividad": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Codigo actividad",
+        "max_length": 100
+      },
+      "observaciones": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Observaciones"
+      },
+      "numero_cuenta_bancaria": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Numero cuenta bancaria",
+        "max_length": 100
+      },
+      "fecha_nacimiento": {
+        "type": "date",
+        "required": false,
+        "read_only": false,
+        "label": "Fecha nacimiento"
+      },
+      "fecha_expedicion_cedula": {
+        "type": "date",
+        "required": false,
+        "read_only": false,
+        "label": "Fecha expedicion cedula"
+      },
+      "fecha_vencimiento_documento": {
+        "type": "date",
+        "required": false,
+        "read_only": false,
+        "label": "Fecha vencimiento documento"
+      },
+      "codigo_id_cliente": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Codigo id cliente",
+        "max_length": 50
+      },
+      "nacionalidad": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Nacionalidad",
+        "max_length": 50
+      },
+      "provincia_nacimiento": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Provincia nacimiento",
+        "max_length": 50
+      },
+      "ciudad_nacimiento": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Ciudad nacimiento",
+        "max_length": 50
+      },
+      "exequatur": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Exequatur",
+        "max_length": 50
+      },
+      "codigo_pps": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Codigo pps",
+        "max_length": 50
+      },
+      "corregimiento": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Corregimiento",
+        "max_length": 50
+      },
+      "genero": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Genero",
+        "max_length": 10
+      },
+      "otra_ocupacion": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Otra ocupacion",
+        "max_length": 200
+      },
+      "es_consorcio": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Es consorcio"
+      },
+      "enviar_correo_polizas_vencidas": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar correo polizas vencidas"
+      },
+      "enviar_sms_poliza_por_vencer": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar sms poliza por vencer"
+      },
+      "enviar_correo_cartera_por_vencer": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar correo cartera por vencer"
+      },
+      "enviar_sms_cartera_por_vencer": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar sms cartera por vencer"
+      },
+      "enviar_whatsapp_poliza_por_vencer": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar whatsapp poliza por vencer"
+      },
+      "enviar_whatsapp_cartera_por_vencer": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar whatsapp cartera por vencer"
+      },
+      "enviar_correo_soat_por_vencer": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar correo soat por vencer"
+      },
+      "enviar_whatsapp_soat_por_vencer": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar whatsapp soat por vencer"
+      },
+      "enviar_correo_polizas_vencidos": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar correo polizas vencidos"
+      },
+      "enviar_correo_pagos_vencidos": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar correo pagos vencidos"
+      },
+      "enviar_whatsapp_polizas_vencidos": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar whatsapp polizas vencidos"
+      },
+      "enviar_whatsapp_pagos_vencidos": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar whatsapp pagos vencidos"
+      },
+      "enviar_correo_aviso_cancelacion": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar correo aviso cancelacion"
+      },
+      "enviar_whatsapp_aviso_cancelacion": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar whatsapp aviso cancelacion"
+      },
+      "motivo_desuscripcion": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Motivo desuscripcion",
+        "max_length": 200
+      },
+      "estado_correo": {
+        "type": "integer",
+        "required": false,
+        "read_only": false,
+        "label": "Estado correo",
+        "min_value": -2147483648,
+        "max_value": 2147483647
+      },
+      "estado_celular": {
+        "type": "integer",
+        "required": false,
+        "read_only": false,
+        "label": "Estado celular",
+        "min_value": -2147483648,
+        "max_value": 2147483647
+      },
+      "nivel_academico": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Nivel academico",
+        "max_length": 140
+      },
+      "licencia_conduccion": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Licencia conduccion",
+        "max_length": 140
+      },
+      "categoria_licencia": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Categoria licencia",
+        "max_length": 60
+      },
+      "tipo_cliente": {
+        "type": "choice",
+        "required": false,
+        "read_only": false,
+        "label": "Tipo cliente",
+        "choices": [
+          {
+            "value": "Prospecto",
+            "display_name": "Prospecto"
+          },
+          {
+            "value": "Cliente",
+            "display_name": "Cliente"
+          },
+          {
+            "value": "Cliente perdido",
+            "display_name": "Cliente perdido"
+          }
+        ]
+      },
+      "pendiente_editar": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Pendiente editar"
+      },
+      "tipo_direccion": {
+        "type": "choice",
+        "required": false,
+        "read_only": false,
+        "label": "Tipo direccion",
+        "choices": [
+          {
+            "value": "1",
+            "display_name": "Residencial"
+          },
+          {
+            "value": "2",
+            "display_name": "Oficina"
+          },
+          {
+            "value": "3",
+            "display_name": "Otro"
+          },
+          {
+            "value": "4",
+            "display_name": "Personal"
+          }
+        ]
+      },
+      "tipo_telefono": {
+        "type": "choice",
+        "required": false,
+        "read_only": false,
+        "label": "Tipo telefono",
+        "choices": [
+          {
+            "value": "1",
+            "display_name": "Residencial"
+          },
+          {
+            "value": "2",
+            "display_name": "Oficina"
+          },
+          {
+            "value": "3",
+            "display_name": "Otro"
+          },
+          {
+            "value": "4",
+            "display_name": "Personal"
+          }
+        ]
+      },
+      "tipo_celular": {
+        "type": "choice",
+        "required": false,
+        "read_only": false,
+        "label": "Tipo celular",
+        "choices": [
+          {
+            "value": "1",
+            "display_name": "Residencial"
+          },
+          {
+            "value": "2",
+            "display_name": "Oficina"
+          },
+          {
+            "value": "3",
+            "display_name": "Otro"
+          },
+          {
+            "value": "4",
+            "display_name": "Personal"
+          }
+        ]
+      },
+      "tipo_email": {
+        "type": "choice",
+        "required": false,
+        "read_only": false,
+        "label": "Tipo email",
+        "choices": [
+          {
+            "value": "1",
+            "display_name": "Residencial"
+          },
+          {
+            "value": "2",
+            "display_name": "Oficina"
+          },
+          {
+            "value": "3",
+            "display_name": "Otro"
+          },
+          {
+            "value": "4",
+            "display_name": "Personal"
+          }
+        ]
+      },
+      "tiene_hijos": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Tiene hijos"
+      },
+      "numero_hijos": {
+        "type": "integer",
+        "required": false,
+        "read_only": false,
+        "label": "Numero hijos",
+        "min_value": -2147483648,
+        "max_value": 2147483647
+      },
+      "tiene_casa_propia": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Tiene casa propia"
+      },
+      "numero_casas_propias": {
+        "type": "integer",
+        "required": false,
+        "read_only": false,
+        "label": "Numero casas propias",
+        "min_value": -2147483648,
+        "max_value": 2147483647
+      },
+      "tiene_vehiculo": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Tiene vehiculo"
+      },
+      "numero_vehiculos": {
+        "type": "integer",
+        "required": false,
+        "read_only": false,
+        "label": "Numero vehiculos",
+        "min_value": -2147483648,
+        "max_value": 2147483647
+      },
+      "ingreso_mensual": {
+        "type": "decimal",
+        "required": false,
+        "read_only": false,
+        "label": "Ingreso mensual"
+      },
+      "patrimonio": {
+        "type": "decimal",
+        "required": false,
+        "read_only": false,
+        "label": "Patrimonio"
+      },
+      "estado_civil": {
+        "type": "choice",
+        "required": false,
+        "read_only": false,
+        "label": "Estado civil",
+        "choices": [
+          {
+            "value": "1",
+            "display_name": "Soltero"
+          },
+          {
+            "value": "2",
+            "display_name": "Casado"
+          },
+          {
+            "value": "3",
+            "display_name": "Divorciado"
+          },
+          {
+            "value": "4",
+            "display_name": "Unión libre"
+          },
+          {
+            "value": "5",
+            "display_name": "Separado"
+          },
+          {
+            "value": "6",
+            "display_name": "Viudo"
+          }
+        ]
+      },
+      "tratamiento_de_datos": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Tratamiento de datos"
+      },
+      "otra_empresa": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Otra empresa",
+        "max_length": 200
+      },
+      "estrato": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Estrato",
+        "max_length": 12
+      },
+      "id_contacto_getresponse": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Id contacto getresponse",
+        "max_length": 12
+      },
+      "campaign_id_contacto_getresponse": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Campaign id contacto getresponse",
+        "help_text": "Id de la campaña con la que se creó originalmente el cliente.",
+        "max_length": 12
+      },
+      "send_birthday_card": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Send birthday card"
+      },
+      "file_storage_data": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "File storage data"
+      },
+      "from_create": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "From create",
+        "max_length": 25
+      },
+      "aviso_operaciones": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Aviso operaciones",
+        "max_length": 500
+      },
+      "nombres_contacto": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Nombres contacto",
+        "max_length": 100
+      },
+      "email_verified": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Email verified",
+        "help_text": "Correo verificado por entrega exitosa"
+      },
+      "last_bounce_date": {
+        "type": "datetime",
+        "required": false,
+        "read_only": false,
+        "label": "Last bounce date",
+        "help_text": "Fecha del último rebote"
+      },
+      "bounce_count": {
+        "type": "integer",
+        "required": false,
+        "read_only": false,
+        "label": "Bounce count",
+        "help_text": "Número de rebotes acumulados",
+        "min_value": -2147483648,
+        "max_value": 2147483647
+      },
+      "unsubscribed_date": {
+        "type": "datetime",
+        "required": false,
+        "read_only": false,
+        "label": "Unsubscribed date",
+        "help_text": "Fecha de cancelación de suscripción"
+      },
+      "last_failure_reason": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Last failure reason",
+        "help_text": "Razón del último fallo de entrega",
+        "max_length": 500
+      },
+      "last_failure_code": {
+        "type": "string",
+        "required": false,
+        "read_only": false,
+        "label": "Last failure code",
+        "help_text": "Código del último fallo (ej: 550, 552)",
+        "max_length": 20
+      },
+      "activo": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Activo"
+      },
+      "created_at": {
+        "type": "datetime",
+        "required": false,
+        "read_only": false,
+        "label": "Created at"
+      },
+      "updated_at": {
+        "type": "datetime",
+        "required": false,
+        "read_only": false,
+        "label": "Updated at"
+      },
+      "enviar_correo_notificacion_renovacion": {
+        "type": "boolean",
+        "required": false,
+        "read_only": false,
+        "label": "Enviar correo notificacion renovacion"
+      },
+      "model_tipo_documento": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "Model tipo documento"
+      },
+      "sede": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "Sede"
+      },
+      "marca": {
+        "type": "field",
+        "required": true,
+        "read_only": false,
+        "label": "Marca"
+      },
+      "compania": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "Compania"
+      },
+      "ocupacion": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "Ocupacion"
+      },
+      "riesgo_asegurado": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "Riesgo asegurado"
+      },
+      "import_document": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "Import document"
+      },
+      "created_by": {
+        "type": "field",
+        "required": false,
+        "read_only": false,
+        "label": "Created by",
+        "help_text": "Cliente creado por"
+      },
+      "segmentos": {
+        "type": "field",
+        "required": false,
+        "read_only": true,
+        "label": "Segmentos"
+      }
+    }
+  }
+}

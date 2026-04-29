@@ -1,0 +1,2 @@
+[   30253ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://roesan-backend.onrender.com/sync/softseguros/baef431a-8e80-4663-b345-bfeafc171a5a:0
+[   77180ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://roesan-crm.netlify.app/config:0

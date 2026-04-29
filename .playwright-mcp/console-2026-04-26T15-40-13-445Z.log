@@ -1,0 +1,13 @@
+[ 5823535ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3001/sync/softseguros/baef431a-8e80-4663-b345-bfeafc171a5a:0
+[ 5823535ms] [ERROR] Sync error: TypeError: Failed to fetch
+    at em (https://roesan-crm.netlify.app/_next/static/chunks/00r0w5g7_u7~p.js:1:21454)
+    at sJ (https://roesan-crm.netlify.app/_next/static/chunks/0yoi6g0rt32bk.js:1:162749)
+    at https://roesan-crm.netlify.app/_next/static/chunks/0yoi6g0rt32bk.js:1:168645
+    at tD (https://roesan-crm.netlify.app/_next/static/chunks/0yoi6g0rt32bk.js:1:30679)
+    at s4 (https://roesan-crm.netlify.app/_next/static/chunks/0yoi6g0rt32bk.js:1:163982)
+    at fz (https://roesan-crm.netlify.app/_next/static/chunks/0yoi6g0rt32bk.js:1:200718)
+    at fT (https://roesan-crm.netlify.app/_next/static/chunks/0yoi6g0rt32bk.js:1:200540)
+    at eval (eval at evaluate (:302:30), <anonymous>:1:135)
+    at UtilityScript.evaluate (<anonymous>:304:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44) @ https://roesan-crm.netlify.app/_next/static/chunks/00r0w5g7_u7~p.js:0
+[41892123ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://roesan-crm.netlify.app/config:0

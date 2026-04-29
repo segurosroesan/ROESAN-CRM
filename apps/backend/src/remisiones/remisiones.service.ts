@@ -163,10 +163,16 @@ export class RemisionesService {
     // STEP B: Create policy (SYNC-4)
     this.logger.log(`SYNC-4: Creando póliza para cliente ${soft_cliente_id}`);
 
-    // Map ramo text labels to Soft Seguros ramo IDs
+    // Map ramo text labels to Soft Seguros ramo IDs from Listado_de_Ramos_Activos.xlsx
     const RAMO_MAP: Record<string, number> = {
-      auto: 502, soat: 503, hogar: 700, vida: 200, salud: 300,
-      empresarial: 600, cumplimiento: 800,
+      auto: 90828, 
+      soat: 90838, 
+      hogar: 90835, 
+      vida: 90830, 
+      salud: 90831,
+      empresarial: 90850, 
+      pyme: 90850,
+      cumplimiento: 90829,
     };
     const ramoId = policyData.ramo_soft_id || RAMO_MAP[(policyData.ramo || '').toLowerCase()];
 

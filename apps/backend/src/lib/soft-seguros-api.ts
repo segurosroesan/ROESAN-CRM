@@ -108,9 +108,12 @@ export class SoftSegurosApi {
   async getClientByDocument(documento: string) {
     // Attempt 1: dedicated endpoint
     try {
+      this.logger.log(`[getClientByDocument] Attempt 1: /listar_cliente_por_documento/ for ${documento}`);
       const response = await this.request('GET', '/api/cliente/listar_cliente_por_documento/', undefined, {
         numero_documento: documento,
       });
+      this.logger.log(`[getClientByDocument] Attempt 1 response type: ${typeof response}, has results: ${response?.results !== undefined}, id: ${response?.id}`);
+      
       if (response?.results !== undefined) {
         if (response.results?.[0]) return response.results[0];
         // count=0 here doesn't always mean "not exists" — some old clients are missed by this endpoint
@@ -118,16 +121,23 @@ export class SoftSegurosApi {
         return response;
       }
     } catch (error) {
-      if (error.response?.status === 404) {
+      const status = error.response?.status;
+      const detail = error.response?.data ? JSON.stringify(error.response.data) : error.message;
+      this.logger.warn(`[getClientByDocument] Attempt 1 failed: status=${status}, detail=${detail}`);
+      
+      if (status === 404) {
         this.logger.log(`Client ${documento} not found in Soft Seguros (404).`);
         return null;
       }
-      this.logger.warn(`Dedicated endpoint failed for ${documento}: ${error.message}`);
+      // Auth errors should not be silently swallowed
+      if (status === 401 || status === 403) {
+        throw error;
+      }
     }
 
     // Attempt 2: main /api/cliente/ with filter (more reliable for older records)
     try {
-      this.logger.log(`Trying main endpoint filter for document ${documento}`);
+      this.logger.log(`[getClientByDocument] Attempt 2: /api/cliente/ filter for ${documento}`);
       const response = await this.request('GET', '/api/cliente/', undefined, {
         numero_documento: documento,
         page_size: 10,
@@ -137,7 +147,7 @@ export class SoftSegurosApi {
         return response.results[0];
       }
     } catch (error) {
-      this.logger.warn(`Main endpoint filter also failed for ${documento}: ${error.message}`);
+      this.logger.warn(`Main endpoint filter also failed for ${documento}: status=${error.response?.status}, ${error.message}`);
     }
 
     return null;

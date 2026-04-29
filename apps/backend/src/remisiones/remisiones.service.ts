@@ -26,6 +26,14 @@ export class RemisionesService {
           : 'Cliente no encontrado — se creará al remisionar.',
       };
     } catch (error) {
+      // If it's an auth error, propagate it — don't mask as "not found"
+      const isAuthError = error.message?.includes('authenticate') ||
+        error.response?.status === 401 || error.response?.status === 403;
+      if (isAuthError) {
+        this.logger.error(`Error de autenticación con Soft Seguros: ${error.message}`);
+        throw new Error('Error de autenticación con Soft Seguros. Verifique las credenciales del servidor.');
+      }
+      // 404 or network errors — assume not found
       this.logger.warn(`Error buscando cliente ${documento}: ${error.message}. Asumiendo no existe.`);
       return { found: false, cliente: null, message: 'Cliente no encontrado — se creará al remisionar.' };
     }

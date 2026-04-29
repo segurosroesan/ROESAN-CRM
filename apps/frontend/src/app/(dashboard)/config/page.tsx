@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { db } from "@/lib/instant-db";
 import {
   Settings,
   Users,
@@ -39,7 +40,7 @@ interface UserRow {
   name: string;
   email: string;
   role: "admin" | "coordinador" | "asesor" | "solo lectura";
-  active: boolean;
+  active?: boolean;
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -64,9 +65,14 @@ const DEFAULT_RAMOS: RamoMapping[] = [
   { crm: "cumplimiento", softId: 7, label: "Cumplimiento", icon: Shield },
 ];
 
-const DEFAULT_USERS: UserRow[] = [
-  { id: "u1", name: "Admin Roesan", email: "admin@roesan.com", role: "admin", active: true },
-  { id: "u2", name: "John Doe", email: "john@roesan.com", role: "asesor", active: true },
+const INITIAL_USERS: UserRow[] = [
+  { id: "carmen",    name: "Carmen Estrada",      email: "gerencia@roesan.com",                     role: "admin",         active: true },
+  { id: "federico",  name: "Federico Lopez",       email: "comercial@roesan.com",                    role: "coordinador",   active: true },
+  { id: "patricia",  name: "Patricia Ortegon",     email: "administrativo@roesan.com",               role: "solo lectura",  active: true },
+  { id: "adriana",   name: "Adriana Garzon",       email: "autos@roesan.com",                        role: "asesor",        active: true },
+  { id: "jose",      name: "Jose Rodriguez",       email: "ejecutivo@roesan.com",                    role: "asesor",        active: true },
+  { id: "alejandro", name: "Alejandro Sarmiento",  email: "alejandro@roesan.com",                    role: "asesor",        active: true },
+  { id: "jorge",     name: "Jorge Henao",          email: "jorge.jaime.henao.romero@gmail.com",      role: "admin",         active: true },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -115,9 +121,22 @@ export default function ConfigPage() {
   // Ramos mapping
   const [ramos, setRamos] = useState(DEFAULT_RAMOS);
 
-  // Users
-  const [users, setUsers] = useState<UserRow[]>(DEFAULT_USERS);
+  // Users — live from InstantDB
+  const { data: usersData } = db.useQuery({ users: {} });
+  const users: UserRow[] = (usersData?.users ?? []) as UserRow[];
   const [showUserModal, setShowUserModal] = useState(false);
+
+  // Seed initial team on first load
+  useEffect(() => {
+    if (usersData && users.length === 0) {
+      db.transact(
+        INITIAL_USERS.map(u =>
+          db.tx.users[u.id].update({ name: u.name, email: u.email, role: u.role, active: u.active })
+        )
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usersData]);
 
   // Import job settings
   const [importHour, setImportHour] = useState("07");
@@ -328,7 +347,7 @@ export default function ConfigPage() {
                     <Edit3 className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => setUsers(users.filter(u => u.id !== user.id))}
+                    onClick={() => db.transact(db.tx.users[user.id].delete())}
                     className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -400,7 +419,15 @@ export default function ConfigPage() {
       </Section>
 
       {/* Add user modal */}
-      {showUserModal && <AddUserModal onClose={() => setShowUserModal(false)} onAdd={u => { setUsers([...users, u]); setShowUserModal(false); }} />}
+      {showUserModal && (
+        <AddUserModal
+          onClose={() => setShowUserModal(false)}
+          onAdd={u => {
+            db.transact(db.tx.users[u.id].update({ name: u.name, email: u.email, role: u.role, active: true }));
+            setShowUserModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -416,7 +443,7 @@ function AddUserModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd({ ...form, id: crypto.randomUUID(), active: true });
+    onAdd({ ...form, id: crypto.randomUUID(), active: true } as UserRow);
   };
 
   return (

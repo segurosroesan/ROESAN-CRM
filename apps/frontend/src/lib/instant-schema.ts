@@ -114,7 +114,8 @@ const schema = i.schema({
     users: i.entity({
       name: i.string(),
       email: i.string().indexed(),
-      role: i.string(), // 'admin', 'coordinador', 'asesor'
+      role: i.string(), // 'admin', 'coordinador', 'asesor', 'solo lectura'
+      active: i.boolean().optional(),
       googleEmail: i.string().optional(),
       googleRefreshToken: i.string().optional(),
     }),

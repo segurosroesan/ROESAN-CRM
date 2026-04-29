@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, Upload, CheckCircle, AlertCircle, ArrowRight, ArrowLeft,
@@ -56,11 +56,22 @@ const inputSmCls = "w-full px-3 py-2 bg-slate-50 rounded-lg border border-slate-
 const labelCls = "block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5";
 const labelSmCls = "block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1";
 
+interface VendedorItem { id: number; nombre: string; }
+
 export default function RemisionarPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Catalogs
+  const [vendedores, setVendedores] = useState<VendedorItem[]>([]);
+  useEffect(() => {
+    fetch(`${BACKEND}/remisiones/catalogs`)
+      .then(r => r.json())
+      .then(d => { if (d.vendedores) setVendedores(d.vendedores); })
+      .catch(() => {});
+  }, []);
 
   // Step 1
   const [formCliente, setFormCliente] = useState({
@@ -225,8 +236,18 @@ export default function RemisionarPage() {
   }
 
   function handleStep2Next() {
-    if (Object.keys(extracted).length === 0) { setError("Procesa al menos un documento antes de continuar"); return; }
     setError("");
+    // Pre-populate clientData from formCliente if doc extraction didn't run
+    if (Object.keys(clientData).length === 0) {
+      setClientData({
+        numero_documento: formCliente.numero_documento,
+        tipo_documento:   formCliente.tipo_documento,
+        nombres:          formCliente.nombres,
+        apellidos:        formCliente.apellidos,
+        email:            formCliente.email,
+        telefono:         formCliente.telefono,
+      });
+    }
     setStep(3);
   }
 
@@ -271,6 +292,7 @@ export default function RemisionarPage() {
     setClientData({});
     setPolicyData({});
     setFormCliente({ tipo_documento: "01", numero_documento: "", nombres: "", apellidos: "", email: "", telefono: "" });
+    setError("");
   }
 
   // ── Success Screen ────────────────────────────────────────────────────────
@@ -493,6 +515,10 @@ export default function RemisionarPage() {
               </button>
             </div>
 
+            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4 text-sm text-blue-700">
+              Los documentos son opcionales. Si no los tienes ahora, puedes ingresar los datos manualmente en el siguiente paso.
+            </div>
+
             {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
             <div className="flex justify-between">
               <button onClick={() => setStep(1)} className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-200 transition-colors">
@@ -582,6 +608,19 @@ export default function RemisionarPage() {
                     placeholder="1500000"
                     className={inputSmCls}
                   />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelSmCls}>Asesor / Vendedor</label>
+                  <select
+                    value={policyData.vendedor_id || ""}
+                    onChange={e => setPolicyData(p => ({ ...p, vendedor_id: e.target.value }))}
+                    className={inputSmCls}
+                  >
+                    <option value="">-- Predeterminado (Roesan) --</option>
+                    {vendedores.map(v => (
+                      <option key={v.id} value={v.id}>{v.nombre}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

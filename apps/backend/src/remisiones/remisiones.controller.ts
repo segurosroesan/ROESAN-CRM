@@ -1,5 +1,5 @@
 import {
-  Body, Controller, Post, HttpCode, Logger,
+  Body, Controller, Get, Post, HttpCode, Logger,
   UseInterceptors, UploadedFiles, BadRequestException, HttpException, HttpStatus,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -16,6 +16,11 @@ export class RemisionesController {
   private readonly logger = new Logger(RemisionesController.name);
 
   constructor(private readonly remisionesService: RemisionesService) {}
+
+  @Get('catalogs')
+  getCatalogs() {
+    return this.remisionesService.getCatalogs();
+  }
 
   @Post('buscar-cliente')
   @HttpCode(200)

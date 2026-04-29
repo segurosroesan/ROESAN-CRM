@@ -97,6 +97,7 @@ export class RemisionesService {
       cedula_tomador?: string;
       nombre_asegurado?: string;
       cedula_asegurado?: string;
+      vendedor_id?: number | string;
     };
     files: { buffer: Buffer; mimeType: string; nombre: string; tipo: 'CEDULA' | 'RUT' | 'SARLAFT' | 'POLIZA' }[];
   }) {
@@ -165,16 +166,26 @@ export class RemisionesService {
     // STEP B: Create policy (SYNC-4)
     this.logger.log(`SYNC-4: Creando póliza para cliente ${soft_cliente_id}`);
 
-    // Map ramo text labels to ramo_marca IDs (these are the "marca" codes, not the actual API ramo ID)
+    // Map ramo text labels to ramo_marca IDs (from soft-catalogs/ramos.json)
     const RAMO_MARCA_MAP: Record<string, number> = {
       auto: 90828,
       soat: 90838,
       hogar: 90835,
       vida: 90830,
-      salud: 90831,
-      empresarial: 90850,
+      salud: 90832,          // 90832 = salud (Suramericana); 90831 = Medical (Bolivar)
+      medical: 90831,
+      empresarial: 90847,    // 90847 = Empresarial; 90850 = pyme (different!)
       pyme: 90850,
       cumplimiento: 90829,
+      responsabilidad_civil: 90836,
+      rc_medica: 90837,
+      exequias: 90843,
+      copropiedades: 90844,
+      arrendamiento: 90845,
+      transportes: 90840,
+      incendio: 90842,
+      sustraccion: 90839,
+      arl: 91285,
     };
 
     // Load real ramo IDs from catalog (ramo = ramo_marca + aseguradora combination)
@@ -260,6 +271,8 @@ export class RemisionesService {
     if (policyData.fecha_fin) policyPayload.fecha_fin = policyData.fecha_fin;
     if (policyData.prima_total) policyPayload.prima = policyData.prima_total;
     if (policyData.apellido_tomador) policyPayload.apellido_tomador = policyData.apellido_tomador;
+    // Vendedor: explicit from form OR fallback to env SOFT_VENDEDOR_ID
+    if (policyData.vendedor_id) policyPayload.vendedor = Number(policyData.vendedor_id);
 
     this.logger.log(`SYNC-4 payload: ${JSON.stringify(policyPayload)}`);
     let soft_poliza_id: string;
@@ -343,5 +356,30 @@ export class RemisionesService {
     this.logger.log(`Lead CRM creado: ${leadId}`);
 
     return { success: true, leadId, soft_cliente_id, soft_poliza_id, steps };
+  }
+
+  /**
+   * Returns catalog data (vendedores, ramos) from local JSON files
+   */
+  getCatalogs(): { vendedores: any[]; ramos: any[] } {
+    const candidatePaths = (filename: string) => [
+      path.join(__dirname, `../lib/soft-catalogs/${filename}`),
+      path.join(process.cwd(), `src/lib/soft-catalogs/${filename}`),
+      path.join(process.cwd(), `dist/lib/soft-catalogs/${filename}`),
+    ];
+
+    const loadJson = (filename: string): any[] => {
+      for (const p of candidatePaths(filename)) {
+        if (fs.existsSync(p)) {
+          try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { /* skip */ }
+        }
+      }
+      return [];
+    };
+
+    return {
+      vendedores: loadJson('vendedores.json'),
+      ramos: loadJson('ramos.json'),
+    };
   }
 }

@@ -151,7 +151,7 @@ export default function ConfigPage() {
             <button
               onClick={() => {
                 const userId = "federico";
-                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${userId}`;
+                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google/login?userId=${userId}`;
               }}
               className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
             >

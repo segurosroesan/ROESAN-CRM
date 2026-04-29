@@ -66,13 +66,13 @@ const DEFAULT_RAMOS: RamoMapping[] = [
 ];
 
 const INITIAL_USERS: UserRow[] = [
-  { id: "carmen",    name: "Carmen Estrada",      email: "gerencia@roesan.com",                     role: "admin",         active: true },
-  { id: "federico",  name: "Federico Lopez",       email: "comercial@roesan.com",                    role: "coordinador",   active: true },
-  { id: "patricia",  name: "Patricia Ortegon",     email: "administrativo@roesan.com",               role: "solo lectura",  active: true },
-  { id: "adriana",   name: "Adriana Garzon",       email: "autos@roesan.com",                        role: "asesor",        active: true },
-  { id: "jose",      name: "Jose Rodriguez",       email: "ejecutivo@roesan.com",                    role: "asesor",        active: true },
-  { id: "alejandro", name: "Alejandro Sarmiento",  email: "operativo@roesan.com",                    role: "asesor",        active: true },
-  { id: "jorge",     name: "Jorge Henao",          email: "jorge.jaime.henao.romero@gmail.com",      role: "admin",         active: true },
+  { id: "a1b2c3d4-e5f6-4789-8abc-def012345678", name: "Carmen Estrada",     email: "gerencia@roesan.com",                  role: "admin",        active: true },
+  { id: "b2c3d4e5-f6a7-4890-8bcd-ef0123456789", name: "Federico Lopez",      email: "comercial@roesan.com",                 role: "coordinador",  active: true },
+  { id: "c3d4e5f6-a7b8-4901-8cde-f01234567890", name: "Patricia Ortegon",    email: "administrativo@roesan.com",            role: "solo lectura", active: true },
+  { id: "d4e5f6a7-b8c9-4012-8def-012345678901", name: "Adriana Garzon",      email: "autos@roesan.com",                     role: "asesor",       active: true },
+  { id: "e5f6a7b8-c9d0-4123-8ef0-123456789012", name: "Jose Rodriguez",      email: "ejecutivo@roesan.com",                 role: "asesor",       active: true },
+  { id: "f6a7b8c9-d0e1-4234-8f01-234567890123", name: "Alejandro Sarmiento", email: "operativo@roesan.com",                 role: "asesor",       active: true },
+  { id: "a7b8c9d0-e1f2-4345-8012-345678901234", name: "Jorge Henao",         email: "jorge.jaime.henao.romero@gmail.com",   role: "admin",        active: true },
 ];
 
 const ROLE_COLORS: Record<string, string> = {

@@ -182,7 +182,7 @@ export class RemisionesService {
       cedula_tomador: policyData.cedula_tomador || clientData.numero_documento,
       nombre_asegurado: policyData.nombre_asegurado || fullName,
       cedula_asegurado: policyData.cedula_asegurado || clientData.numero_documento,
-      codio_objeto_asegurado: policyData.codio_objeto_asegurado || policyData.objeto_asegurado || clientData.direccion || 'N/A',
+      codio_objeto_asegurado: policyData.objeto_asegurado || clientData.direccion || 'N/A',
     };
     if (ramoId) policyPayload.ramo = ramoId;
     if (policyData.numero_poliza) policyPayload.numero_poliza = policyData.numero_poliza;

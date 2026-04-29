@@ -150,7 +150,13 @@ export class RemisionesService {
       if (clientData.otra_ocupacion) clientUpdate.otra_ocupacion = clientData.otra_ocupacion;
 
       if (Object.keys(clientUpdate).length > 0) {
-        steps.clientUpdate = await this.softApi.updateClient(soft_cliente_id, clientUpdate);
+        try {
+          steps.clientUpdate = await this.softApi.updateClient(soft_cliente_id, clientUpdate);
+        } catch (updateErr: any) {
+          const detail = updateErr.response?.data ? JSON.stringify(updateErr.response.data) : updateErr.message;
+          this.logger.error(`Error actualizando cliente ${soft_cliente_id}: ${detail}`);
+          throw new Error(`Error actualizando cliente en Soft Seguros: ${detail}`);
+        }
       }
     }
 
@@ -173,9 +179,17 @@ export class RemisionesService {
     if (policyData.nombre_asegurado) policyPayload.nombre_asegurado = policyData.nombre_asegurado;
     if (policyData.cedula_asegurado) policyPayload.cedula_asegurado = policyData.cedula_asegurado;
 
-    const policy = await this.softApi.createPolicy(policyPayload);
-    const soft_poliza_id = String(policy.id);
-    steps.policyCreate = { soft_poliza_id };
+    this.logger.log(`SYNC-4 payload: ${JSON.stringify(policyPayload)}`);
+    let soft_poliza_id: string;
+    try {
+      const policy = await this.softApi.createPolicy(policyPayload);
+      soft_poliza_id = String(policy.id);
+      steps.policyCreate = { soft_poliza_id };
+    } catch (policyErr: any) {
+      const detail = policyErr.response?.data ? JSON.stringify(policyErr.response.data) : policyErr.message;
+      this.logger.error(`SYNC-4 falló: ${detail}`);
+      throw new Error(`Error creando póliza en Soft Seguros: ${detail}`);
+    }
     this.logger.log(`Póliza creada con ID: ${soft_poliza_id}`);
 
     // STEP B.5: SYNC-3 — Vehicle extra data for auto/soat policies

@@ -3,6 +3,8 @@ import { SoftSegurosApi } from '../lib/soft-seguros-api';
 import { ComparadorService } from '../cotizador/comparador.service';
 import { getInstantAdmin } from '../lib/instant-admin';
 import { tx, id } from '@instantdb/admin';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class RemisionesService {
@@ -163,18 +165,57 @@ export class RemisionesService {
     // STEP B: Create policy (SYNC-4)
     this.logger.log(`SYNC-4: Creando póliza para cliente ${soft_cliente_id}`);
 
-    // Map ramo text labels to Soft Seguros ramo IDs from Listado_de_Ramos_Activos.xlsx
-    const RAMO_MAP: Record<string, number> = {
-      auto: 90828, 
-      soat: 90838, 
-      hogar: 90835, 
-      vida: 90830, 
+    // Map ramo text labels to ramo_marca IDs (these are the "marca" codes, not the actual API ramo ID)
+    const RAMO_MARCA_MAP: Record<string, number> = {
+      auto: 90828,
+      soat: 90838,
+      hogar: 90835,
+      vida: 90830,
       salud: 90831,
-      empresarial: 90850, 
+      empresarial: 90850,
       pyme: 90850,
       cumplimiento: 90829,
     };
-    const ramoId = policyData.ramo_soft_id || RAMO_MAP[(policyData.ramo || '').toLowerCase()];
+
+    // Load real ramo IDs from catalog (ramo = ramo_marca + aseguradora combination)
+    let ramoId: number | undefined = policyData.ramo_soft_id;
+    if (!ramoId) {
+      try {
+        const catalogPath = path.join(__dirname, '../lib/soft-catalogs/ramos.json');
+        const ramos: Array<{ id: number; ramo_marca: number; aseguradora_id: number; aseguradora_nombre: string }> =
+          JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
+
+        const ramoClave = (policyData.ramo || '').toLowerCase();
+        const ramaMarca = RAMO_MARCA_MAP[ramoClave];
+        const aseguradoraNombre = (policyData.aseguradora || '').toUpperCase();
+
+        if (ramaMarca) {
+          // Try exact match: same ramo_marca AND aseguradora name contains search term
+          const exactMatch = aseguradoraNombre
+            ? ramos.find(
+                (r) =>
+                  r.ramo_marca === ramaMarca &&
+                  (r.aseguradora_nombre || '').toUpperCase().includes(aseguradoraNombre),
+              )
+            : null;
+
+          // Fallback: first ramo with the correct marca
+          const fallback = ramos.find((r) => r.ramo_marca === ramaMarca);
+
+          const match = exactMatch || fallback;
+          if (match) {
+            ramoId = match.id;
+            this.logger.log(
+              `RAMO lookup: '${ramoClave}' + '${aseguradoraNombre}' → ID=${ramoId} (${match.aseguradora_nombre})`,
+            );
+          } else {
+            this.logger.warn(`No se encontró ramo en catálogo para marca=${ramaMarca}, aseguradora='${aseguradoraNombre}'`);
+          }
+        }
+      } catch (catalogErr: any) {
+        this.logger.warn(`No se pudo leer catálogo de ramos: ${catalogErr.message}`);
+      }
+    }
 
     // Auto-fill tomador/asegurado from client data if not explicitly provided
     const fullName = [clientData.nombres, clientData.apellidos].filter(Boolean).join(' ') || 'Sin nombre';

@@ -1,0 +1,554 @@
+[
+  {
+    "id": 896922,
+    "nombre": "Autos",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896923,
+    "nombre": "Autos",
+    "aseguradora_id": 136205,
+    "aseguradora_nombre": "LIBERTY SEGUROS S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896924,
+    "nombre": "Autos",
+    "aseguradora_id": 136207,
+    "aseguradora_nombre": "SEGUROS DEL ESTADO S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896925,
+    "nombre": "Autos",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896926,
+    "nombre": "Autos",
+    "aseguradora_id": 136208,
+    "aseguradora_nombre": "SBS SEGUROS COLOMBIA S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896927,
+    "nombre": "Autos",
+    "aseguradora_id": 136211,
+    "aseguradora_nombre": "ALLIANZ SEGUROS S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896928,
+    "nombre": "Autos",
+    "aseguradora_id": 136213,
+    "aseguradora_nombre": "MAPFRE SEGUROS S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896929,
+    "nombre": "Autos",
+    "aseguradora_id": 136218,
+    "aseguradora_nombre": "HDI SEGUROS S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896930,
+    "nombre": "Autos",
+    "aseguradora_id": 136220,
+    "aseguradora_nombre": "AXA COLPATRIA SEGUROS S.A",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896931,
+    "nombre": "Autos",
+    "aseguradora_id": 136223,
+    "aseguradora_nombre": "SEGUROS GENERALES SURAMERICANA S.A.",
+    "ramo_marca": 90828,
+    "ramo_global": 11
+  },
+  {
+    "id": 896932,
+    "nombre": "cumplimiento",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90829,
+    "ramo_global": 2
+  },
+  {
+    "id": 896933,
+    "nombre": "cumplimiento",
+    "aseguradora_id": 136207,
+    "aseguradora_nombre": "SEGUROS DEL ESTADO S.A.",
+    "ramo_marca": 90829,
+    "ramo_global": 2
+  },
+  {
+    "id": 896934,
+    "nombre": "cumplimiento",
+    "aseguradora_id": 136223,
+    "aseguradora_nombre": "SEGUROS GENERALES SURAMERICANA S.A.",
+    "ramo_marca": 90829,
+    "ramo_global": 2
+  },
+  {
+    "id": 896935,
+    "nombre": "cumplimiento",
+    "aseguradora_id": 136226,
+    "aseguradora_nombre": "JMALUCELLI TRAVELRES SEGUROS S.A.",
+    "ramo_marca": 90829,
+    "ramo_global": 2
+  },
+  {
+    "id": 896936,
+    "nombre": "vida",
+    "aseguradora_id": 136204,
+    "aseguradora_nombre": "COMPAÑIA DE SEGUROS BOLIVAR S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896937,
+    "nombre": "vida",
+    "aseguradora_id": 136206,
+    "aseguradora_nombre": "SEGUROS DE VIDA SURAMERICANA S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896938,
+    "nombre": "vida",
+    "aseguradora_id": 136212,
+    "aseguradora_nombre": "AXA COLPATRIA SEGUROS DE VIDA S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896939,
+    "nombre": "vida",
+    "aseguradora_id": 136214,
+    "aseguradora_nombre": "MAPFRE COLOMBIA VIDA SEGUROS S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896940,
+    "nombre": "vida",
+    "aseguradora_id": 136217,
+    "aseguradora_nombre": "HDI SEGUROS DE VIDA S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896941,
+    "nombre": "vida",
+    "aseguradora_id": 136222,
+    "aseguradora_nombre": "SEGUROS DE VIDA DEL ESTADO S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896942,
+    "nombre": "vida",
+    "aseguradora_id": 136224,
+    "aseguradora_nombre": "ALLIANZ SEGUROS DE VIDA S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896943,
+    "nombre": "vida",
+    "aseguradora_id": 136225,
+    "aseguradora_nombre": "METLIFE COLOMBIA SEGUROS DE VIDA S.A.",
+    "ramo_marca": 90830,
+    "ramo_global": 53
+  },
+  {
+    "id": 896944,
+    "nombre": "Medical",
+    "aseguradora_id": 136204,
+    "aseguradora_nombre": "COMPAÑIA DE SEGUROS BOLIVAR S.A.",
+    "ramo_marca": 90831,
+    "ramo_global": 5
+  },
+  {
+    "id": 896945,
+    "nombre": "salud",
+    "aseguradora_id": 136206,
+    "aseguradora_nombre": "SEGUROS DE VIDA SURAMERICANA S.A.",
+    "ramo_marca": 90832,
+    "ramo_global": 5
+  },
+  {
+    "id": 896946,
+    "nombre": "Accidentes estudiantiles",
+    "aseguradora_id": 136204,
+    "aseguradora_nombre": "COMPAÑIA DE SEGUROS BOLIVAR S.A.",
+    "ramo_marca": 90833,
+    "ramo_global": 5
+  },
+  {
+    "id": 896947,
+    "nombre": "Accidentes estudiantiles",
+    "aseguradora_id": 136222,
+    "aseguradora_nombre": "SEGUROS DE VIDA DEL ESTADO S.A.",
+    "ramo_marca": 90833,
+    "ramo_global": 5
+  },
+  {
+    "id": 896948,
+    "nombre": "Accidentes personales",
+    "aseguradora_id": 136206,
+    "aseguradora_nombre": "SEGUROS DE VIDA SURAMERICANA S.A.",
+    "ramo_marca": 90834,
+    "ramo_global": 5
+  },
+  {
+    "id": 896949,
+    "nombre": "Hogar",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90835,
+    "ramo_global": 22
+  },
+  {
+    "id": 896950,
+    "nombre": "Hogar",
+    "aseguradora_id": 136205,
+    "aseguradora_nombre": "LIBERTY SEGUROS S.A.",
+    "ramo_marca": 90835,
+    "ramo_global": 22
+  },
+  {
+    "id": 896951,
+    "nombre": "Hogar",
+    "aseguradora_id": 136207,
+    "aseguradora_nombre": "SEGUROS DEL ESTADO S.A.",
+    "ramo_marca": 90835,
+    "ramo_global": 22
+  },
+  {
+    "id": 896952,
+    "nombre": "Hogar",
+    "aseguradora_id": 136213,
+    "aseguradora_nombre": "MAPFRE SEGUROS S.A.",
+    "ramo_marca": 90835,
+    "ramo_global": 22
+  },
+  {
+    "id": 896953,
+    "nombre": "Hogar",
+    "aseguradora_id": 136223,
+    "aseguradora_nombre": "SEGUROS GENERALES SURAMERICANA S.A.",
+    "ramo_marca": 90835,
+    "ramo_global": 22
+  },
+  {
+    "id": 896954,
+    "nombre": "Hogar",
+    "aseguradora_id": 136208,
+    "aseguradora_nombre": "SBS SEGUROS COLOMBIA S.A.",
+    "ramo_marca": 90835,
+    "ramo_global": 22
+  },
+  {
+    "id": 896955,
+    "nombre": "Responsabilidad civil",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90836,
+    "ramo_global": 10
+  },
+  {
+    "id": 896956,
+    "nombre": "Responsabilidad civil",
+    "aseguradora_id": 136207,
+    "aseguradora_nombre": "SEGUROS DEL ESTADO S.A.",
+    "ramo_marca": 90836,
+    "ramo_global": 10
+  },
+  {
+    "id": 896957,
+    "nombre": "Responsabilidad civil",
+    "aseguradora_id": 136223,
+    "aseguradora_nombre": "SEGUROS GENERALES SURAMERICANA S.A.",
+    "ramo_marca": 90836,
+    "ramo_global": 10
+  },
+  {
+    "id": 896958,
+    "nombre": "Responsabilidad civil",
+    "aseguradora_id": 136226,
+    "aseguradora_nombre": "JMALUCELLI TRAVELRES SEGUROS S.A.",
+    "ramo_marca": 90836,
+    "ramo_global": 10
+  },
+  {
+    "id": 896959,
+    "nombre": "RC médica",
+    "aseguradora_id": 136214,
+    "aseguradora_nombre": "MAPFRE COLOMBIA VIDA SEGUROS S.A.",
+    "ramo_marca": 90837,
+    "ramo_global": 10
+  },
+  {
+    "id": 896960,
+    "nombre": "RC médica",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90837,
+    "ramo_global": 10
+  },
+  {
+    "id": 896961,
+    "nombre": "RC médica",
+    "aseguradora_id": 136222,
+    "aseguradora_nombre": "SEGUROS DE VIDA DEL ESTADO S.A.",
+    "ramo_marca": 90837,
+    "ramo_global": 10
+  },
+  {
+    "id": 896962,
+    "nombre": "soat",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90838,
+    "ramo_global": 20
+  },
+  {
+    "id": 896963,
+    "nombre": "sustracción",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90839,
+    "ramo_global": 23
+  },
+  {
+    "id": 896964,
+    "nombre": "transportes",
+    "aseguradora_id": 136223,
+    "aseguradora_nombre": "SEGUROS GENERALES SURAMERICANA S.A.",
+    "ramo_marca": 90840,
+    "ramo_global": 23
+  },
+  {
+    "id": 896965,
+    "nombre": "transportes",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90840,
+    "ramo_global": 23
+  },
+  {
+    "id": 896966,
+    "nombre": "transportes",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90840,
+    "ramo_global": 23
+  },
+  {
+    "id": 896967,
+    "nombre": "Daños materiales combinados",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90841,
+    "ramo_global": 23
+  },
+  {
+    "id": 896968,
+    "nombre": "Incendio",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90842,
+    "ramo_global": 9
+  },
+  {
+    "id": 896969,
+    "nombre": "Incendio",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90842,
+    "ramo_global": 9
+  },
+  {
+    "id": 896970,
+    "nombre": "exequias",
+    "aseguradora_id": 136205,
+    "aseguradora_nombre": "LIBERTY SEGUROS S.A.",
+    "ramo_marca": 90843,
+    "ramo_global": 36
+  },
+  {
+    "id": 896971,
+    "nombre": "exequias",
+    "aseguradora_id": 136219,
+    "aseguradora_nombre": "MAPFRE SERVICIOS EXEQUIALES S.A.S.",
+    "ramo_marca": 90843,
+    "ramo_global": 36
+  },
+  {
+    "id": 896972,
+    "nombre": "copropiedades",
+    "aseguradora_id": 136207,
+    "aseguradora_nombre": "SEGUROS DEL ESTADO S.A.",
+    "ramo_marca": 90844,
+    "ramo_global": 21
+  },
+  {
+    "id": 896973,
+    "nombre": "copropiedades",
+    "aseguradora_id": 136208,
+    "aseguradora_nombre": "SBS SEGUROS COLOMBIA S.A.",
+    "ramo_marca": 90844,
+    "ramo_global": 21
+  },
+  {
+    "id": 896974,
+    "nombre": "copropiedades",
+    "aseguradora_id": 136213,
+    "aseguradora_nombre": "MAPFRE SEGUROS S.A.",
+    "ramo_marca": 90844,
+    "ramo_global": 21
+  },
+  {
+    "id": 896975,
+    "nombre": "copropiedades",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90844,
+    "ramo_global": 21
+  },
+  {
+    "id": 896976,
+    "nombre": "copropiedades",
+    "aseguradora_id": 136216,
+    "aseguradora_nombre": "CHUBB SEGUROS COLOMBIA S.A.",
+    "ramo_marca": 90844,
+    "ramo_global": 21
+  },
+  {
+    "id": 896978,
+    "nombre": "Arrendamiento",
+    "aseguradora_id": 136223,
+    "aseguradora_nombre": "SEGUROS GENERALES SURAMERICANA S.A.",
+    "ramo_marca": 90845,
+    "ramo_global": 24
+  },
+  {
+    "id": 896980,
+    "nombre": "Empresarial",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90847,
+    "ramo_global": 23
+  },
+  {
+    "id": 896981,
+    "nombre": "integral industrial",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90848,
+    "ramo_global": 23
+  },
+  {
+    "id": 896982,
+    "nombre": "All risk",
+    "aseguradora_id": 136203,
+    "aseguradora_nombre": "SEGUROS COMERCIALES BOLIVAR S.A.",
+    "ramo_marca": 90849,
+    "ramo_global": 23
+  },
+  {
+    "id": 896983,
+    "nombre": "pyme",
+    "aseguradora_id": 136205,
+    "aseguradora_nombre": "LIBERTY SEGUROS S.A.",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896984,
+    "nombre": "pyme",
+    "aseguradora_id": 136207,
+    "aseguradora_nombre": "SEGUROS DEL ESTADO S.A.",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896985,
+    "nombre": "pyme",
+    "aseguradora_id": 136208,
+    "aseguradora_nombre": "SBS SEGUROS COLOMBIA S.A.",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896986,
+    "nombre": "pyme",
+    "aseguradora_id": 136211,
+    "aseguradora_nombre": "ALLIANZ SEGUROS S.A.",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896987,
+    "nombre": "pyme",
+    "aseguradora_id": 136213,
+    "aseguradora_nombre": "MAPFRE SEGUROS S.A.",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896988,
+    "nombre": "pyme",
+    "aseguradora_id": 136215,
+    "aseguradora_nombre": "LA PREVISORA S.A.",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896989,
+    "nombre": "pyme",
+    "aseguradora_id": 136218,
+    "aseguradora_nombre": "HDI SEGUROS S.A.",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896990,
+    "nombre": "pyme",
+    "aseguradora_id": 136220,
+    "aseguradora_nombre": "AXA COLPATRIA SEGUROS S.A",
+    "ramo_marca": 90850,
+    "ramo_global": 23
+  },
+  {
+    "id": 896991,
+    "nombre": "Empresarial",
+    "aseguradora_id": 136223,
+    "aseguradora_nombre": "SEGUROS GENERALES SURAMERICANA S.A.",
+    "ramo_marca": 90847,
+    "ramo_global": 23
+  },
+  {
+    "id": 898175,
+    "nombre": "ARL",
+    "aseguradora_id": 136204,
+    "aseguradora_nombre": "COMPAÑIA DE SEGUROS BOLIVAR S.A.",
+    "ramo_marca": 91285,
+    "ramo_global": 1
+  }
+]

@@ -89,7 +89,10 @@ export class RemisionesService {
       ramo_soft_id?: number;
       fecha_inicio?: string;
       fecha_fin?: string;
+      prima_neta?: number;
       prima_total?: number;
+      iva?: number;
+      gastos_expedicion?: number;
       objeto_asegurado?: string;
       placa?: string;
       nombre_tomador?: string;
@@ -269,9 +272,12 @@ export class RemisionesService {
     if (policyData.numero_poliza) policyPayload.numero_poliza = policyData.numero_poliza;
     if (policyData.fecha_inicio) policyPayload.fecha_inicio = policyData.fecha_inicio;
     if (policyData.fecha_fin) policyPayload.fecha_fin = policyData.fecha_fin;
-    if (policyData.prima_total) policyPayload.prima = policyData.prima_total;
+    if (policyData.prima_neta !== undefined) policyPayload.prima = policyData.prima_neta;
+    if (policyData.prima_total !== undefined) policyPayload.total = policyData.prima_total;
+    if (policyData.iva !== undefined) policyPayload.iva = policyData.iva;
+    if (policyData.gastos_expedicion !== undefined) policyPayload.gastos_expedicion = policyData.gastos_expedicion;
     if (policyData.apellido_tomador) policyPayload.apellido_tomador = policyData.apellido_tomador;
-    // Vendedor: explicit from form OR fallback to env SOFT_VENDEDOR_ID
+    // Vendedor: explicit from form OR fallback to corporate
     if (policyData.vendedor_id) policyPayload.vendedor = Number(policyData.vendedor_id);
 
     this.logger.log(`SYNC-4 payload: ${JSON.stringify(policyPayload)}`);
@@ -350,6 +356,9 @@ export class RemisionesService {
           fecha_inicio_poliza: policyData.fecha_inicio || '',
           fecha_fin_poliza: policyData.fecha_fin || '',
           prima_actual: policyData.prima_total || 0,
+          prima_neta: policyData.prima_neta || 0,
+          iva: policyData.iva || 0,
+          gastos_expedicion: policyData.gastos_expedicion || 0,
           objeto_asegurado: policyData.objeto_asegurado || '',
           createdAt: Date.now(),
           updatedAt: Date.now(),

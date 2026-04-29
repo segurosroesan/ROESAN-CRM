@@ -237,8 +237,13 @@ export class SoftSegurosApi {
       if (data.numero_poliza) payload.numero_poliza = data.numero_poliza;
       if (data.fecha_inicio) payload.fecha_inicio = data.fecha_inicio;
       if (data.fecha_fin) payload.fecha_fin = data.fecha_fin;
-      // prima is the correct field name in Soft Seguros (not valor_prima)
-      if (data.prima ?? data.valor_prima) payload.prima = data.prima ?? data.valor_prima;
+      // prima is the correct field name in Soft Seguros for Prima Neta
+      if (data.prima !== undefined || data.valor_prima !== undefined) {
+        payload.prima = data.prima ?? data.valor_prima;
+      }
+      if (data.total !== undefined) payload.total = data.total;
+      if (data.iva !== undefined) payload.iva = data.iva;
+      if (data.gastos_expedicion !== undefined) payload.gastos_expedicion = data.gastos_expedicion;
       if (data.codio_objeto_asegurado ?? data.objeto_asegurado) {
         payload.codio_objeto_asegurado = data.codio_objeto_asegurado ?? data.objeto_asegurado;
       }

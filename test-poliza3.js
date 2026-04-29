@@ -8,9 +8,9 @@ async function testPoliza() {
     const res = await axios.post(url + '/api-token-auth/', { username: user, password: pass });
     const token = res.data.token;
     
-    console.log('Testing POST /api/poliza/ with ID ramo 90835...');
+    console.log('Testing POST /api/poliza/ with ID ramo 896927 (Autos Allianz)...');
     const payload = {
-        cliente: 2288123, // Maria Eugenia
+        cliente: 2288123,
         numero_poliza: "TEST123456",
         sede: 6787,
         vendedor: 27931,
@@ -21,7 +21,7 @@ async function testPoliza() {
         nombre_asegurado: "TEST",
         cedula_asegurado: "999999",
         codio_objeto_asegurado: "TEST",
-        ramo: 90835, // Hogar ID from excel
+        ramo: 896927,
         fecha_inicio: "2026-04-27",
         fecha_fin: "2027-04-27",
         prima: 1000
@@ -33,7 +33,6 @@ async function testPoliza() {
       console.log('POST Poliza Response Status:', res4.status);
       console.log('Poliza ID:', res4.data.id);
       
-      // Let's delete it so we don't leave trash
       await axios.delete(url + '/api/poliza/' + res4.data.id + '/', {
           headers: { Authorization: `Token ${token}` }
       });

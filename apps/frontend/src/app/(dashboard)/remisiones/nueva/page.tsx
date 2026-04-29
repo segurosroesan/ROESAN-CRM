@@ -69,7 +69,7 @@ export default function RemisionarPage() {
   useEffect(() => {
     fetch(`${BACKEND}/remisiones/catalogs`)
       .then(r => r.json())
-      .then(d => { if (d.vendedores) setVendedores(d.vendedores.filter((v: VendedorItem) => v.puede_crear_polizas !== false)); })
+      .then(d => { if (d.vendedores) setVendedores(d.vendedores); })
       .catch(() => {});
   }, []);
 
@@ -224,7 +224,10 @@ export default function RemisionarPage() {
         pd.ramo             = data.POLIZA.ramo             || "auto";
         pd.fecha_inicio     = data.POLIZA.fecha_inicio     || "";
         pd.fecha_fin        = data.POLIZA.fecha_fin        || "";
+        pd.prima_neta       = data.POLIZA.prima_neta       || 0;
         pd.prima_total      = data.POLIZA.prima_total      || 0;
+        pd.iva              = data.POLIZA.iva              || 0;
+        pd.gastos_expedicion = data.POLIZA.gastos_expedicion || 0;
         pd.objeto_asegurado = data.POLIZA.objeto_asegurado || "";
       }
       setPolicyData(pd);
@@ -599,24 +602,56 @@ export default function RemisionarPage() {
                   <label className={labelSmCls}>Fecha Fin</label>
                   <input type="date" value={policyData.fecha_fin || ""} onChange={e => setPolicyData(p => ({ ...p, fecha_fin: e.target.value }))} className={inputSmCls} />
                 </div>
-                <div className="col-span-2">
-                  <label className={labelSmCls}>Prima Total (COP)</label>
-                  <input
-                    type="number"
-                    value={policyData.prima_total || ""}
-                    onChange={e => setPolicyData(p => ({ ...p, prima_total: Number(e.target.value) }))}
-                    placeholder="1500000"
-                    className={inputSmCls}
-                  />
+                <div className="col-span-2 grid grid-cols-4 gap-3">
+                  <div>
+                    <label className={labelSmCls}>Prima Neta</label>
+                    <input
+                      type="number"
+                      value={policyData.prima_neta || ""}
+                      onChange={e => setPolicyData(p => ({ ...p, prima_neta: Number(e.target.value) }))}
+                      placeholder="1000000"
+                      className={inputSmCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelSmCls}>IVA</label>
+                    <input
+                      type="number"
+                      value={policyData.iva || ""}
+                      onChange={e => setPolicyData(p => ({ ...p, iva: Number(e.target.value) }))}
+                      placeholder="190000"
+                      className={inputSmCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelSmCls}>Gastos Exped.</label>
+                    <input
+                      type="number"
+                      value={policyData.gastos_expedicion || ""}
+                      onChange={e => setPolicyData(p => ({ ...p, gastos_expedicion: Number(e.target.value) }))}
+                      placeholder="0"
+                      className={inputSmCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelSmCls}>Prima Total</label>
+                    <input
+                      type="number"
+                      value={policyData.prima_total || ""}
+                      onChange={e => setPolicyData(p => ({ ...p, prima_total: Number(e.target.value) }))}
+                      placeholder="1190000"
+                      className={inputSmCls}
+                    />
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <label className={labelSmCls}>Asesor / Vendedor</label>
                   <select
-                    value={policyData.vendedor_id || ""}
+                    value={policyData.vendedor_id || "27931"}
                     onChange={e => setPolicyData(p => ({ ...p, vendedor_id: e.target.value }))}
                     className={inputSmCls}
                   >
-                    <option value="">-- Predeterminado (Roesan) --</option>
+                    <option value="27931">ORGANIZACION DE SEGUROS ROESAN LIMITADA</option>
                     {vendedores.map(v => (
                       <option key={v.id} value={v.id}>{v.nombre}</option>
                     ))}

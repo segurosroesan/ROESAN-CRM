@@ -24,6 +24,81 @@ export class RemisionesController {
     return this.remisionesService.buscarCliente(documento);
   }
 
+  /**
+   * Temporary diagnostic endpoint to debug Soft Seguros connectivity from Render.
+   * TODO: Remove after debugging is complete.
+   */
+  @Post('diagnostico')
+  @HttpCode(200)
+  async diagnostico(@Body('documento') documento: string) {
+    const results: Record<string, any> = { timestamp: new Date().toISOString() };
+    
+    // Check env vars
+    results.env = {
+      SOFT_SEGUROS_API_URL: process.env.SOFT_SEGUROS_API_URL || 'NOT SET',
+      SOFT_SEGUROS_USERNAME: process.env.SOFT_SEGUROS_USERNAME ? `${process.env.SOFT_SEGUROS_USERNAME.substring(0, 4)}...` : 'NOT SET',
+      SOFT_SEGUROS_PASSWORD: process.env.SOFT_SEGUROS_PASSWORD ? '***SET***' : 'NOT SET',
+    };
+
+    // Test auth directly
+    const axios = require('axios');
+    try {
+      const authResp = await axios.post(
+        `${process.env.SOFT_SEGUROS_API_URL || 'https://app.softseguros.com'}/api-token-auth/`,
+        {
+          username: process.env.SOFT_SEGUROS_USERNAME,
+          password: process.env.SOFT_SEGUROS_PASSWORD,
+        },
+      );
+      results.auth = { success: true, tokenPrefix: authResp.data.token?.substring(0, 10) };
+
+      // If documento provided, test search
+      if (documento) {
+        try {
+          const searchResp = await axios.get(
+            `${process.env.SOFT_SEGUROS_API_URL || 'https://app.softseguros.com'}/api/cliente/listar_cliente_por_documento/`,
+            {
+              params: { numero_documento: documento },
+              headers: { Authorization: `Token ${authResp.data.token}` },
+            },
+          );
+          results.search = {
+            status: searchResp.status,
+            dataType: typeof searchResp.data,
+            hasResults: searchResp.data?.results !== undefined,
+            hasId: !!searchResp.data?.id,
+            clientId: searchResp.data?.id,
+            clientName: searchResp.data?.nombres ? `${searchResp.data.nombres} ${searchResp.data.apellidos}` : null,
+          };
+        } catch (searchErr) {
+          results.search = {
+            error: true,
+            status: searchErr.response?.status,
+            data: searchErr.response?.data,
+            message: searchErr.message,
+          };
+        }
+      }
+    } catch (authErr) {
+      results.auth = {
+        success: false,
+        status: authErr.response?.status,
+        data: authErr.response?.data,
+        message: authErr.message,
+      };
+    }
+
+    // Also test via the injected SOFT_SEGUROS_API instance
+    try {
+      const clientViaService = await this.remisionesService.buscarCliente(documento || '27567880');
+      results.serviceResult = clientViaService;
+    } catch (serviceErr) {
+      results.serviceResult = { error: true, message: serviceErr.message };
+    }
+
+    return results;
+  }
+
   @Post('parsear')
   @HttpCode(200)
   @UseInterceptors(FilesInterceptor('files', 4, MULTER_OPTS))

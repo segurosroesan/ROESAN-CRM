@@ -301,4 +301,46 @@ export class RenovacionesService {
     });
     return (result as any)?.job_importaciones || [];
   }
+
+  async confirmarRenovacion(
+    leadId: string,
+    nuevaPrima: number,
+    nuevaFechaFin: string,
+  ): Promise<{ success: boolean; message: string; soft_poliza_id?: string }> {
+    const queryResult = await this.db.query({ leads: { $: { where: { id: leadId } } } });
+    const lead = (queryResult as any)?.leads?.[0];
+    if (!lead) throw new Error(`Lead ${leadId} no encontrado`);
+    if (!lead.soft_poliza_id) throw new Error('Esta renovación no tiene ID de póliza en Soft Seguros');
+
+    const fechaInicioDate = lead.fecha_fin_poliza
+      ? new Date(new Date(lead.fecha_fin_poliza).getTime() + 86_400_000)
+      : new Date();
+    const nuevaFechaInicio = fechaInicioDate.toISOString().split('T')[0];
+
+    await this.softApi['request']('PUT', `/api/poliza/${lead.soft_poliza_id}/`, {
+      fecha_fin: nuevaFechaFin,
+      fecha_inicio: nuevaFechaInicio,
+      prima: nuevaPrima,
+      total: nuevaPrima,
+    });
+
+    await this.db.transact([
+      tx.leads[leadId].update({
+        status: 'Renovada en Soft ✓',
+        prima_actual: nuevaPrima,
+        fecha_fin_poliza: nuevaFechaFin,
+        fecha_inicio_poliza: nuevaFechaInicio,
+        dias_para_vencer: 365,
+        sincronizado_soft: true,
+        updatedAt: Date.now(),
+      } as any),
+    ]);
+
+    this.logger.log(`Renovación confirmada en Soft Seguros: póliza ${lead.soft_poliza_id}`);
+    return {
+      success: true,
+      message: `Póliza ${lead.numero_poliza} renovada hasta ${nuevaFechaFin}`,
+      soft_poliza_id: lead.soft_poliza_id,
+    };
+  }
 }

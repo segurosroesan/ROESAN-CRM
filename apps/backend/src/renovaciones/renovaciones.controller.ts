@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Query, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { RenovacionesService } from './renovaciones.service';
 
 @Controller('renovaciones')
@@ -40,5 +40,14 @@ export class RenovacionesController {
   @Post('import/direct')
   async triggerImportDirect(@Body('diasRango') diasRango?: number) {
     return this.renovacionesService.runImportJob(diasRango || 60);
+  }
+
+  @Put(':id/confirmar')
+  async confirmarRenovacion(
+    @Param('id') id: string,
+    @Body('nuevaPrima') nuevaPrima: number,
+    @Body('nuevaFechaFin') nuevaFechaFin: string,
+  ) {
+    return this.renovacionesService.confirmarRenovacion(id, nuevaPrima, nuevaFechaFin);
   }
 }

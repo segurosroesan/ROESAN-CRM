@@ -1,0 +1,138 @@
+[
+  {
+    "id": 181590,
+    "nombre": "GASTOS MEDICOS POR ACCIDENTE"
+  },
+  {
+    "id": 181591,
+    "nombre": "MUERTE ACCIDENTAL"
+  },
+  {
+    "id": 181592,
+    "nombre": "DESMEMBRACIÓN, INVALIDEZ PERMANENTE"
+  },
+  {
+    "id": 181593,
+    "nombre": "AUXILIO FUNERARIO"
+  },
+  {
+    "id": 181594,
+    "nombre": "MUERTE NATURAL"
+  },
+  {
+    "id": 181595,
+    "nombre": "AUXILIO EDUCATIVO"
+  },
+  {
+    "id": 181596,
+    "nombre": "RENTA DIARIA POR HOSP"
+  },
+  {
+    "id": 181597,
+    "nombre": "ENFERMEDADES AMPARADAS"
+  },
+  {
+    "id": 181598,
+    "nombre": "TRANSPORTE POR INCAPACIDAD"
+  },
+  {
+    "id": 181599,
+    "nombre": "RESPONSABILIDAD CIVIL"
+  },
+  {
+    "id": 181600,
+    "nombre": "PERDIDA TOTAL POR DAÑOS"
+  },
+  {
+    "id": 181601,
+    "nombre": "PERDIDA TOTAL POR HURTO"
+  },
+  {
+    "id": 181602,
+    "nombre": "PERDIDA PARCIAL POR DAÑOS"
+  },
+  {
+    "id": 181603,
+    "nombre": "PERDIDAPARCIAL POR HURTO"
+  },
+  {
+    "id": 181604,
+    "nombre": "ASISTENCIA JURÍDICA"
+  },
+  {
+    "id": 181605,
+    "nombre": "TERREMOTO"
+  },
+  {
+    "id": 181606,
+    "nombre": "AUXILIO DE TRANSPORTE"
+  },
+  {
+    "id": 181607,
+    "nombre": "VEHÍCULO DE REEMPLAZO"
+  },
+  {
+    "id": 181608,
+    "nombre": "ASISTENCIA EN VIAJE"
+  },
+  {
+    "id": 181609,
+    "nombre": "PROTECCIÓN PATRIMONIAL"
+  },
+  {
+    "id": 181610,
+    "nombre": "CONDUCTOR ELEGIDO"
+  },
+  {
+    "id": 181611,
+    "nombre": "INCENDIO Y/O RAYO "
+  },
+  {
+    "id": 181612,
+    "nombre": "ANEGACIÓN"
+  },
+  {
+    "id": 181613,
+    "nombre": "DAÑOS POR AGUA"
+  },
+  {
+    "id": 181614,
+    "nombre": "EXPLOSIÓN"
+  },
+  {
+    "id": 181615,
+    "nombre": "EXTENDED COVERAGE"
+  },
+  {
+    "id": 181616,
+    "nombre": "TERREMOTO, TEMBLOR Y/O ERUPCION VOLCANICA"
+  },
+  {
+    "id": 181617,
+    "nombre": "HMACCP, AMIT, S & T"
+  },
+  {
+    "id": 181618,
+    "nombre": "ROTURA DE MAQUINARIA"
+  },
+  {
+    "id": 181619,
+    "nombre": "EQUIPO ELECTRICO Y ELECTRÓNICO DAÑOS"
+  },
+  {
+    "id": 181620,
+    "nombre": "EQUIPO ELECTRICO Y ELECTRÓNICO"
+  },
+  {
+    "id": 181621,
+    "nombre": "SUSTRACCIÓN"
+  },
+  {
+    "id": 181622,
+    "nombre": "RESPONSABILIDAD CIVIL D&O"
+  },
+  {
+    "id": 181623,
+    "nombre": "ASISTENCIA DOMICILIARIA"
+  }
+]

@@ -70,15 +70,23 @@ export class RemisionesService {
       ciudad?: string;
       provincia?: string;
       ocupacion_descripcion?: string;
+      otra_ocupacion?: string;
     };
     policyData: {
       numero_poliza?: string;
       aseguradora?: string;
       ramo?: string;
+      ramo_soft_id?: number;
       fecha_inicio?: string;
       fecha_fin?: string;
       prima_total?: number;
       objeto_asegurado?: string;
+      placa?: string;
+      nombre_tomador?: string;
+      apellido_tomador?: string;
+      cedula_tomador?: string;
+      nombre_asegurado?: string;
+      cedula_asegurado?: string;
     };
     files: { buffer: Buffer; mimeType: string; nombre: string; tipo: 'CEDULA' | 'RUT' | 'SARLAFT' | 'POLIZA' }[];
   }) {
@@ -103,6 +111,7 @@ export class RemisionesService {
           direccion: clientData.direccion,
           ciudad: clientData.ciudad,
           provincia: clientData.provincia,
+          otra_ocupacion: clientData.otra_ocupacion,
         });
         soft_cliente_id = String(newClient.id);
         steps.clientCreate = { soft_cliente_id };
@@ -130,6 +139,7 @@ export class RemisionesService {
       if (clientData.ciudad) clientUpdate.ciudad = clientData.ciudad;
       if (clientData.provincia) clientUpdate.provincia = clientData.provincia;
       if (clientData.ocupacion_descripcion) clientUpdate.ocupacion_descripcion = clientData.ocupacion_descripcion;
+      if (clientData.otra_ocupacion) clientUpdate.otra_ocupacion = clientData.otra_ocupacion;
 
       if (Object.keys(clientUpdate).length > 0) {
         steps.clientUpdate = await this.softApi.updateClient(soft_cliente_id, clientUpdate);
@@ -143,16 +153,41 @@ export class RemisionesService {
       renovable: true,
       estado_poliza: { codigo_generico: '01' },
     };
+    if (policyData.ramo_soft_id) policyPayload.ramo_soft_id = policyData.ramo_soft_id;
     if (policyData.numero_poliza) policyPayload.numero_poliza = policyData.numero_poliza;
     if (policyData.fecha_inicio) policyPayload.fecha_inicio = policyData.fecha_inicio;
     if (policyData.fecha_fin) policyPayload.fecha_fin = policyData.fecha_fin;
-    if (policyData.prima_total) policyPayload.valor_prima = policyData.prima_total;
-    if (policyData.objeto_asegurado) policyPayload.objeto_asegurado = policyData.objeto_asegurado;
+    if (policyData.prima_total) policyPayload.prima = policyData.prima_total;
+    if (policyData.objeto_asegurado) policyPayload.codio_objeto_asegurado = policyData.objeto_asegurado;
+    if (policyData.nombre_tomador) policyPayload.nombre_tomador = policyData.nombre_tomador;
+    if (policyData.apellido_tomador) policyPayload.apellido_tomador = policyData.apellido_tomador;
+    if (policyData.cedula_tomador) policyPayload.cedula_tomador = policyData.cedula_tomador;
+    if (policyData.nombre_asegurado) policyPayload.nombre_asegurado = policyData.nombre_asegurado;
+    if (policyData.cedula_asegurado) policyPayload.cedula_asegurado = policyData.cedula_asegurado;
 
     const policy = await this.softApi.createPolicy(policyPayload);
     const soft_poliza_id = String(policy.id);
     steps.policyCreate = { soft_poliza_id };
     this.logger.log(`Póliza creada con ID: ${soft_poliza_id}`);
+
+    // STEP B.5: SYNC-3 — Vehicle extra data for auto/soat policies
+    const isVehicle = ['auto', 'soat'].includes((policyData.ramo || '').toLowerCase());
+    if (isVehicle && policyData.placa) {
+      try {
+        this.logger.log(`SYNC-3: Creando datos extras vehículo para cliente ${soft_cliente_id}`);
+        const vehicleData = {
+          placa_dato_extra: policyData.placa,
+          fecha_soat_dato_extra: null,
+          fecha_impuestos_dato_extra: null,
+          fecha_tecnomecanica_dato_extra: null,
+        };
+        steps.datosExtras = await this.softApi.createDatosExtras(Number(soft_cliente_id), 6, vehicleData);
+        this.logger.log(`Datos extras vehículo creados`);
+      } catch (extrasErr) {
+        this.logger.warn(`SYNC-3 falló (no crítico): ${extrasErr.message}`);
+        steps.datosExtrasError = extrasErr.message;
+      }
+    }
 
     // STEP C: Upload each file as anexo (SYNC-6)
     steps.anexos = [];

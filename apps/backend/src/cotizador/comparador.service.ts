@@ -358,8 +358,8 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
   "prima_total": 0,
   "objeto_asegurado": "descripción corta del bien: placa del vehículo, dirección del inmueble, nombre del asegurado, etc.",
   "placa": "placa del vehículo si aplica, null si no",
-  "marca": "marca del vehículo si aplica",
-  "linea": "línea/modelo del vehículo si aplica",
+  "marca": "marca del vehículo si aplica, null si no",
+  "linea": "línea/modelo del vehículo si aplica, null si no",
   "modelo": 0,
   "tomador_nombres": "nombres del tomador o asegurado principal (sin apellidos)",
   "tomador_apellidos": "apellidos del tomador o asegurado principal",
@@ -368,7 +368,10 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
   "tomador_correo": "correo electrónico del tomador si aparece, null si no",
   "tomador_direccion": "dirección de residencia del tomador si aparece, null si no",
   "tomador_ciudad": "ciudad del tomador si aparece, null si no",
-  "tomador_departamento": "departamento del tomador si aparece, null si no"
+  "tomador_departamento": "departamento del tomador si aparece, null si no",
+  "nombre_asegurado": "nombre completo del asegurado si es diferente del tomador, null si es el mismo",
+  "cedula_asegurado": "cédula del asegurado si es diferente del tomador, null si es la misma",
+  "fecha_soat": "fecha de vencimiento del SOAT si aparece (YYYY-MM-DD), null si no aplica"
 }
 `;
         break;

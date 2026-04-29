@@ -170,6 +170,7 @@ export class SoftSegurosApi {
         ciudad: data.ciudad || "BOGOTÁ",
         provincia: data.provincia || "BOGOTÁ",
         pais: "CO",
+        ...(data.otra_ocupacion ? { otra_ocupacion: data.otra_ocupacion } : {}),
       };
 
       this.logger.debug(`Payload sync-2: ${JSON.stringify(payload)}`);
@@ -202,11 +203,59 @@ export class SoftSegurosApi {
    */
   async createPolicy(data: any): Promise<any> {
     try {
-      this.logger.log(`Creating policy for client ID: ${data.id_cliente}`);
-      const response = await this.request('POST', '/api/poliza/', data);
+      this.logger.log(`Creating policy for client ID: ${data.id_cliente ?? data.cliente}`);
+
+      const payload: Record<string, any> = {
+        cliente: data.id_cliente ?? data.cliente,
+        renovable: data.renovable ?? true,
+        estado_poliza: data.estado_poliza ?? { codigo_generico: '01' },
+        sede: data.sede ?? Number(process.env.SOFT_SEDE_ID ?? 6787),
+      };
+
+      if (data.vendedor ?? process.env.SOFT_VENDEDOR_ID) {
+        payload.vendedor = data.vendedor ?? Number(process.env.SOFT_VENDEDOR_ID);
+      }
+      if (data.ramo ?? data.ramo_soft_id) payload.ramo = data.ramo_soft_id ?? data.ramo;
+      if (data.numero_poliza) payload.numero_poliza = data.numero_poliza;
+      if (data.fecha_inicio) payload.fecha_inicio = data.fecha_inicio;
+      if (data.fecha_fin) payload.fecha_fin = data.fecha_fin;
+      // prima is the correct field name in Soft Seguros (not valor_prima)
+      if (data.prima ?? data.valor_prima) payload.prima = data.prima ?? data.valor_prima;
+      if (data.codio_objeto_asegurado ?? data.objeto_asegurado) {
+        payload.codio_objeto_asegurado = data.codio_objeto_asegurado ?? data.objeto_asegurado;
+      }
+      if (data.nombre_tomador) payload.nombre_tomador = data.nombre_tomador;
+      if (data.apellido_tomador) payload.apellido_tomador = data.apellido_tomador;
+      if (data.cedula_tomador) payload.cedula_tomador = data.cedula_tomador;
+      if (data.nombre_asegurado) payload.nombre_asegurado = data.nombre_asegurado;
+      if (data.cedula_asegurado) payload.cedula_asegurado = data.cedula_asegurado;
+
+      this.logger.debug(`Payload sync-4: ${JSON.stringify(payload)}`);
+      const response = await this.request('POST', '/api/poliza/', payload);
       return response;
     } catch (error) {
       this.logger.error(`Failed to create policy: ${JSON.stringify(error.response?.data || error.message)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * SYNC-3: Create extra client data in Soft Seguros
+   * codigo_tipo: 1=email, 2=address, 3=phone, 4=cellular, 5=child, 6=vehicle
+   */
+  async createDatosExtras(clienteId: number, codigoTipo: number, texto: string | object): Promise<any> {
+    try {
+      this.logger.log(`Creating datosextrascliente tipo ${codigoTipo} for client ${clienteId}`);
+      const payload = {
+        cliente: clienteId,
+        codigo_tipo: codigoTipo,
+        texto: typeof texto === 'object' ? JSON.stringify(texto) : texto,
+      };
+      this.logger.debug(`Payload sync-3: ${JSON.stringify(payload)}`);
+      const response = await this.request('POST', '/api/datosextrascliente/', payload);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to create datosextrascliente: ${JSON.stringify(error.response?.data || error.message)}`);
       throw error;
     }
   }

@@ -26,7 +26,7 @@ export class DocumentosService {
     fileName?: string;
     mimeType?: string;
   }) {
-    const { tipo, extractedData, softClientId, softPolicyId, fileBuffer, fileName, mimeType } = data;
+    const { tipo, extractedData, softClientId, softPolicyId, fileBuffer, fileName } = data;
     this.logger.log(`Sincronizando ${tipo} a Soft Seguros para lead ${data.leadId}`);
 
     let syncResult: any = {};
@@ -56,12 +56,19 @@ export class DocumentosService {
 
       // 2. Update/Create Policy if applicable
       if (tipo === 'POLIZA' && softPolicyId) {
-        const policyPayload = {
-          numero_poliza: extractedData.numero_poliza,
-          fecha_inicio: extractedData.fecha_inicio,
-          fecha_fin: extractedData.fecha_fin,
-          valor_prima: extractedData.prima_total,
-        };
+        const policyPayload: Record<string, any> = {};
+        if (extractedData.numero_poliza) policyPayload.numero_poliza = extractedData.numero_poliza;
+        if (extractedData.fecha_inicio) policyPayload.fecha_inicio = extractedData.fecha_inicio;
+        if (extractedData.fecha_fin) policyPayload.fecha_fin = extractedData.fecha_fin;
+        // prima is the correct Soft Seguros field name (not valor_prima)
+        if (extractedData.prima_total) policyPayload.prima = extractedData.prima_total;
+        if (extractedData.tomador_nombres) policyPayload.nombre_tomador = extractedData.tomador_nombres;
+        if (extractedData.tomador_apellidos) policyPayload.apellido_tomador = extractedData.tomador_apellidos;
+        if (extractedData.tomador_documento) policyPayload.cedula_tomador = extractedData.tomador_documento;
+        if (extractedData.nombre_asegurado) policyPayload.nombre_asegurado = extractedData.nombre_asegurado;
+        if (extractedData.cedula_asegurado) policyPayload.cedula_asegurado = extractedData.cedula_asegurado;
+        if (extractedData.objeto_asegurado) policyPayload.codio_objeto_asegurado = extractedData.objeto_asegurado;
+
         syncResult.policyUpdate = await this.softApi.updatePolicy(softPolicyId, policyPayload);
       }
 

@@ -56,7 +56,7 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
       formData.append("file", file);
       formData.append("tipo", selectedType);
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const response = await fetch(`${backendUrl}/documentos/parse`, {
         method: "POST",
         body: formData,
@@ -139,7 +139,7 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
       if (lead.soft_cliente_id) formData.append("softClientId", lead.soft_cliente_id);
       if (lead.soft_poliza_id) formData.append("softPolicyId", lead.soft_poliza_id);
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const response = await fetch(`${backendUrl}/documentos/sync`, {
         method: "POST",
         body: formData,

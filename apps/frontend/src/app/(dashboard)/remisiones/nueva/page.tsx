@@ -7,7 +7,7 @@ import {
   FileText, User, Shield, Building2, Loader2, X, ExternalLink, Plus
 } from "lucide-react";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+const BACKEND = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
 
 type DocTipo = "CEDULA" | "RUT" | "SARLAFT" | "POLIZA";
 

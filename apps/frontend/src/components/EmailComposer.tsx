@@ -22,8 +22,8 @@ export function EmailComposer({ leadId, toEmail, onClose }: EmailComposerProps) 
     setError(null);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
-      const response = await fetch(`${backendUrl}/gmail/send`, {
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
+      const response = await fetch(`${backendUrl}/auth/google/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

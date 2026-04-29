@@ -8,7 +8,7 @@ import {
   Clock, CheckCircle2, RefreshCw, Plus, X,
 } from "lucide-react";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+const BACKEND = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
 
 const STAGES_RENOVACION = [
   "Importada",

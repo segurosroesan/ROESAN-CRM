@@ -197,7 +197,7 @@ export default function LeadDetailPage() {
 
     setIsAutoQuoting(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const response = await fetch(`${backendUrl}/cotizador/all`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -284,7 +284,7 @@ export default function LeadDetailPage() {
       const formData = new FormData();
       Array.from(files).forEach(file => formData.append("files", file));
       
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const res = await fetch(`${backendUrl}/cotizador/parse-pdfs`, {
         method: "POST",
         body: formData,
@@ -361,7 +361,7 @@ export default function LeadDetailPage() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const response = await fetch(`${backendUrl}/sync/softseguros/${leadId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -393,7 +393,7 @@ export default function LeadDetailPage() {
 
     setIsSearchingPlaca(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const response = await fetch(`${backendUrl}/vehiculos/placa/${placaAUsar}`);
       const result = await response.json();
 
@@ -434,7 +434,7 @@ export default function LeadDetailPage() {
     if (!cotizaciones || cotizaciones.length === 0) return;
     setIsComparing(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
 
       // Normalize cotizaciones: map 'valor' → 'prima_total' for manual quotes,
       // and use the explicit 'es_renovacion' flag stored in DB.
@@ -832,7 +832,7 @@ export default function LeadDetailPage() {
                   esNuevo={lead.pipeline_tipo !== "renovacion"}
                   onGenerarCorreo={async () => {
                     try {
-                      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+                      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
                       const response = await fetch(`${backendUrl}/cotizador/email`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -1215,7 +1215,7 @@ function AddCotizacionForm({ leadId, onClose, lead }: { leadId: string; onClose:
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const res = await fetch(`${backendUrl}/cotizador/parse-pdf`, {
         method: "POST",
         body: formData,

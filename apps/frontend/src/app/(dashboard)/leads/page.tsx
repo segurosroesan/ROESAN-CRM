@@ -356,7 +356,7 @@ function CreateLeadModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     setIsSubmitting(true);
 
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/leads`, {
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/leads`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),

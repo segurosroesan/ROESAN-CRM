@@ -8,7 +8,8 @@ async function bootstrap() {
   
   // Enable CORS for frontend integration
   app.enableCors();
-  
+  app.setGlobalPrefix('api');
+
   const port = process.env.PORT || 3002;
   await app.listen(port);
   logger.log(`Backend CRM running on: http://localhost:${port}`);

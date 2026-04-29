@@ -181,39 +181,62 @@ export class RemisionesService {
     let ramoId: number | undefined = policyData.ramo_soft_id;
     if (!ramoId) {
       try {
-        const catalogPath = path.join(__dirname, '../lib/soft-catalogs/ramos.json');
-        const ramos: Array<{ id: number; ramo_marca: number; aseguradora_id: number; aseguradora_nombre: string }> =
-          JSON.parse(fs.readFileSync(catalogPath, 'utf-8'));
+        // Try multiple paths: compiled dist/lib/... and fallback to process.cwd()/src/lib/...
+        const candidatePaths = [
+          path.join(__dirname, '../lib/soft-catalogs/ramos.json'),
+          path.join(process.cwd(), 'src/lib/soft-catalogs/ramos.json'),
+          path.join(process.cwd(), 'dist/lib/soft-catalogs/ramos.json'),
+        ];
+        let catalogRaw: string | null = null;
+        let resolvedPath = '';
+        for (const p of candidatePaths) {
+          if (fs.existsSync(p)) {
+            catalogRaw = fs.readFileSync(p, 'utf-8');
+            resolvedPath = p;
+            break;
+          }
+        }
+        if (!catalogRaw) {
+          this.logger.warn(`Catálogo ramos.json no encontrado. Rutas buscadas: ${candidatePaths.join(', ')}`);
+        } else {
+          this.logger.log(`Catálogo ramos cargado desde: ${resolvedPath}`);
+          const ramos: Array<{ id: number; ramo_marca: number; aseguradora_id: number; aseguradora_nombre: string }> =
+            JSON.parse(catalogRaw);
 
-        const ramoClave = (policyData.ramo || '').toLowerCase();
-        const ramaMarca = RAMO_MARCA_MAP[ramoClave];
-        const aseguradoraNombre = (policyData.aseguradora || '').toUpperCase();
+          const ramoClave = (policyData.ramo || '').toLowerCase();
+          const ramaMarca = RAMO_MARCA_MAP[ramoClave];
+          const aseguradoraNombre = (policyData.aseguradora || '').toUpperCase();
 
-        if (ramaMarca) {
-          // Try exact match: same ramo_marca AND aseguradora name contains search term
-          const exactMatch = aseguradoraNombre
-            ? ramos.find(
-                (r) =>
-                  r.ramo_marca === ramaMarca &&
-                  (r.aseguradora_nombre || '').toUpperCase().includes(aseguradoraNombre),
-              )
-            : null;
+          this.logger.log(`RAMO lookup: clave='${ramoClave}' marca=${ramaMarca} aseguradora='${aseguradoraNombre}'`);
 
-          // Fallback: first ramo with the correct marca
-          const fallback = ramos.find((r) => r.ramo_marca === ramaMarca);
+          if (ramaMarca) {
+            // Try exact match: same ramo_marca AND aseguradora name contains search term
+            const exactMatch = aseguradoraNombre
+              ? ramos.find(
+                  (r) =>
+                    r.ramo_marca === ramaMarca &&
+                    (r.aseguradora_nombre || '').toUpperCase().includes(aseguradoraNombre),
+                )
+              : null;
 
-          const match = exactMatch || fallback;
-          if (match) {
-            ramoId = match.id;
-            this.logger.log(
-              `RAMO lookup: '${ramoClave}' + '${aseguradoraNombre}' → ID=${ramoId} (${match.aseguradora_nombre})`,
-            );
+            // Fallback: first ramo with the correct marca
+            const fallback = ramos.find((r) => r.ramo_marca === ramaMarca);
+
+            const match = exactMatch || fallback;
+            if (match) {
+              ramoId = match.id;
+              this.logger.log(
+                `RAMO match: '${ramoClave}' + '${aseguradoraNombre}' → ID=${ramoId} (${match.aseguradora_nombre})`,
+              );
+            } else {
+              this.logger.warn(`No se encontró ramo en catálogo para marca=${ramaMarca}, aseguradora='${aseguradoraNombre}'`);
+            }
           } else {
-            this.logger.warn(`No se encontró ramo en catálogo para marca=${ramaMarca}, aseguradora='${aseguradoraNombre}'`);
+            this.logger.warn(`Ramo clave '${ramoClave}' no tiene ramo_marca configurado en RAMO_MARCA_MAP`);
           }
         }
       } catch (catalogErr: any) {
-        this.logger.warn(`No se pudo leer catálogo de ramos: ${catalogErr.message}`);
+        this.logger.warn(`Error leyendo catálogo de ramos: ${catalogErr.message}`);
       }
     }
 

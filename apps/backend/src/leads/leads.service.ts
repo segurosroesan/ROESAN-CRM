@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { getInstantAdmin } from '../lib/instant-admin';
 import { tx, id } from '@instantdb/admin';
+import { GmailService } from '../gmail/gmail.service';
 
 @Injectable()
 export class LeadsService {
   private readonly logger = new Logger(LeadsService.name);
   private db = getInstantAdmin();
+
+  constructor(private readonly gmailService: GmailService) {}
 
   async create(leadData: any) {
     this.logger.log(`Processing new lead from ${leadData.source || 'Unknown'}`);
@@ -51,6 +54,14 @@ export class LeadsService {
         tx.leads[newLeadId].update(lead)
       ]);
       this.logger.log(`Successfully created lead ${newLeadId}`);
+
+      const notifUserId = process.env.NOTIFICATION_USER_ID;
+      if (notifUserId) {
+        this.sendLeadNotification(notifUserId, lead).catch(err =>
+          this.logger.warn(`Notificación de lead fallida: ${err.message}`)
+        );
+      }
+
       return { id: newLeadId, ...lead };
     } catch (error) {
       this.logger.error(`Error creating lead: ${error.message}`);
@@ -59,9 +70,29 @@ export class LeadsService {
   }
 
   async findAll() {
-    // In a real scenario, we might want to query through Admin SDK 
-    // but InstantDB is usually queried from frontend. 
+    // In a real scenario, we might want to query through Admin SDK
+    // but InstantDB is usually queried from frontend.
     // We'll expose this for internal backend use or sync checks.
-    return []; 
+    return [];
+  }
+
+  private async sendLeadNotification(userId: string, lead: any) {
+    const subject = `Nuevo lead: ${lead.name} — ${lead.type}`;
+    const fecha = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+    const body = `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto">
+        <h2 style="color:#1e40af">Nuevo lead en el CRM</h2>
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:6px 0;color:#64748b;width:120px">Nombre</td><td><strong>${lead.name}</strong></td></tr>
+          <tr><td style="padding:6px 0;color:#64748b">Teléfono</td><td>${lead.phone || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b">Email</td><td>${lead.email || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b">Ramo</td><td>${lead.type}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b">Fuente</td><td>${lead.source}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b">Ciudad</td><td>${lead.city || '—'}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b">Recibido</td><td>${fecha}</td></tr>
+        </table>
+      </div>
+    `;
+    await this.gmailService.sendEmail(userId, 'comercial@roesan.com', subject, body);
   }
 }

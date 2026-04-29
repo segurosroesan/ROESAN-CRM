@@ -355,19 +355,13 @@ function CreateLeadModal({ onClose }: { onClose: () => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const newId = crypto.randomUUID();
-    
-    await db.transact([
-      db.tx.leads[newId].update({
-        ...formData,
-        status: "Nuevo",
-        sincronizado_soft: false,
-        score: 20,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      })
-    ]);
-    
+
+    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/leads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+
     setIsSubmitting(false);
     onClose();
   };

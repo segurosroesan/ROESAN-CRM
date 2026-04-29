@@ -71,7 +71,7 @@ const INITIAL_USERS: UserRow[] = [
   { id: "patricia",  name: "Patricia Ortegon",     email: "administrativo@roesan.com",               role: "solo lectura",  active: true },
   { id: "adriana",   name: "Adriana Garzon",       email: "autos@roesan.com",                        role: "asesor",        active: true },
   { id: "jose",      name: "Jose Rodriguez",       email: "ejecutivo@roesan.com",                    role: "asesor",        active: true },
-  { id: "alejandro", name: "Alejandro Sarmiento",  email: "alejandro@roesan.com",                    role: "asesor",        active: true },
+  { id: "alejandro", name: "Alejandro Sarmiento",  email: "operativo@roesan.com",                    role: "asesor",        active: true },
   { id: "jorge",     name: "Jorge Henao",          email: "jorge.jaime.henao.romero@gmail.com",      role: "admin",         active: true },
 ];
 

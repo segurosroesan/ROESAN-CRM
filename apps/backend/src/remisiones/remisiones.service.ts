@@ -244,7 +244,6 @@ export class RemisionesService {
 
     // STEP D: Create lead in InstantDB for CRM traceability
     const leadId = id();
-    const fullName = [clientData.nombres, clientData.apellidos].filter(Boolean).join(' ') || 'Sin nombre';
     await this.db.transact([
       tx.leads[leadId].update({
         name: fullName,

@@ -1,6 +1,7 @@
 "use client";
 
 import { db } from "@/lib/instant-db";
+import { id as newId } from "@instantdb/react";
 import {
   RefreshCw,
   Search,
@@ -32,6 +33,8 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+
+const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
 
 // Etapas del pipeline de renovaciones (PRD v2.0)
 const STAGES_RENOVACION = [
@@ -65,6 +68,7 @@ const RAMO_META: Record<string, { icon: React.ComponentType<{ className?: string
   "soat":         { icon: Car, color: "text-amber-600 bg-amber-50" },
   "hogar":        { icon: Home, color: "text-teal-600 bg-teal-50" },
   "pyme":         { icon: Building2, color: "text-violet-600 bg-violet-50" },
+  "empresarial":  { icon: Building2, color: "text-violet-600 bg-violet-50" },
   "cumplimiento": { icon: Shield, color: "text-slate-600 bg-slate-50" },
 };
 
@@ -75,19 +79,19 @@ function urgencyBadge(dias: number) {
   return { label: `D-${dias}`, cls: "text-slate-500 bg-slate-50 border border-slate-100" };
 }
 
-// Simulación de renovaciones hasta que el job diario esté implementado
-const DEMO_RENOVACIONES = [
-  { id: "r1", name: "Carlos Méndez", type: "auto", poliza: "POL-2024-1234", aseguradora: "Sura", prima: 1850000, diasVencer: 12, status: "Importada", phone: "+573002345678" },
-  { id: "r2", name: "María Torres", type: "hogar", poliza: "POL-2024-5678", aseguradora: "Allianz", prima: 2400000, diasVencer: 28, status: "Contacto previo", phone: "+573104567890" },
-  { id: "r3", name: "Empresa Logística SAS", type: "pyme", poliza: "POL-2024-9012", aseguradora: "Bolívar", prima: 8500000, diasVencer: 45, status: "En gestión", phone: "+576015678901" },
-  { id: "r4", name: "Ana García", type: "salud", poliza: "POL-2024-3456", aseguradora: "Sura", prima: 3200000, diasVencer: 8, status: "Importada", phone: "+573153456789" },
-  { id: "r5", name: "Pedro Ruiz", type: "soat", poliza: "POL-2024-7890", aseguradora: "HDI", prima: 380000, diasVencer: 55, status: "Cotización enviada", phone: "+573209876543" },
-  { id: "r6", name: "Sofía Vargas", type: "vida", poliza: "POL-2024-2345", aseguradora: "AXA", prima: 4100000, diasVencer: 22, status: "Negociando", phone: "+573112345678" },
-  { id: "r7", name: "Constructora ABC", type: "pyme", poliza: "POL-2024-6789", aseguradora: "Mapfre", prima: 12000000, diasVencer: 35, status: "Confirmada", phone: "+576019876543" },
-  { id: "r8", name: "Luis Herrera", type: "auto", poliza: "POL-2024-0123", aseguradora: "Liberty", prima: 2100000, diasVencer: 60, status: "Importada", phone: "+573005678901" },
-];
+interface RenovacionCard {
+  id: string;
+  name: string;
+  type: string;
+  poliza: string;
+  aseguradora: string;
+  prima: number;
+  diasVencer: number;
+  status: string;
+  phone: string;
+}
 
-function RenovacionCard({ ren, onClick }: { ren: typeof DEMO_RENOVACIONES[0]; onClick: () => void }) {
+function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => void }) {
   const meta = RAMO_META[ren.type] || { icon: Shield, color: "text-slate-600 bg-slate-50" };
   const RamoIcon = meta.icon;
   const urgency = urgencyBadge(ren.diasVencer);
@@ -130,10 +134,39 @@ function RenovacionCard({ ren, onClick }: { ren: typeof DEMO_RENOVACIONES[0]; on
 
 export default function RenovacionesPage() {
   const [search, setSearch] = useState("");
-  const [renovaciones, setRenovaciones] = useState(DEMO_RENOVACIONES);
   const [isImportando, setIsImportando] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    nuevasCreadas: number;
+    actualizadas: number;
+    errores: number;
+    duracionMs: number;
+  } | null>(null);
   const router = useRouter();
+
+  // Datos reales desde InstantDB
+  const { data, isLoading } = db.useQuery({
+    leads: {
+      $: { where: { pipeline_tipo: "renovacion" } },
+    },
+  });
+
+  const renovaciones: RenovacionCard[] = (data?.leads || []).map((lead: any) => {
+    const diasVencer = lead.fecha_fin_poliza
+      ? Math.ceil((new Date(lead.fecha_fin_poliza).getTime() - Date.now()) / 86_400_000)
+      : lead.dias_para_vencer ?? 60;
+    return {
+      id: lead.id,
+      name: lead.name || "Sin nombre",
+      type: lead.type || "auto",
+      poliza: lead.numero_poliza || "—",
+      aseguradora: lead.aseguradora || "—",
+      prima: lead.prima_actual || 0,
+      diasVencer: Math.max(diasVencer, 0),
+      status: lead.status || "Importada",
+      phone: lead.phone || "",
+    };
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -148,21 +181,34 @@ export default function RenovacionesPage() {
       )
     : renovaciones;
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
     const newStatus = over.id as string;
-    if (STAGES_RENOVACION.includes(newStatus)) {
-      setRenovaciones(prev => prev.map(r => r.id === active.id ? { ...r, status: newStatus } : r));
-    }
+    if (!STAGES_RENOVACION.includes(newStatus)) return;
+    const leadId = active.id as string;
+    await db.transact([
+      db.tx.leads[leadId].update({ status: newStatus, updatedAt: Date.now() }),
+    ]);
   };
 
-  const handleImportar = () => {
+  const handleImportar = async () => {
     setIsImportando(true);
-    setTimeout(() => {
+    setImportResult(null);
+    try {
+      const res = await fetch(`${BACKEND}/renovaciones/import/direct`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ diasRango: 60 }),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const result = await res.json();
+      setImportResult(result);
+    } catch (err: any) {
+      alert(`Error al importar: ${err.message}`);
+    } finally {
       setIsImportando(false);
-      alert("✅ Job de importación ejecutado.\n\n23 pólizas consultadas en Soft Seguros.\n5 nuevas oportunidades de renovación creadas.\n3 actualizadas.\n\n(Conectar API real en Fase 2)");
-    }, 2500);
+    }
   };
 
   // Stats
@@ -171,8 +217,16 @@ export default function RenovacionesPage() {
   const confirmadas = renovaciones.filter(r => r.status === "Confirmada" || r.status === "Renovada en Soft ✓").length;
   const primaTotal = renovaciones.reduce((acc, r) => acc + r.prima, 0);
 
-  // Only show first 7 stages in main view, rest are terminal
+  // Solo mostrar las 7 primeras etapas en el kanban principal
   const VISIBLE_STAGES = STAGES_RENOVACION.filter(s => !["No renueva", "Perdida"].includes(s));
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400 text-sm font-medium">
+        Cargando renovaciones…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 flex flex-col h-full w-full">
@@ -291,7 +345,7 @@ export default function RenovacionesPage() {
                     <RenovacionCard
                       key={ren.id}
                       ren={ren}
-                      onClick={() => {}}
+                      onClick={() => router.push(`/renovaciones/${ren.id}`)}
                     />
                   ))}
                 </div>
@@ -301,6 +355,41 @@ export default function RenovacionesPage() {
         </DndContext>
       </div>
 
+      {/* Modal resultado de importación */}
+      {importResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-6 w-6 text-emerald-500 flex-shrink-0" />
+              <h3 className="font-bold text-slate-800 text-lg">Importación completada</h3>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="bg-emerald-50 rounded-xl p-3">
+                <p className="text-2xl font-black text-emerald-600">{importResult.nuevasCreadas}</p>
+                <p className="text-[10px] font-bold text-emerald-400 uppercase">Nuevas</p>
+              </div>
+              <div className="bg-blue-50 rounded-xl p-3">
+                <p className="text-2xl font-black text-blue-600">{importResult.actualizadas}</p>
+                <p className="text-[10px] font-bold text-blue-400 uppercase">Actualizadas</p>
+              </div>
+              <div className="bg-red-50 rounded-xl p-3">
+                <p className="text-2xl font-black text-red-600">{importResult.errores}</p>
+                <p className="text-[10px] font-bold text-red-400 uppercase">Errores</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 text-center">
+              Completado en {(importResult.duracionMs / 1000).toFixed(1)}s
+            </p>
+            <button
+              onClick={() => setImportResult(null)}
+              className="w-full py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-700 transition-all"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
       {showImportModal && <ManualRenovacionModal onClose={() => setShowImportModal(false)} />}
     </div>
   );
@@ -308,13 +397,35 @@ export default function RenovacionesPage() {
 
 function ManualRenovacionModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({
-    name: "", phone: "+57", poliza: "",
+    name: "", phone: "+57", email: "", poliza: "",
     aseguradora: "", prima: "", type: "", diasVencer: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("✅ Renovación creada manualmente.\n\n(En Fase 2 se vincula con InstantDB)");
+    const diasVencer = Number(form.diasVencer);
+    const fechaFin = new Date();
+    fechaFin.setDate(fechaFin.getDate() + diasVencer);
+
+    await db.transact([
+      db.tx.leads[newId()].update({
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        pipeline_tipo: "renovacion",
+        status: "Importada",
+        type: form.type,
+        numero_poliza: form.poliza,
+        aseguradora: form.aseguradora,
+        prima_actual: Number(form.prima),
+        dias_para_vencer: diasVencer,
+        fecha_fin_poliza: fechaFin.toISOString().split("T")[0],
+        sincronizado_soft: false,
+        score: diasVencer <= 15 ? 40 : diasVencer <= 30 ? 25 : 10,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }),
+    ]);
     onClose();
   };
 
@@ -342,6 +453,18 @@ function ManualRenovacionModal({ onClose }: { onClose: () => void }) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Teléfono</label>
+              <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-500 text-sm" placeholder="+573001234567" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</label>
+              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-500 text-sm" placeholder="cliente@email.com" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aseguradora *</label>
               <input required value={form.aseguradora} onChange={e => setForm({ ...form, aseguradora: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-500 text-sm" placeholder="Sura, Allianz…" />
@@ -358,7 +481,7 @@ function ManualRenovacionModal({ onClose }: { onClose: () => void }) {
               <select required value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-500 text-sm">
                 <option value="">Seleccionar…</option>
-                {["auto", "soat", "vida", "salud", "hogar", "pyme", "cumplimiento"].map(r => (
+                {["auto", "soat", "vida", "salud", "hogar", "empresarial", "cumplimiento"].map(r => (
                   <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
                 ))}
               </select>

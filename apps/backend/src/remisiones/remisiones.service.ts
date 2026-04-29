@@ -162,22 +162,34 @@ export class RemisionesService {
 
     // STEP B: Create policy (SYNC-4)
     this.logger.log(`SYNC-4: Creando póliza para cliente ${soft_cliente_id}`);
+
+    // Map ramo text labels to Soft Seguros ramo IDs
+    const RAMO_MAP: Record<string, number> = {
+      auto: 502, soat: 503, hogar: 700, vida: 200, salud: 300,
+      empresarial: 600, cumplimiento: 800,
+    };
+    const ramoId = policyData.ramo_soft_id || RAMO_MAP[(policyData.ramo || '').toLowerCase()];
+
+    // Auto-fill tomador/asegurado from client data if not explicitly provided
+    const fullName = [clientData.nombres, clientData.apellidos].filter(Boolean).join(' ') || 'Sin nombre';
+
     const policyPayload: Record<string, any> = {
       id_cliente: Number(soft_cliente_id),
       renovable: true,
       estado_poliza: { codigo_generico: '01' },
+      // Required fields — auto-filled from client data
+      nombre_tomador: policyData.nombre_tomador || fullName,
+      cedula_tomador: policyData.cedula_tomador || clientData.numero_documento,
+      nombre_asegurado: policyData.nombre_asegurado || fullName,
+      cedula_asegurado: policyData.cedula_asegurado || clientData.numero_documento,
+      codio_objeto_asegurado: policyData.codio_objeto_asegurado || policyData.objeto_asegurado || clientData.direccion || 'N/A',
     };
-    if (policyData.ramo_soft_id) policyPayload.ramo_soft_id = policyData.ramo_soft_id;
+    if (ramoId) policyPayload.ramo = ramoId;
     if (policyData.numero_poliza) policyPayload.numero_poliza = policyData.numero_poliza;
     if (policyData.fecha_inicio) policyPayload.fecha_inicio = policyData.fecha_inicio;
     if (policyData.fecha_fin) policyPayload.fecha_fin = policyData.fecha_fin;
     if (policyData.prima_total) policyPayload.prima = policyData.prima_total;
-    if (policyData.objeto_asegurado) policyPayload.codio_objeto_asegurado = policyData.objeto_asegurado;
-    if (policyData.nombre_tomador) policyPayload.nombre_tomador = policyData.nombre_tomador;
     if (policyData.apellido_tomador) policyPayload.apellido_tomador = policyData.apellido_tomador;
-    if (policyData.cedula_tomador) policyPayload.cedula_tomador = policyData.cedula_tomador;
-    if (policyData.nombre_asegurado) policyPayload.nombre_asegurado = policyData.nombre_asegurado;
-    if (policyData.cedula_asegurado) policyPayload.cedula_asegurado = policyData.cedula_asegurado;
 
     this.logger.log(`SYNC-4 payload: ${JSON.stringify(policyPayload)}`);
     let soft_poliza_id: string;

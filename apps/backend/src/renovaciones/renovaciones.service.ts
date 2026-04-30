@@ -91,7 +91,7 @@ export class RenovacionesService {
         if (!fechaFin) return false;
 
         // Vigente (codigo_generico = "01") y renovable
-        const esVigente = poliza.estado_poliza?.codigo_generico === '01' || poliza.estado_poliza === 'Vigente';
+        const esVigente = poliza.estado_poliza?.codigo_generico === '01' || poliza.estado_poliza === 'Vigente' || poliza.estado_poliza === 45909;
         const esRenovable = poliza.renovable === true;
         const dentroDelRango = fechaFin >= hoy && fechaFin <= limiteFecha;
 
@@ -232,6 +232,7 @@ export class RenovacionesService {
           order_by: 'id',
           sort_by: 'asc',
           page,
+          page_size: 100,
         });
 
         const items = response.results || response;

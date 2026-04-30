@@ -208,6 +208,10 @@ export default function RemisionarPage() {
         if (data.RUT.direccion)    cd.direccion = data.RUT.direccion;
         if (data.RUT.ciudad)       cd.ciudad    = data.RUT.ciudad;
         if (data.RUT.departamento) cd.provincia = data.RUT.departamento;
+        // Para persona jurídica (NIT), la fecha_constitucion del RUT se usa como fecha_nacimiento en Soft Seguros
+        if (data.RUT.fecha_constitucion && formCliente.tipo_documento === '02') {
+          cd.fecha_nacimiento = data.RUT.fecha_constitucion;
+        }
       } else if (data.POLIZA) {
         // Sin RUT: tomar dirección/ciudad/departamento del tomador desde la carátula
         if (data.POLIZA.tomador_direccion)   cd.direccion = data.POLIZA.tomador_direccion;

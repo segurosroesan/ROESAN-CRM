@@ -112,21 +112,36 @@ export class RemisionesService {
     if (!soft_cliente_id) {
       this.logger.log('SYNC-2: Creando cliente en Soft Seguros');
       try {
-        const newClient = await this.softApi.createClient({
+        // Determine tipo_cliente from tipo_documento:
+        // '02' = NIT → persona Jurídica ('J'), otherwise persona Física ('F')
+        const isJuridica = clientData.tipo_documento === '02';
+        const tipoCliente = isJuridica ? 'J' : 'F';
+
+        const clientPayload: Record<string, any> = {
           numero_documento: clientData.numero_documento,
           tipo_documento: clientData.tipo_documento || '01',
+          tipo_cliente: tipoCliente,
           nombres: clientData.nombres || '',
           apellidos: clientData.apellidos || '',
           correo: clientData.email,
           celular: clientData.telefono,
           telefono: clientData.telefono,
-          genero: clientData.genero || 'MASCULINO',
-          fecha_nacimiento: clientData.fecha_nacimiento || '1990-01-01',
           direccion: clientData.direccion,
           ciudad: clientData.ciudad,
           provincia: clientData.provincia,
           otra_ocupacion: clientData.otra_ocupacion,
-        });
+        };
+
+        // Persona natural requires genero & fecha_nacimiento; juridica uses fecha_nacimiento as fecha_constitucion
+        if (!isJuridica) {
+          clientPayload.genero = clientData.genero || 'MASCULINO';
+          clientPayload.fecha_nacimiento = clientData.fecha_nacimiento || '1990-01-01';
+        } else if (clientData.fecha_nacimiento) {
+          // For juridica: fecha_nacimiento = fecha_constitucion (from RUT)
+          clientPayload.fecha_nacimiento = clientData.fecha_nacimiento;
+        }
+
+        const newClient = await this.softApi.createClient(clientPayload);
         soft_cliente_id = String(newClient.id);
         steps.clientCreate = { soft_cliente_id };
         this.logger.log(`Cliente creado con ID: ${soft_cliente_id}`);

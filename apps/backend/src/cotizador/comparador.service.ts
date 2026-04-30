@@ -322,7 +322,8 @@ Extrae los siguientes datos del REGISTRO ÚNICO TRIBUTARIO y devuélvelos en JSO
   "direccion": "dirección principal",
   "ciudad": "municipio/ciudad",
   "departamento": "departamento",
-  "actividades_economicas": ["códigos de 4 dígitos"]
+  "actividades_economicas": ["códigos de 4 dígitos"],
+  "fecha_constitucion": "YYYY-MM-DD fecha de constitución de la empresa si aparece, null si no o si es persona natural"
 }
 `;
         break;

@@ -95,12 +95,19 @@ export class RemisionesService {
       gastos_expedicion?: number;
       objeto_asegurado?: string;
       placa?: string;
+      moneda?: string;
       nombre_tomador?: string;
       apellido_tomador?: string;
       cedula_tomador?: string;
       nombre_asegurado?: string;
       cedula_asegurado?: string;
       vendedor_id?: number | string;
+      beneficiarios?: Array<{
+        nombres?: string;
+        numero_documento?: string;
+        parentesco?: string;
+        porcentaje_beneficio?: number;
+      }>;
     };
     files: { buffer: Buffer; mimeType: string; nombre: string; tipo: 'CEDULA' | 'RUT' | 'SARLAFT' | 'POLIZA' }[];
   }) {

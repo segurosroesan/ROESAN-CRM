@@ -290,6 +290,11 @@ export class RemisionesService {
     // Auto-fill tomador/asegurado from client data if not explicitly provided
     const fullName = [clientData.nombres, clientData.apellidos].filter(Boolean).join(' ') || 'Sin nombre';
 
+    const isVehiclePolicy = ['auto', 'soat'].includes((policyData.ramo || '').toLowerCase());
+    const objetoAseguradoFinal = (isVehiclePolicy && policyData.placa) 
+      ? policyData.placa 
+      : (policyData.objeto_asegurado || clientData.direccion || 'N/A');
+
     const policyPayload: Record<string, any> = {
       id_cliente: Number(soft_cliente_id),
       renovable: true,
@@ -299,7 +304,7 @@ export class RemisionesService {
       cedula_tomador: policyData.cedula_tomador || clientData.numero_documento,
       nombre_asegurado: policyData.nombre_asegurado || fullName,
       cedula_asegurado: policyData.cedula_asegurado || clientData.numero_documento,
-      codio_objeto_asegurado: policyData.objeto_asegurado || clientData.direccion || 'N/A',
+      codio_objeto_asegurado: objetoAseguradoFinal,
       
       // Payment & Notifications defaults
       forma_pago: policyData.forma_pago || 'Contado',

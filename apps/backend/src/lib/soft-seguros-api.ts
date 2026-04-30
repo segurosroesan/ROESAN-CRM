@@ -252,6 +252,13 @@ export class SoftSegurosApi {
       if (data.cedula_tomador) payload.cedula_tomador = data.cedula_tomador;
       if (data.nombre_asegurado) payload.nombre_asegurado = data.nombre_asegurado;
       if (data.cedula_asegurado) payload.cedula_asegurado = data.cedula_asegurado;
+      
+      // Tipo Moneda (default to COP if not specified, mapped from moneda)
+      if (data.moneda) {
+        payload.tipo_moneda = data.moneda;
+      } else {
+        payload.tipo_moneda = 'COP'; // Default
+      }
 
       this.logger.debug(`Payload sync-4: ${JSON.stringify(payload)}`);
       const response = await this.request('POST', '/api/poliza/', payload);
@@ -280,6 +287,31 @@ export class SoftSegurosApi {
     } catch (error) {
       this.logger.error(`Failed to create datosextrascliente: ${JSON.stringify(error.response?.data || error.message)}`);
       throw error;
+    }
+  }
+
+  /**
+   * SYNC-5: Create beneficiariopolizariesgo in Soft Seguros
+   */
+  async createBeneficiario(data: any): Promise<any> {
+    try {
+      this.logger.log(`Creating beneficiario para póliza ID: ${data.poliza}`);
+      const payload: Record<string, any> = {
+        poliza: data.poliza,
+        numero_documento: data.numero_documento || 'No especificado',
+      };
+      
+      if (data.nombres) payload.nombres = data.nombres;
+      if (data.parentesco) payload.parentesco = data.parentesco;
+      if (data.porcentaje_beneficio !== undefined) payload.porcentaje_beneficio = data.porcentaje_beneficio;
+
+      this.logger.debug(`Payload sync-5 (beneficiario): ${JSON.stringify(payload)}`);
+      const response = await this.request('POST', '/api/beneficiariopolizariesgo/', payload);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to create beneficiario: ${JSON.stringify(error.response?.data || error.message)}`);
+      // No lanzamos error crítico para que no falle toda la remisión si solo falla el beneficiario
+      return { error: error.message };
     }
   }
 

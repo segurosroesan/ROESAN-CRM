@@ -233,7 +233,13 @@ export default function RemisionarPage() {
         pd.iva              = data.POLIZA.iva              || 0;
         pd.gastos_expedicion = data.POLIZA.gastos_expedicion || 0;
         pd.objeto_asegurado = data.POLIZA.objeto_asegurado || "";
+        pd.moneda           = data.POLIZA.moneda           || "COP";
+        pd.beneficiarios    = data.POLIZA.beneficiarios    || [];
+      } else {
+        pd.moneda = "COP";
+        pd.beneficiarios = [];
       }
+      pd.vendedor_id = pd.vendedor_id || "27931";
       setPolicyData(pd);
     } catch {
       setError("Error al procesar los documentos");
@@ -254,6 +260,17 @@ export default function RemisionarPage() {
         email:            formCliente.email,
         telefono:         formCliente.telefono,
       });
+    }
+    // Pre-populate policyData defaults if extraction didn't run
+    if (Object.keys(policyData).length === 0) {
+      setPolicyData({
+        ramo: "auto",
+        moneda: "COP",
+        vendedor_id: "27931",
+        beneficiarios: [],
+      });
+    } else if (!policyData.vendedor_id) {
+      setPolicyData(p => ({ ...p, vendedor_id: "27931" }));
     }
     setStep(3);
   }
@@ -606,6 +623,13 @@ export default function RemisionarPage() {
                   <label className={labelSmCls}>Fecha Fin</label>
                   <input type="date" value={policyData.fecha_fin || ""} onChange={e => setPolicyData(p => ({ ...p, fecha_fin: e.target.value }))} className={inputSmCls} />
                 </div>
+                <div>
+                  <label className={labelSmCls}>Moneda</label>
+                  <select value={policyData.moneda || "COP"} onChange={e => setPolicyData(p => ({ ...p, moneda: e.target.value }))} className={inputSmCls}>
+                    <option value="COP">COP (Pesos Colombianos)</option>
+                    <option value="USD">USD (Dólares)</option>
+                  </select>
+                </div>
                 <div className="col-span-2 grid grid-cols-4 gap-3">
                   <div>
                     <label className={labelSmCls}>Prima Neta</label>
@@ -662,6 +686,85 @@ export default function RemisionarPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            {/* Beneficiarios Section */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <User className="h-3.5 w-3.5" /> Beneficiarios
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setPolicyData(p => ({ ...p, beneficiarios: [...(p.beneficiarios || []), { nombres: "", numero_documento: "", parentesco: "", porcentaje_beneficio: 100 }] }))}
+                  className="text-xs font-medium text-amber-500 hover:text-amber-600 flex items-center gap-1 bg-amber-50 px-2 py-1 rounded"
+                >
+                  <Plus className="h-3 w-3" /> Agregar Beneficiario
+                </button>
+              </div>
+              
+              {(policyData.beneficiarios || []).length === 0 ? (
+                <p className="text-xs text-slate-400 italic">No hay beneficiarios agregados.</p>
+              ) : (
+                <div className="space-y-3">
+                  {(policyData.beneficiarios || []).map((ben: any, idx: number) => (
+                    <div key={idx} className="flex gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                      <input
+                        value={ben.nombres}
+                        onChange={e => {
+                          const newB = [...policyData.beneficiarios];
+                          newB[idx].nombres = e.target.value;
+                          setPolicyData(p => ({ ...p, beneficiarios: newB }));
+                        }}
+                        placeholder="Nombres Completos"
+                        className={`${inputSmCls} flex-1`}
+                      />
+                      <input
+                        value={ben.numero_documento}
+                        onChange={e => {
+                          const newB = [...policyData.beneficiarios];
+                          newB[idx].numero_documento = e.target.value;
+                          setPolicyData(p => ({ ...p, beneficiarios: newB }));
+                        }}
+                        placeholder="Documento"
+                        className={`${inputSmCls} w-32`}
+                      />
+                      <input
+                        value={ben.parentesco || ""}
+                        onChange={e => {
+                          const newB = [...policyData.beneficiarios];
+                          newB[idx].parentesco = e.target.value;
+                          setPolicyData(p => ({ ...p, beneficiarios: newB }));
+                        }}
+                        placeholder="Parentesco"
+                        className={`${inputSmCls} w-32`}
+                      />
+                      <input
+                        type="number"
+                        value={ben.porcentaje_beneficio}
+                        onChange={e => {
+                          const newB = [...policyData.beneficiarios];
+                          newB[idx].porcentaje_beneficio = Number(e.target.value);
+                          setPolicyData(p => ({ ...p, beneficiarios: newB }));
+                        }}
+                        placeholder="%"
+                        className={`${inputSmCls} w-20`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newB = [...policyData.beneficiarios];
+                          newB.splice(idx, 1);
+                          setPolicyData(p => ({ ...p, beneficiarios: newB }));
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-500 bg-white rounded-md border border-slate-200"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {error && (

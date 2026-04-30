@@ -249,10 +249,15 @@ export class RemisionesService {
                 )
               : null;
 
-            // Fallback: first ramo with the correct marca
+            // Fallback: first ramo with the correct marca. BUT only if aseguradora is missing or we couldn't match
             const fallback = ramos.find((r) => r.ramo_marca === ramaMarca);
 
             const match = exactMatch || fallback;
+            if (exactMatch) {
+              this.logger.log(`Exact RAMO match found for '${aseguradoraNombre}'`);
+            } else if (aseguradoraNombre && fallback) {
+              this.logger.warn(`No exact match for aseguradora='${aseguradoraNombre}'. Falling back to ${fallback.aseguradora_nombre}`);
+            }
             if (match) {
               ramoId = match.id;
               this.logger.log(
@@ -293,6 +298,7 @@ export class RemisionesService {
     if (policyData.iva !== undefined) policyPayload.iva = policyData.iva;
     if (policyData.gastos_expedicion !== undefined) policyPayload.gastos_expedicion = policyData.gastos_expedicion;
     if (policyData.apellido_tomador) policyPayload.apellido_tomador = policyData.apellido_tomador;
+    if (policyData.moneda) policyPayload.moneda = policyData.moneda;
     // Vendedor: explicit from form OR fallback to corporate
     if (policyData.vendedor_id) policyPayload.vendedor = Number(policyData.vendedor_id);
 
@@ -325,6 +331,27 @@ export class RemisionesService {
       } catch (extrasErr) {
         this.logger.warn(`SYNC-3 falló (no crítico): ${extrasErr.message}`);
         steps.datosExtrasError = extrasErr.message;
+      }
+    }
+
+    // STEP B.6: SYNC-5 — Beneficiarios
+    if (Array.isArray(policyData.beneficiarios) && policyData.beneficiarios.length > 0) {
+      this.logger.log(`SYNC-5: Creando ${policyData.beneficiarios.length} beneficiarios para póliza ${soft_poliza_id}`);
+      steps.beneficiarios = [];
+      for (const ben of policyData.beneficiarios) {
+        try {
+          const benResult = await this.softApi.createBeneficiario({
+            poliza: Number(soft_poliza_id),
+            nombres: ben.nombres,
+            numero_documento: ben.numero_documento || 'No especificado',
+            parentesco: ben.parentesco,
+            porcentaje_beneficio: ben.porcentaje_beneficio,
+          });
+          steps.beneficiarios.push(benResult);
+        } catch (benErr) {
+          this.logger.warn(`Error creando beneficiario (no crítico): ${benErr.message}`);
+          steps.beneficiarios.push({ error: benErr.message });
+        }
       }
     }
 

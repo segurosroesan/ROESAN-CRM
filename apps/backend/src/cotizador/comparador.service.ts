@@ -352,10 +352,14 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
 
 {
   "numero_poliza": "número de la póliza",
-  "aseguradora": "nombre de la aseguradora",
+  "aseguradora": "nombre de la aseguradora (usa el nombre principal, ej: Mapfre, Bolivar, Sura, AXA Colpatria, HDI Seguros, Allianz, La Previsora, Seguros del Estado, Liberty, Equidad, SBS)",
   "ramo": "rama del seguro en minúsculas: auto, hogar, vida, salud, soat, empresarial o cumplimiento",
   "fecha_inicio": "YYYY-MM-DD",
   "fecha_fin": "YYYY-MM-DD",
+  "moneda": "COP o USD (usa COP para pesos colombianos)",
+  "prima_neta": 0,
+  "iva": 0,
+  "gastos_expedicion": 0,
   "prima_total": 0,
   "objeto_asegurado": "descripción corta del bien: placa del vehículo, dirección del inmueble, nombre del asegurado, etc.",
   "placa": "placa del vehículo si aplica, null si no",
@@ -372,7 +376,15 @@ Extrae los datos clave de esta CARÁTULA DE PÓLIZA y devuélvelos en JSON puro.
   "tomador_departamento": "departamento del tomador si aparece, null si no",
   "nombre_asegurado": "nombre completo del asegurado si es diferente del tomador, null si es el mismo",
   "cedula_asegurado": "cédula del asegurado si es diferente del tomador, null si es la misma",
-  "fecha_soat": "fecha de vencimiento del SOAT si aparece (YYYY-MM-DD), null si no aplica"
+  "fecha_soat": "fecha de vencimiento del SOAT si aparece (YYYY-MM-DD), null si no aplica",
+  "beneficiarios": [
+    {
+      "nombres": "nombre completo del beneficiario",
+      "numero_documento": "documento de identidad si aparece, null si no",
+      "parentesco": "parentesco con el asegurado principal, null si no",
+      "porcentaje_beneficio": 0
+    }
+  ]
 }
 `;
         break;

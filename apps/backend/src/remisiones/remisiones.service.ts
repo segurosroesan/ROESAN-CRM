@@ -108,6 +108,11 @@ export class RemisionesService {
         parentesco?: string;
         porcentaje_beneficio?: number;
       }>;
+      crear_pago?: boolean;
+      forma_pago?: string;
+      periodicidad?: string;
+      poliza_padre_id?: number | string;
+      numero_renovacion?: number;
     };
     files: { buffer: Buffer; mimeType: string; nombre: string; tipo: 'CEDULA' | 'RUT' | 'SARLAFT' | 'POLIZA' }[];
   }) {
@@ -295,7 +300,23 @@ export class RemisionesService {
       nombre_asegurado: policyData.nombre_asegurado || fullName,
       cedula_asegurado: policyData.cedula_asegurado || clientData.numero_documento,
       codio_objeto_asegurado: policyData.objeto_asegurado || clientData.direccion || 'N/A',
+      
+      // Payment & Notifications defaults
+      forma_pago: policyData.forma_pago || 'Contado',
+      periodicidad: policyData.periodicidad || 'Anual',
+      activar_notificaciones_asistente_virtual: true,
+      enviar_correo_notificacion_renovacion: true,
+      enviar_whatsapp_poliza_por_vencer: true,
+      enviar_correo_pagos_vencidos: true,
+      enviar_whatsapp_pagos_vencidos: true,
     };
+
+    if (policyData.poliza_padre_id) {
+      policyPayload.poliza_padre = Number(policyData.poliza_padre_id);
+      policyPayload.numero_renovacion = policyData.numero_renovacion || 1;
+      const anoFin = policyData.fecha_fin ? new Date(policyData.fecha_fin).getFullYear() : new Date().getFullYear() + 1;
+      policyPayload.observaciones = `renovacion poliza ${anoFin}`;
+    }
     if (ramoId) policyPayload.ramo = ramoId;
     if (policyData.numero_poliza) policyPayload.numero_poliza = policyData.numero_poliza;
     if (policyData.fecha_inicio) policyPayload.fecha_inicio = policyData.fecha_inicio;
@@ -378,6 +399,24 @@ export class RemisionesService {
       } catch (err) {
         this.logger.error(`Error subiendo anexo ${file.tipo}: ${err.message}`);
         steps.anexos.push({ tipo: file.tipo, error: err.message });
+      }
+    }
+
+    // STEP C.5: Create payment in Soft Seguros (SYNC-7)
+    // Create payment if specifically requested, or if form of payment is Contado
+    const isContado = (policyData.forma_pago === 'Contado' || !policyData.forma_pago);
+    if ((policyData.crear_pago !== false && isContado) && policyData.prima_total) {
+      try {
+        this.logger.log(`SYNC-7: Creando pago pendiente para póliza ${soft_poliza_id}`);
+        const pagoResult = await this.softApi.createPago({
+          poliza: Number(soft_poliza_id),
+          valor_a_pagar: policyData.prima_total,
+          valor_pagado: 0,
+        });
+        steps.pago = pagoResult;
+      } catch (pagoErr: any) {
+        this.logger.warn(`Error creando pago (no crítico): ${pagoErr.message}`);
+        steps.pago = { error: pagoErr.message };
       }
     }
 

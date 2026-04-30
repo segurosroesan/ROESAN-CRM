@@ -260,6 +260,20 @@ export class SoftSegurosApi {
         payload.tipo_moneda = 'COP'; // Default
       }
 
+      // Advanced fields for renewals, payments and alerts
+      if (data.poliza_padre) payload.poliza_padre = data.poliza_padre;
+      if (data.numero_renovacion !== undefined) payload.numero_renovacion = data.numero_renovacion;
+      if (data.observaciones) payload.observaciones = data.observaciones;
+      if (data.forma_pago) payload.forma_pago = data.forma_pago;
+      if (data.periodicidad) payload.periodicidad = data.periodicidad;
+      
+      // Notifications (booleans)
+      if (data.activar_notificaciones_asistente_virtual !== undefined) payload.activar_notificaciones_asistente_virtual = data.activar_notificaciones_asistente_virtual;
+      if (data.enviar_correo_notificacion_renovacion !== undefined) payload.enviar_correo_notificacion_renovacion = data.enviar_correo_notificacion_renovacion;
+      if (data.enviar_whatsapp_poliza_por_vencer !== undefined) payload.enviar_whatsapp_poliza_por_vencer = data.enviar_whatsapp_poliza_por_vencer;
+      if (data.enviar_correo_pagos_vencidos !== undefined) payload.enviar_correo_pagos_vencidos = data.enviar_correo_pagos_vencidos;
+      if (data.enviar_whatsapp_pagos_vencidos !== undefined) payload.enviar_whatsapp_pagos_vencidos = data.enviar_whatsapp_pagos_vencidos;
+
       this.logger.debug(`Payload sync-4: ${JSON.stringify(payload)}`);
       const response = await this.request('POST', '/api/poliza/', payload);
       return response;
@@ -356,6 +370,33 @@ export class SoftSegurosApi {
     } catch (error) {
       this.logger.error(`Failed to upload attachment: ${JSON.stringify(error.response?.data || error.message)}`);
       throw error;
+    }
+  }
+
+  /**
+   * SYNC-7: Create pago pendiente in Soft Seguros
+   */
+  async createPago(data: {
+    poliza: number;
+    valor_a_pagar: number;
+    valor_pagado: number;
+  }): Promise<any> {
+    try {
+      this.logger.log(`Creating pago for policy ID: ${data.poliza}`);
+      
+      const payload = {
+        poliza: data.poliza,
+        valor_a_pagar: data.valor_a_pagar || 0,
+        valor_pagado: data.valor_pagado || 0,
+      };
+
+      this.logger.debug(`Payload sync-7 (pago): ${JSON.stringify(payload)}`);
+      const response = await this.request('POST', '/api/pagopoliza/', payload);
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to create pago: ${JSON.stringify(error.response?.data || error.message)}`);
+      // No lanzamos error crítico para que no falle toda la remisión si solo falla el pago
+      return { error: error.message };
     }
   }
 }

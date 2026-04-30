@@ -115,11 +115,12 @@ export class RemisionesService {
         // Determine tipo_cliente from tipo_documento:
         // '02' = NIT → persona Jurídica ('J'), otherwise persona Física ('F')
         const isJuridica = clientData.tipo_documento === '02';
-        const tipoCliente = isJuridica ? 'J' : 'F';
+        const tipoCliente = 'Cliente'; // Valid API values: 'Prospecto', 'Cliente', 'Cliente perdido'
+        const tipoDocumento = isJuridica ? 'nit' : (clientData.tipo_documento || '01');
 
         const clientPayload: Record<string, any> = {
           numero_documento: clientData.numero_documento,
-          tipo_documento: clientData.tipo_documento || '01',
+          tipo_documento: tipoDocumento,
           tipo_cliente: tipoCliente,
           nombres: clientData.nombres || '',
           apellidos: clientData.apellidos || '',

@@ -1,34 +1,50 @@
+/**
+ * Use OPTIONS request to find out the allowed values for tipo_cliente
+ */
 const axios = require('axios');
+require('dotenv').config({ path: './apps/backend/.env' });
 
-async function testPolizas() {
-  const url = 'https://app.softseguros.com';
-  const user = 'carmene.estrada';
-  const pass = '670618';
+const BASE = 'https://app.softseguros.com';
+const USER = process.env.SOFT_SEGUROS_USERNAME;
+const PASS = process.env.SOFT_SEGUROS_PASSWORD;
+
+async function main() {
+  if (!USER || !PASS) {
+      console.error('Credentials not found in .env');
+      return;
+  }
+  // Auth
   try {
-    const res = await axios.post(url + '/api-token-auth/', { username: user, password: pass });
-    const token = res.data.token;
+    const auth = await axios.post(`${BASE}/api-token-auth/`, { username: USER, password: PASS });
+    const token = auth.data.token;
+    const headers = { Authorization: `Token ${token}` };
+
+    console.log('--- Sending OPTIONS to /api/cliente/ ---');
+    const res = await axios({
+        method: 'OPTIONS',
+        url: `${BASE}/api/cliente/`,
+        headers
+    });
     
-    // We try to request the options for poliza, this sometimes gives the choices
-    try {
-      const resOpt = await axios.options(url + '/api/poliza/', {
-        headers: { Authorization: `Token ${token}` }
-      });
-      console.log('OPTIONS Response Status:', resOpt.status);
-      if (resOpt.data && resOpt.data.actions && resOpt.data.actions.POST) {
-        const ramoField = resOpt.data.actions.POST.ramo;
-        if (ramoField && ramoField.choices) {
-            console.log("Ramos Choices:", ramoField.choices);
-        } else {
-            console.log("Ramo Field spec:", ramoField);
-        }
-      } else {
-        console.log(JSON.stringify(resOpt.data).substring(0, 500));
-      }
-    } catch(err) {
-      console.log("OPTIONS Error", err.response?.status);
+    const tipoClienteField = res.data.actions?.POST?.tipo_cliente;
+    if (tipoClienteField) {
+        console.log('tipo_cliente metadata:', JSON.stringify(tipoClienteField, null, 2));
+    } else {
+        console.log('tipo_cliente field not found in OPTIONS response.');
+        // Log the whole actions object to see what fields are there
+        console.log('Available POST fields:', Object.keys(res.data.actions?.POST || {}));
     }
-  } catch(e) {
-    console.error('Error in Login:', e.response?.status, e.response?.data || e.message);
+    
+    const tipoDocField = res.data.actions?.POST?.tipo_documento;
+    if (tipoDocField) {
+        console.log('tipo_documento metadata:', JSON.stringify(tipoDocField, null, 2));
+    }
+
+  } catch (e) {
+      console.error('Status:', e.response?.status);
+      console.error('Error Data:', JSON.stringify(e.response?.data, null, 2));
+      console.error('Error Message:', e.message);
   }
 }
-testPolizas();
+
+main();

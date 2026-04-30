@@ -168,14 +168,14 @@ export class SoftSegurosApi {
         email: data.correo || data.email || 'sin_correo@test.com',
         celular: data.celular || data.phone || '0000000000',
         telefono: data.telefono || data.celular || data.phone || '0000000000',
-        tipo_documento: data.tipo_documento || "01", // Cédula (default)
+        tipo_documento: data.tipo_documento || "01", // Default to Cédula ("01")
         genero: data.genero || "MASCULINO",
         fecha_nacimiento: data.fecha_nacimiento || "1990-01-01",
         ocupacion: data.ocupacion || 4, // INDEPENDIENTE (ID encontrado en SoftSeguros)
         es_prospecto: true,
         sede: 6787, // Sede Principal Roesan
         marca: 6751, // Marca Roesan
-        tipo_cliente: data.tipo_cliente || "F", // Persona Física
+        tipo_cliente: data.tipo_cliente || "Cliente", // Default to Cliente for remisiones
         direccion: data.direccion || "Sin dirección",
         ciudad: data.ciudad || "BOGOTÁ",
         provincia: data.provincia || "BOGOTÁ",

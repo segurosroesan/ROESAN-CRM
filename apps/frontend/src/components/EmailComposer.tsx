@@ -6,10 +6,11 @@ import { Send, X, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 interface EmailComposerProps {
   leadId: string;
   toEmail: string;
+  userId: string;
   onClose: () => void;
 }
 
-export function EmailComposer({ leadId, toEmail, onClose }: EmailComposerProps) {
+export function EmailComposer({ leadId, toEmail, userId, onClose }: EmailComposerProps) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -27,7 +28,7 @@ export function EmailComposer({ leadId, toEmail, onClose }: EmailComposerProps) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: "u2", // ID del asesor John Doe para pruebas
+          userId,
           to: toEmail,
           subject,
           body,

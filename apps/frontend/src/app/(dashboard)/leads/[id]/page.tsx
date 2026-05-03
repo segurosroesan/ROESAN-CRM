@@ -3,6 +3,7 @@
 import { db } from "@/lib/instant-db";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useRef } from "react";
+
 import {
   ArrowLeft,
   Phone,
@@ -1082,7 +1083,7 @@ export default function LeadDetailPage() {
 
       {/* Email Composer Modal */}
       {showEmailComposer && lead.email && (
-        <EmailComposer 
+        <EmailComposerWrapper
           leadId={leadId}
           toEmail={lead.email}
           onClose={() => setShowEmailComposer(false)}
@@ -1097,7 +1098,16 @@ export default function LeadDetailPage() {
   );
 }
 
+// ── Email Composer Wrapper (injects userId from auth) ─────────────────────
+
+function EmailComposerWrapper({ leadId, toEmail, onClose }: { leadId: string; toEmail: string; onClose: () => void }) {
+  const { user } = db.useAuth();
+  if (!user) return null;
+  return <EmailComposer leadId={leadId} toEmail={toEmail} userId={user.id} onClose={onClose} />;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
+
 
 function buildCoberturas(data: any): object {
   return {

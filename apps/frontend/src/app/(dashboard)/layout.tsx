@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import {
   Users,
   RefreshCw,
@@ -11,8 +12,10 @@ import {
   LogOut,
   ChevronRight,
   Bell,
-  FileText
+  FileText,
+  Loader2,
 } from "lucide-react";
+import { db } from "@/lib/instant-db";
 
 const PAGE_TITLES: Record<string, { parent: string; current: string }> = {
   "/":             { parent: "Panel Comercial", current: "Dashboard" },
@@ -22,15 +25,64 @@ const PAGE_TITLES: Record<string, { parent: string; current: string }> = {
   "/remisiones/nueva": { parent: "Panel Comercial", current: "Remisionar" },
 };
 
+function getInitials(email?: string | null): string {
+  if (!email) return "?";
+  const local = email.split("@")[0];
+  const parts = local.split(/[._-]/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return local.slice(0, 2).toUpperCase();
+}
+
+function getDisplayName(email?: string | null): string {
+  if (!email) return "Usuario";
+  const local = email.split("@")[0];
+  const parts = local.split(/[._-]/);
+  if (parts.length >= 2) {
+    return parts
+      .slice(0, 2)
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ");
+  }
+  return local.charAt(0).toUpperCase() + local.slice(1);
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isLoading, user, error } = db.useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login");
+    }
+  }, [isLoading, user, router]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div
+        className="h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(135deg, #060614 0%, #0c0c22 50%, #060614 100%)" }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 text-amber-400 animate-spin" />
+          <p className="text-slate-400 text-sm font-medium">Verificando sesión…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in → redirect handled by useEffect
+  if (!user || error) return null;
 
   const isLeadDetail = pathname.startsWith("/leads/") && pathname !== "/leads";
-
   const pageInfo = isLeadDetail
     ? { parent: "Pre-Venta", current: "Ficha de Prospecto" }
     : PAGE_TITLES[pathname] || { parent: "Panel Comercial", current: "" };
@@ -42,6 +94,9 @@ export default function DashboardLayout({
     { title: "Remisionar", icon: FileText, href: "/remisiones/nueva" },
     { title: "Configuración", icon: Settings, href: "/config" },
   ];
+
+  const displayName = getDisplayName(user.email);
+  const initials = getInitials(user.email);
 
   return (
     <div className="flex h-screen bg-slate-50 selection:bg-amber-100">
@@ -118,19 +173,23 @@ export default function DashboardLayout({
               <div className="relative shrink-0">
                 <div className="h-7 w-7 rounded-full p-[1.5px]" style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}>
                   <div className="h-full w-full rounded-full bg-[#0c0c22] flex items-center justify-center overflow-hidden">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Roesan" alt="User" className="h-full w-full object-cover" />
+                    {/* Avatar: initials from real email */}
+                    <span className="text-[10px] font-black text-amber-400">{initials}</span>
                   </div>
                 </div>
                 <div className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-400 border-2 border-[#0c0c22]" />
               </div>
-              <div>
-                <p className="text-[13px] font-semibold text-white leading-none">Asesor Roesan</p>
-                <p className="text-[11px] text-amber-400/60 mt-0.5 font-mono">Comercial</p>
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-white leading-none truncate">{displayName}</p>
+                <p className="text-[10px] text-amber-400/50 mt-0.5 font-mono truncate">{user.email}</p>
               </div>
             </div>
           </div>
 
-          <button className="flex items-center justify-center w-full px-3 py-2 text-[13px] font-medium rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/15 transition-all duration-200">
+          <button
+            onClick={() => db.auth.signOut()}
+            className="flex items-center justify-center w-full px-3 py-2 text-[13px] font-medium rounded-lg text-slate-500 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/15 transition-all duration-200"
+          >
             <LogOut className="mr-2 h-3.5 w-3.5" />
             Cerrar Sesión
           </button>
@@ -164,11 +223,12 @@ export default function DashboardLayout({
               <Bell className="h-4 w-4" />
               <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 border border-white" />
             </button>
+            {/* Avatar mini en header */}
             <div
-              className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+              className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-black text-white"
               style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)" }}
             >
-              R
+              {initials}
             </div>
           </div>
         </header>

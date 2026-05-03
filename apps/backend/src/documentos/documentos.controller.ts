@@ -1,6 +1,14 @@
 import { Body, Controller, Post, Logger, HttpCode, UseInterceptors, UploadedFile, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { DocumentosService } from './documentos.service';
+
+const DOC_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+const docFilter = (_req: any, file: Express.Multer.File, cb: (e: Error | null, ok: boolean) => void) => {
+  if (DOC_MIME_TYPES.includes(file.mimetype)) cb(null, true);
+  else cb(new BadRequestException(`Solo PDF o imágenes. Recibido: ${file.mimetype}`), false);
+};
+const DOC_OPTS = { storage: memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: docFilter };
 
 @Controller('documentos')
 export class DocumentosController {
@@ -10,7 +18,7 @@ export class DocumentosController {
 
   @Post('parse')
   @HttpCode(200)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DOC_OPTS))
   async parseDocumento(
     @UploadedFile() file: any,
     @Body('tipo') tipo: 'CEDULA' | 'RUT' | 'SARLAFT' | 'POLIZA'
@@ -28,7 +36,7 @@ export class DocumentosController {
 
   @Post('sync')
   @HttpCode(200)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DOC_OPTS))
   async syncToSoft(
     @UploadedFile() file: any,
     @Body('leadId') leadId: string,

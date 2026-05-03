@@ -1,8 +1,16 @@
 import { Body, Controller, Post, Logger, HttpCode, UseInterceptors, UploadedFile, UploadedFiles, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { CotizadorService } from './cotizador.service';
 import { CotizarDto } from '../lib/qualitas-api';
 import type { GenerarCorreoParams } from './email-generator';
+
+const PDF_MIME_TYPES = ['application/pdf'];
+const pdfFilter = (_req: any, file: Express.Multer.File, cb: (e: Error | null, ok: boolean) => void) => {
+  if (PDF_MIME_TYPES.includes(file.mimetype)) cb(null, true);
+  else cb(new BadRequestException(`Solo se aceptan archivos PDF. Recibido: ${file.mimetype}`), false);
+};
+const PDF_OPTS = { storage: memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: pdfFilter };
 
 @Controller('cotizador')
 export class CotizadorController {
@@ -60,7 +68,7 @@ export class CotizadorController {
 
   @Post('parse-pdf')
   @HttpCode(200)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', PDF_OPTS))
   async parsePdfCotizacion(@UploadedFile() file: any) {
     if (!file) {
       throw new BadRequestException('Archivo no proporcionado');
@@ -75,7 +83,7 @@ export class CotizadorController {
 
   @Post('parse-pdfs')
   @HttpCode(200)
-  @UseInterceptors(FilesInterceptor('files'))
+  @UseInterceptors(FilesInterceptor('files', 4, PDF_OPTS))
   async parsePdfsCotizacion(@UploadedFiles() files: any[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Archivos no proporcionados');

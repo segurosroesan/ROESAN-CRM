@@ -65,15 +65,9 @@ const DEFAULT_RAMOS: RamoMapping[] = [
   { crm: "cumplimiento", softId: 7, label: "Cumplimiento", icon: Shield },
 ];
 
-const INITIAL_USERS: UserRow[] = [
-  { id: "a1b2c3d4-e5f6-4789-8abc-def012345678", name: "Carmen Estrada",     email: "gerencia@roesan.com",                  role: "admin",        active: true },
-  { id: "b2c3d4e5-f6a7-4890-8bcd-ef0123456789", name: "Federico Lopez",      email: "comercial@roesan.com",                 role: "coordinador",  active: true },
-  { id: "c3d4e5f6-a7b8-4901-8cde-f01234567890", name: "Patricia Ortegon",    email: "administrativo@roesan.com",            role: "solo lectura", active: true },
-  { id: "d4e5f6a7-b8c9-4012-8def-012345678901", name: "Adriana Garzon",      email: "autos@roesan.com",                     role: "asesor",       active: true },
-  { id: "e5f6a7b8-c9d0-4123-8ef0-123456789012", name: "Jose Rodriguez",      email: "ejecutivo@roesan.com",                 role: "asesor",       active: true },
-  { id: "f6a7b8c9-d0e1-4234-8f01-234567890123", name: "Alejandro Sarmiento", email: "operativo@roesan.com",                 role: "asesor",       active: true },
-  { id: "a7b8c9d0-e1f2-4345-8012-345678901234", name: "Jorge Henao",         email: "jorge.jaime.henao.romero@gmail.com",   role: "admin",        active: true },
-];
+// Seed data removed — users are managed through the backend.
+// Add initial users via the admin panel or a backend seed script.
+const INITIAL_USERS: UserRow[] = [];
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-red-100 text-red-700",
@@ -169,8 +163,11 @@ export default function ConfigPage() {
             
             <button
               onClick={() => {
-                const userId = "federico";
-                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${userId}`;
+                const userId = (document.querySelector<HTMLElement>('[data-current-user-id]') as HTMLElement | null)?.dataset.currentUserId
+                  ?? localStorage.getItem('currentUserId')
+                  ?? '';
+                if (!userId) { alert('Inicia sesión antes de vincular tu cuenta Gmail.'); return; }
+                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${encodeURIComponent(userId)}`;
               }}
               className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
             >

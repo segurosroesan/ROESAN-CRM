@@ -38,3 +38,19 @@ APIS/**/*.xlsx
 APIS/**/*.docx
 APIS/**/*.pdf
 apps/backend/certs/
+
+# Archivos JSON de opciones/catálogos locales
+pago_options.json
+poliza_options.json
+options.json
+
+# Scripts de desarrollo y pruebas ad-hoc (no deben estar en repo)
+test-*.js
+fix-*.js
+scan-*.js
+fetch-*.js
+check-*.js
+extract-*.js
+find-*.js
+read-*.py
+comparativo.py

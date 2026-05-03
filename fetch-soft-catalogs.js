@@ -27,8 +27,9 @@ async function fetchAllPages(url, endpoint, headers) {
 
 async function run() {
   const url = 'https://app.softseguros.com';
-  const user = process.env.SOFT_SEGUROS_USERNAME || 'carmene.estrada';
-  const pass = process.env.SOFT_SEGUROS_PASSWORD || '670618';
+  const user = process.env.SOFT_SEGUROS_USERNAME;
+  const pass = process.env.SOFT_SEGUROS_PASSWORD;
+  if (!user || !pass) { console.error('Error: SOFT_SEGUROS_USERNAME y SOFT_SEGUROS_PASSWORD son requeridos'); process.exit(1); }
   
   try {
     console.log('Authenticating...');

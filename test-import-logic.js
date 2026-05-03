@@ -1,6 +1,8 @@
 require('dotenv').config();
-process.env.SOFT_SEGUROS_USERNAME = process.env.SOFT_SEGUROS_USERNAME || 'carmene.estrada';
-process.env.SOFT_SEGUROS_PASSWORD = process.env.SOFT_SEGUROS_PASSWORD || '670618';
+if (!process.env.SOFT_SEGUROS_USERNAME || !process.env.SOFT_SEGUROS_PASSWORD) {
+  console.error('Error: SOFT_SEGUROS_USERNAME y SOFT_SEGUROS_PASSWORD son requeridos en .env');
+  process.exit(1);
+}
 const { SoftSegurosApi } = require('./apps/backend/dist/lib/soft-seguros-api');
 
 async function testImport() {

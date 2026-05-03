@@ -1,9 +1,10 @@
 const axios = require('axios');
 
 async function testPoliza() {
-  const url = 'https://app.softseguros.com';
-  const user = 'carmene.estrada';
-  const pass = '670618';
+  const url = process.env.SOFT_SEGUROS_API_URL || 'https://app.softseguros.com';
+  const user = process.env.SOFT_SEGUROS_USERNAME;
+  const pass = process.env.SOFT_SEGUROS_PASSWORD;
+  if (!user || !pass) { console.error('Error: SOFT_SEGUROS_USERNAME y SOFT_SEGUROS_PASSWORD son requeridos'); process.exit(1); }
   try {
     const res = await axios.post(url + '/api-token-auth/', { username: user, password: pass });
     const token = res.data.token;

@@ -22,6 +22,7 @@ function derivarTipo(poliza: any): string {
 
 export interface ImportJobResult {
   ejecutadoEn: number;
+  mesImportado: string;
   totalConsultadas: number;
   nuevasCreadas: number;
   actualizadas: number;
@@ -44,10 +45,10 @@ export class RenovacionesService {
   /**
    * Trigger the daily import job manually or via cron
    */
-  async triggerImport(diasRango: number = 60): Promise<{ jobId: string; message: string }> {
+  async triggerImport(): Promise<{ jobId: string; message: string }> {
     const job = await this.renovacionesQueue.add(
       'import-renovaciones',
-      { diasRango },
+      {},
       {
         attempts: 3,
         backoff: { type: 'exponential', delay: 30000 },
@@ -62,10 +63,18 @@ export class RenovacionesService {
   /**
    * Core import logic — called by the BullMQ processor
    */
-  async runImportJob(diasRango: number = 60): Promise<ImportJobResult> {
+  async runImportJob(): Promise<ImportJobResult> {
     const startTime = Date.now();
+
+    // Próximo mes calendario completo
+    const hoy = new Date();
+    const inicioProximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+    const finProximoMes = new Date(hoy.getFullYear(), hoy.getMonth() + 2, 0, 23, 59, 59, 999);
+    const mesLabel = inicioProximoMes.toLocaleString('es-CO', { month: 'long', year: 'numeric' });
+
     const result: ImportJobResult = {
       ejecutadoEn: startTime,
+      mesImportado: mesLabel,
       totalConsultadas: 0,
       nuevasCreadas: 0,
       actualizadas: 0,
@@ -74,32 +83,34 @@ export class RenovacionesService {
       detalleErrores: [],
     } as any;
 
-    this.logger.log(`Starting daily renovation import job. Range: ${diasRango} days`);
+    this.logger.log(`Importando pólizas que vencen en: ${inicioProximoMes.toLocaleDateString('es-CO')} — ${finProximoMes.toLocaleDateString('es-CO')}`);
 
     try {
       // ── PASO 1: Paginar todas las pólizas de Soft Seguros ──────────────────
       const allPolizas = await this.fetchAllPolizas();
       this.logger.log(`Total polizas fetched from Soft Seguros: ${allPolizas.length}`);
 
-      // ── PASO 2: Filtrar por fecha_fin dentro del rango ─────────────────────
-      const hoy = new Date();
-      const limiteFecha = new Date();
-      limiteFecha.setDate(limiteFecha.getDate() + diasRango);
-
+      // ── PASO 2: Filtrar por fecha_fin dentro del próximo mes calendario ────
       const polizasAVencer = allPolizas.filter((poliza: any) => {
         const fechaFin = poliza.fecha_fin ? new Date(poliza.fecha_fin) : null;
         if (!fechaFin) return false;
 
-        // Vigente (codigo_generico = "01") y renovable
-        const esVigente = poliza.estado_poliza?.codigo_generico === '01' || poliza.estado_poliza === 'Vigente' || poliza.estado_poliza === 45909;
-        const esRenovable = poliza.renovable === true;
-        const dentroDelRango = fechaFin >= hoy && fechaFin <= limiteFecha;
+        const estadoPoliza = poliza.estado_poliza;
+        const esVigente =
+          estadoPoliza?.codigo_generico === '01' ||
+          String(estadoPoliza?.codigo_generico) === '01' ||
+          estadoPoliza?.id === 45909 ||
+          estadoPoliza === 45909 ||
+          estadoPoliza === 'Vigente';
+
+        const esRenovable = poliza.renovable === true || poliza.renovable === 1;
+        const dentroDelRango = fechaFin >= inicioProximoMes && fechaFin <= finProximoMes;
 
         return esVigente && esRenovable && dentroDelRango;
       });
 
       result.totalConsultadas = polizasAVencer.length;
-      this.logger.log(`Polizas a vencer en ${diasRango} dias: ${polizasAVencer.length}`);
+      this.logger.log(`Pólizas a vencer en ${mesLabel}: ${polizasAVencer.length}`);
 
       // ── PASO 3: Traer renovaciones existentes en InstantDB ─────────────────
       const existingData = await this.db.query({ leads: { $: { where: { pipeline_tipo: 'renovacion' } } } });
@@ -196,6 +207,7 @@ export class RenovacionesService {
       await this.db.transact([
         (tx.job_importaciones as any)[logId].update({
           ejecutadoEn: result.ejecutadoEn,
+          mesImportado: result.mesImportado,
           totalConsultadas: result.totalConsultadas,
           nuevasCreadas: result.nuevasCreadas,
           actualizadas: result.actualizadas,

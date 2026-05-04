@@ -137,6 +137,7 @@ export default function RenovacionesPage() {
   const [isImportando, setIsImportando] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResult, setImportResult] = useState<{
+    mesImportado: string;
     nuevasCreadas: number;
     actualizadas: number;
     errores: number;
@@ -199,7 +200,6 @@ export default function RenovacionesPage() {
       const res = await fetch(`${BACKEND}/renovaciones/import/direct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ diasRango: 60 }),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const result = await res.json();
@@ -361,7 +361,12 @@ export default function RenovacionesPage() {
           <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-100 p-6 space-y-4">
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-6 w-6 text-emerald-500 flex-shrink-0" />
-              <h3 className="font-bold text-slate-800 text-lg">Importación completada</h3>
+              <div>
+                <h3 className="font-bold text-slate-800 text-lg">Importación completada</h3>
+                {importResult.mesImportado && (
+                  <p className="text-xs text-slate-500 font-medium capitalize">Pólizas de {importResult.mesImportado}</p>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="bg-emerald-50 rounded-xl p-3">

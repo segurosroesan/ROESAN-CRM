@@ -20,17 +20,9 @@ export class RenovacionesCronService {
    */
   @Cron(process.env.IMPORT_CRON || '0 12 * * *')
   async handleDailyImport() {
-    const diasRango = parseInt(
-      process.env.IMPORT_DIAS_RANGO || '60',
-      10,
-    );
-
-    this.logger.log(
-      `[CRON] Starting daily renovation import. Range: ${diasRango} days.`
-    );
-
+    this.logger.log('[CRON] Starting daily renovation import (próximo mes calendario).');
     try {
-      const result = await this.renovacionesService.triggerImport(diasRango);
+      const result = await this.renovacionesService.triggerImport();
       this.logger.log(`[CRON] Job enqueued: ${result.jobId}`);
     } catch (error) {
       this.logger.error(`[CRON] Failed to enqueue import job: ${error.message}`);

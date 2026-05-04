@@ -11,8 +11,8 @@ export class RenovacionesController {
    */
   @Post('import')
   @HttpCode(HttpStatus.ACCEPTED)
-  async triggerImport(@Body('diasRango') diasRango?: number) {
-    return this.renovacionesService.triggerImport(diasRango || 60);
+  async triggerImport() {
+    return this.renovacionesService.triggerImport();
   }
 
   /**
@@ -38,8 +38,8 @@ export class RenovacionesController {
    * Run import synchronously (no queue/Redis required — for admin/testing)
    */
   @Post('import/direct')
-  async triggerImportDirect(@Body('diasRango') diasRango?: number) {
-    return this.renovacionesService.runImportJob(diasRango || 60);
+  async triggerImportDirect() {
+    return this.renovacionesService.runImportJob();
   }
 
   @Put(':id/confirmar')

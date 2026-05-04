@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { db } from "@/lib/instant-db";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import Image from "next/image";
-import { Shield, AlertCircle } from "lucide-react";
+import { Shield, AlertCircle, Loader2 } from "lucide-react";
 
 // Dominios/emails permitidos
 const ALLOWED_DOMAIN = "roesan.com";
@@ -29,9 +30,19 @@ function isAllowedEmail(email: string): boolean {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [nonce] = useState(crypto.randomUUID());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [waitingForAuth, setWaitingForAuth] = useState(false);
+
+  // Detecta sesión activa (incluye cuando acaba de hacer login)
+  const { isLoading: authLoading, user } = db.useAuth();
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/");
+    }
+  }, [authLoading, user, router]);
 
   const handleSuccess = async ({ credential }: { credential?: string }) => {
     if (!credential) return;
@@ -52,13 +63,30 @@ export default function LoginPage() {
         idToken: credential,
         nonce,
       });
+      // Login exitoso — esperar a que db.useAuth() confirme el usuario
+      // El useEffect de arriba hará el router.replace("/") cuando user != null
+      setWaitingForAuth(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Error al iniciar sesión";
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
+
+  // Mientras verifica sesión existente → spinner
+  if (authLoading || waitingForAuth) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-3"
+        style={{ background: "linear-gradient(135deg, #060614 0%, #0c0c22 50%, #060614 100%)" }}
+      >
+        <Loader2 className="h-8 w-8 text-amber-400 animate-spin" />
+        {waitingForAuth && (
+          <p className="text-slate-500 text-sm font-medium">Redirigiendo al CRM…</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

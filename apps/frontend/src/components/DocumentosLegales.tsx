@@ -82,6 +82,9 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
     if (selectedType === "CEDULA") {
       updates.name = `${extractedData.nombres} ${extractedData.apellidos}`;
       updates.documento = extractedData.numero_documento;
+      // Capturar fecha de nacimiento para cumpleaños y género
+      if (extractedData.fecha_nacimiento) updates.fecha_nacimiento = extractedData.fecha_nacimiento;
+      if (extractedData.genero) updates.genero = extractedData.genero;
     } else if (selectedType === "RUT") {
       updates.documento = extractedData.nit;
       updates.city = extractedData.ciudad;
@@ -123,12 +126,19 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
       db.tx.leads[leadId].update({ ...updates, updatedAt: Date.now() }),
     ]);
 
-    alert(selectedType === "POLIZA" ? "Datos del vehículo actualizados y póliza actual registrada." : "Datos aplicados al prospecto localmente.");
+    // AUTO-SYNC: Si el cliente ya existe en Soft Seguros, sincronizar documento automáticamente
+    if (lead.soft_cliente_id) {
+      console.log("Auto-syncing document to Soft Seguros...");
+      handleSyncToSoft();
+    } else {
+      alert(selectedType === "POLIZA" ? "Datos del vehículo actualizados y póliza actual registrada." : "Datos aplicados al prospecto localmente.");
+    }
   };
 
   const handleSyncToSoft = async () => {
     if (!extractedData || !currentFile) return;
     setIsSyncing(true);
+    setSyncStatus("loading");
 
     try {
       const formData = new FormData();

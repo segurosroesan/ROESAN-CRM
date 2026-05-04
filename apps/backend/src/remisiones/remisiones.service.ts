@@ -171,12 +171,15 @@ export class RemisionesService {
         }
       }
     } else {
-      this.logger.log(`Actualizando cliente ${soft_cliente_id} con datos extraídos`);
+      this.logger.log(`Actualizando cliente ${soft_cliente_id} con datos más recientes`);
       const clientUpdate: Record<string, any> = {};
+      // Datos personales — la info nueva siempre sobrescribe la existente
       if (clientData.nombres) clientUpdate.nombres = clientData.nombres;
       if (clientData.apellidos) clientUpdate.apellidos = clientData.apellidos;
       if (clientData.fecha_nacimiento) clientUpdate.fecha_nacimiento = clientData.fecha_nacimiento;
       if (clientData.genero) clientUpdate.genero = clientData.genero;
+      if (clientData.email) clientUpdate.correo = clientData.email;
+      if (clientData.telefono) { clientUpdate.celular = clientData.telefono; clientUpdate.telefono = clientData.telefono; }
       if (clientData.direccion) clientUpdate.direccion = clientData.direccion;
       if (clientData.ciudad) clientUpdate.ciudad = clientData.ciudad;
       if (clientData.provincia) clientUpdate.provincia = clientData.provincia;
@@ -329,7 +332,7 @@ export class RemisionesService {
     if (policyData.prima_neta !== undefined) policyPayload.prima = policyData.prima_neta;
     if (policyData.prima_total !== undefined) policyPayload.total = policyData.prima_total;
     if (policyData.iva !== undefined) policyPayload.iva = policyData.iva;
-    if (policyData.gastos_expedicion !== undefined) policyPayload.gastos_expedicion = policyData.gastos_expedicion;
+    if (policyData.gastos_expedicion) policyPayload.gastos_expedicion = policyData.gastos_expedicion;
     if (policyData.apellido_tomador) policyPayload.apellido_tomador = policyData.apellido_tomador;
     if (policyData.moneda) policyPayload.moneda = policyData.moneda;
     // Vendedor: explicit from form OR fallback to corporate
@@ -392,7 +395,7 @@ export class RemisionesService {
     steps.anexos = [];
     for (const file of files) {
       try {
-        const isPoliza = file.tipo === 'POLIZA';
+        const isPoliza = file.tipo === 'POLIZA' && soft_poliza_id;
         const anexoResult = await this.softApi.createAnexo({
           id_entidad: isPoliza ? Number(soft_poliza_id) : Number(soft_cliente_id),
           tipo_entidad: isPoliza ? 'P' : 'C',
@@ -454,6 +457,10 @@ export class RemisionesService {
           iva: policyData.iva || 0,
           gastos_expedicion: policyData.gastos_expedicion || 0,
           objeto_asegurado: policyData.objeto_asegurado || '',
+          // Datos personales del cliente (para cumpleaños y perfil)
+          fecha_nacimiento: clientData.fecha_nacimiento || '',
+          genero: clientData.genero || '',
+          tipo_documento: clientData.tipo_documento || '01',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         }),

@@ -11,6 +11,9 @@ const schema = i.schema({
       type: i.string().indexed(), // ramo: 'auto', 'salud', 'empresarial', 'cumplimiento'
       source: i.string().optional(), // e.g., 'Sitio Web', 'Meta', etc.
       documento: i.string().optional(),
+      fecha_nacimiento: i.string().optional(), // Extraída de cédula, formato YYYY-MM-DD
+      genero: i.string().optional(),           // 'MASCULINO' | 'FEMENINO'
+      
       
       // Vehicle (Auto)
       vehiclePlate: i.string().optional(),
@@ -67,6 +70,9 @@ const schema = i.schema({
       objeto_asegurado: i.string().optional(),
       fecha_inicio_poliza: i.string().optional(),
       tipo_documento: i.string().optional(), // '01'=Cédula, '02'=NIT, '03'=Pasaporte
+      prima_neta: i.number().optional(),
+      iva: i.number().optional(),
+      gastos_expedicion: i.number().optional(),
       
       // Legal
       consentimiento_datos: i.boolean().optional(),

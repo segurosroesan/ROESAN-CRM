@@ -1,7 +1,7 @@
 # Memoria del Proyecto — ROESAN CRM
 
 > **AGENTES DE IA:** Leer este archivo al inicio de CADA sesión antes de escribir cualquier código. Actualizar al finalizar avances importantes.
-> Última actualización: 2026-04-27
+> Última actualización: 2026-05-04
 
 ---
 
@@ -31,6 +31,7 @@
 | Generador de correo IA | ✅ Funcional | Endpoint `/email` con contexto renovación/nuevo |
 | Schema InstantDB cotizaciones | ✅ Actualizado | Campos: `cobertura`, `prima_total`, `es_renovacion` |
 | **SYNC-6 (Anexos)** | ✅ **FUNCIONAL** | Subida de archivos a Soft Seguros mediante `/documentos/sync` |
+| **Auth Google OAuth** | ✅ **FUNCIONAL** | Login con Google via InstantDB. Whitelist: `@roesan.com` + `jorge.jaime.henao.romero@gmail.com` |
 
 ---
 
@@ -88,7 +89,7 @@
 Este módulo permite procesar documentos legales y técnicos para automatizar la captura de datos y la sincronización con Soft Seguros.
 
 ### Documentos Soportados
-- **Cédula:** Extrae Nombres, Apellidos, ID, Género y Fecha de Nacimiento. Actualiza el nombre y documento del Lead.
+- **Cédula:** Extrae Nombres, Apellidos, ID, Género y Fecha de Nacimiento. Actualiza nombre, documento, **`fecha_nacimiento`** y **`genero`** del Lead en InstantDB.
 - **RUT:** Extrae NIT, Razón Social, Dirección y Ciudad. Actualiza el Lead.
 - **Sarlaft:** Extrae datos de ocupación y financieros para el perfil del cliente.
 - **Póliza:** Extrae Aseguradora, Número de Póliza, Vigencias, Prima y Coberturas.
@@ -97,6 +98,14 @@ Este módulo permite procesar documentos legales y técnicos para automatizar la
 Cuando se procesa una **Póliza**, el sistema realiza dos acciones automáticas al darle a "Actualizar":
 1. **Lead:** Actualiza los campos del vehículo (`vehiclePlate`, `vehicleYear`, `vehicleFasecolda`) con la info extraída.
 2. **Comparador:** Crea un registro en la tabla `cotizaciones` marcado con `es_renovacion: true`. Esto permite que la IA compare esta póliza vigente contra las nuevas cotizaciones de Allianz/Qualitas.
+
+### Lógica de Upsert de Cliente en Remisiones (2026-05-04)
+Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
+- La nueva información es **siempre más actual** y sobreescribe la existente.
+- Campos actualizados: `nombres`, `apellidos`, `fecha_nacimiento`, `genero`, `correo`, `celular`, `telefono`, `direccion`, `ciudad`, `provincia`, `ocupacion_descripcion`.
+- La **`fecha_nacimiento`** de la cédula se guarda en `leads.fecha_nacimiento` (InstantDB) para cumpleaños.
+- El frontend muestra banner 🔄 informando que el cliente existe y será actualizado.
+- El flujo **no se bloquea**: al buscar un cliente (nuevo o existente), siempre avanza al Paso 2.
 
 ### Sincronización (SYNC-6)
 - Permite subir el archivo PDF/Imagen directamente a Soft Seguros como un **Anexo**.
@@ -107,6 +116,7 @@ Cuando se procesa una **Póliza**, el sistema realiza dos acciones automáticas 
 ## 🏗️ Arquitectura de Datos
 
 - **InstantDB** (no Prisma, no PostgreSQL). Schema en `apps/frontend/src/lib/instant-schema.ts`
+- **`leads` tiene `fecha_nacimiento` y `genero`** — se capturan al parsear la cédula (remisiones + ficha de lead)
 - **Cotizaciones** guardan tanto `valor` como `prima_total` (el comparador usa `prima_total`)
 - **Flag `es_renovacion`:** Se guarda explícitamente en InstantDB — el comparador NO puede inferirlo
 - **`pipeline_tipo`:** enum `preventa | renovacion | crosssell`
@@ -143,6 +153,18 @@ Cuando se procesa una **Póliza**, el sistema realiza dos acciones automáticas 
 4. **Allianz Status B:** No es error fatal — seguir procesando paquetes
 5. **Soft Seguros tokens:** Solo en variables de entorno, nunca en código
 6. **Comparador:** Usa `prima_total`. Si es renovación, la póliza vigente se marca con `es_renovacion: true`
+
+---
+
+## 🔐 Auth — Configuración Google OAuth (2026-05-04)
+
+- **OAuth Client ID:** `1003175569991-is2qmk8e6kl258nrj9banf37jdultap5.apps.googleusercontent.com`
+- **InstantDB client name:** `roesan-crm`
+- **Google Console app:** External + Test users
+- **Whitelist acceso:** dominio `@roesan.com` (automático) + `jorge.jaime.henao.romero@gmail.com` (test user)
+- **Authorized JS Origins:** `https://roesan-crm.netlify.app`, `http://localhost:3000`
+- **Redirect URIs:** `https://api.instantdb.com/runtime/oauth/callback`, `https://roesan-backend.onrender.com/api/auth/google/callback`
+- **Vars Netlify:** `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `NEXT_PUBLIC_GOOGLE_CLIENT_NAME=roesan-crm`
 
 ---
 

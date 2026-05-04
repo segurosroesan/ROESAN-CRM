@@ -130,6 +130,7 @@ export default function RemisionarPage() {
       const data = await res.json();
       setBusquedaResult({ searched: true, found: data.found, cliente: data.cliente, message: data.message });
       if (data.found && data.cliente) {
+        // Cliente existe — pre-llenar con info de Soft Seguros pero la nueva info sobreescribirá
         setFormCliente(prev => ({
           ...prev,
           nombres:   data.cliente.nombres  || prev.nombres,
@@ -137,6 +138,8 @@ export default function RemisionarPage() {
           email:     data.cliente.email    || prev.email,
           telefono:  data.cliente.celular  || prev.telefono,
         }));
+        // No bloqueamos: continuamos al paso 2 directamente
+        setStep(2);
       } else {
         // Cliente no existe — ir directamente a subir documentos
         setStep(2);
@@ -471,7 +474,31 @@ export default function RemisionarPage() {
         {step === 2 && (
           <div className="p-8">
             <h2 className="text-xl font-bold text-slate-800 mb-1" style={{ fontFamily: "var(--font-outfit)" }}>Subir Documentos</h2>
-            <p className="text-sm text-slate-400 mb-6">Adjunta los documentos. La IA extraerá los datos automáticamente.</p>
+            <p className="text-sm text-slate-400 mb-4">Adjunta los documentos. La IA extraerá los datos automáticamente.</p>
+
+            {/* Banner contextual: cliente existente vs nuevo */}
+            {busquedaResult.found ? (
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
+                <span className="text-lg shrink-0">🔄</span>
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">
+                    Cliente existente — sus datos se actualizarán
+                  </p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    <strong>Sube la cédula</strong> para actualizar nombre, género y <strong>fecha de nacimiento</strong> (cumpleaños).
+                    La nueva información siempre reemplaza la existente en Soft Seguros.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-5">
+                <span className="text-lg shrink-0">🆕</span>
+                <p className="text-sm text-blue-700">
+                  <strong>Cliente nuevo</strong> — se creará en Soft Seguros con los datos extraídos.
+                  Sube la cédula para capturar nombre, fecha de nacimiento y género automáticamente.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               {(Object.keys(DOC_CONFIG) as DocTipo[]).map(tipo => {

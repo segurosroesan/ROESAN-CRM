@@ -11,12 +11,12 @@ export class RenovacionesProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<{ diasRango: number }>) {
-    this.logger.log(`Processing renovation import job ${job.id}. DíasRango: ${job.data.diasRango}`);
+  async process(job: Job) {
+    this.logger.log(`Processing renovation import job ${job.id}.`);
 
     await job.updateProgress(5);
 
-    const result = await this.renovacionesService.runImportJob(job.data.diasRango || 60);
+    const result = await this.renovacionesService.runImportJob();
 
     await job.updateProgress(100);
 

@@ -460,7 +460,6 @@ export class RemisionesService {
           // Datos personales del cliente (para cumpleaños y perfil)
           fecha_nacimiento: clientData.fecha_nacimiento || '',
           genero: clientData.genero || '',
-          tipo_documento: clientData.tipo_documento || '01',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         }),

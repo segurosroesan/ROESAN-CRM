@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { db } from "@/lib/instant-db";
 import {
   Settings,
@@ -24,6 +25,10 @@ import {
   Bell,
   Database,
   Mail,
+  CheckCircle2,
+  AlertCircle,
+  Link2,
+  Unlink,
 } from "lucide-react";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -111,8 +116,22 @@ function Section({
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
-export default function ConfigPage() {
+function ConfigPageInner() {
   const { user } = db.useAuth();
+  const searchParams = useSearchParams();
+
+  // Gmail OAuth result banner
+  const gmailParam = searchParams.get("gmail");
+  const [gmailBanner, setGmailBanner] = useState<"success" | "error" | null>(
+    gmailParam === "success" ? "success" : gmailParam === "error" ? "error" : null
+  );
+
+  // Auto-dismiss banner after 6s
+  useEffect(() => {
+    if (!gmailBanner) return;
+    const t = setTimeout(() => setGmailBanner(null), 6000);
+    return () => clearTimeout(t);
+  }, [gmailBanner]);
 
   // Ramos mapping
   const [ramos, setRamos] = useState(DEFAULT_RAMOS);
@@ -120,6 +139,9 @@ export default function ConfigPage() {
   // Users — live from InstantDB
   const { data: usersData, error: usersQueryError } = db.useQuery({ users: {} });
   const users: UserRow[] = (usersData?.users ?? []) as UserRow[];
+  const linkedEmail: string | null =
+    ((usersData?.users ?? []) as (UserRow & { googleEmail?: string })[])
+      .find(u => u.id === user?.id)?.googleEmail ?? null;
   const [showUserModal, setShowUserModal] = useState(false);
 
   // Seed initial team on first load
@@ -148,32 +170,77 @@ export default function ConfigPage() {
           Credenciales, integraciones, usuarios y parámetros del sistema.
         </p>
       </div>
-      
+
+      {/* ── Banner OAuth result ── */}
+      {gmailBanner === "success" && (
+        <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-sm font-semibold">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          <span>Cuenta de Gmail vinculada correctamente. Ya puedes enviar correos desde las fichas de leads.</span>
+          <button onClick={() => setGmailBanner(null)} className="ml-auto text-emerald-500 hover:text-emerald-700"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+      {gmailBanner === "error" && (
+        <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-sm font-semibold">
+          <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
+          <span>No se pudo vincular la cuenta de Gmail. Intenta nuevamente.</span>
+          <button onClick={() => setGmailBanner(null)} className="ml-auto text-rose-500 hover:text-rose-700"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
       {/* ── Mi Cuenta Gmail ── */}
       <Section title="Mi Cuenta Gmail" icon={Mail}>
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-100">
-                <Globe className="h-6 w-6 text-slate-400" />
+          {linkedEmail ? (
+            /* ── Cuenta vinculada ── */
+            <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-emerald-100">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <Link2 className="h-3.5 w-3.5 text-emerald-600" />
+                    Cuenta vinculada
+                  </p>
+                  <p className="text-xs text-emerald-700 font-semibold mt-0.5">{linkedEmail}</p>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">Los correos se enviarán desde esta cuenta</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-slate-700">Estado de la conexión</p>
-                <p className="text-xs text-slate-400 font-medium">Vincula tu cuenta de Google Workspace para enviar correos desde el CRM.</p>
-              </div>
+              <button
+                onClick={() => {
+                  if (!user?.id) return;
+                  window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${encodeURIComponent(user.id)}`;
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-500 rounded-xl font-semibold text-xs hover:bg-slate-50 transition-all shadow-sm"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Cambiar cuenta
+              </button>
             </div>
-            
-            <button
-              onClick={() => {
-                if (!user?.id) { alert('Inicia sesión antes de vincular tu cuenta Gmail.'); return; }
-                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${encodeURIComponent(user.id)}`;
-              }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
-            >
-              <Plus className="h-4 w-4" />
-              Vincular cuenta de Google
-            </button>
-          </div>
+          ) : (
+            /* ── Sin cuenta ── */
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-100">
+                  <Globe className="h-6 w-6 text-slate-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-700">Sin cuenta vinculada</p>
+                  <p className="text-xs text-slate-400 font-medium">Vincula tu cuenta de Google Workspace para enviar correos desde el CRM.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (!user?.id) return;
+                  window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${encodeURIComponent(user.id)}`;
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
+              >
+                <Plus className="h-4 w-4" />
+                Vincular cuenta de Google
+              </button>
+            </div>
+          )}
 
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 text-xs text-blue-700 space-y-1.5 font-medium">
             <p className="font-bold flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Sobre la privacidad</p>
@@ -429,6 +496,14 @@ export default function ConfigPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ConfigPage() {
+  return (
+    <Suspense>
+      <ConfigPageInner />
+    </Suspense>
   );
 }
 

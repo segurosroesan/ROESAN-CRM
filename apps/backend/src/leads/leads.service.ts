@@ -55,12 +55,9 @@ export class LeadsService {
       ]);
       this.logger.log(`Successfully created lead ${newLeadId}`);
 
-      const notifUserId = process.env.NOTIFICATION_USER_ID;
-      if (notifUserId) {
-        this.sendLeadNotification(notifUserId, lead).catch(err =>
-          this.logger.warn(`Notificación de lead fallida: ${err.message}`)
-        );
-      }
+      this.sendLeadNotification(lead).catch(err =>
+        this.logger.warn(`Notificación de lead fallida: ${err.message}`)
+      );
 
       return { id: newLeadId, ...lead };
     } catch (error) {
@@ -76,13 +73,13 @@ export class LeadsService {
     return [];
   }
 
-  private async sendLeadNotification(userId: string, lead: any) {
-    const subject = `Nuevo lead: ${lead.name} — ${lead.type}`;
+  private async sendLeadNotification(lead: any) {
+    const subject = `🔔 Nuevo lead: ${lead.name} — ${lead.type}`;
     const fecha = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
-    const body = `
+    const html = `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto">
-        <h2 style="color:#1e40af">Nuevo lead en el CRM</h2>
-        <table style="width:100%;border-collapse:collapse">
+        <h2 style="color:#1e40af;margin-bottom:16px">Nuevo lead en el CRM</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr><td style="padding:6px 0;color:#64748b;width:120px">Nombre</td><td><strong>${lead.name}</strong></td></tr>
           <tr><td style="padding:6px 0;color:#64748b">Teléfono</td><td>${lead.phone || '—'}</td></tr>
           <tr><td style="padding:6px 0;color:#64748b">Email</td><td>${lead.email || '—'}</td></tr>
@@ -91,8 +88,9 @@ export class LeadsService {
           <tr><td style="padding:6px 0;color:#64748b">Ciudad</td><td>${lead.city || '—'}</td></tr>
           <tr><td style="padding:6px 0;color:#64748b">Recibido</td><td>${fecha}</td></tr>
         </table>
+        <p style="margin-top:20px;font-size:12px;color:#94a3b8">Este correo fue generado automáticamente por el CRM Roesan.</p>
       </div>
     `;
-    await this.gmailService.sendEmail(userId, 'comercial@roesan.com', subject, body);
+    await this.gmailService.sendNotificationEmail('comercial@roesan.com', subject, html);
   }
 }

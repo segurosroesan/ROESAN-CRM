@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
+import * as nodemailer from 'nodemailer';
 import { getInstantAdmin } from '../lib/instant-admin';
 import { tx } from '@instantdb/admin';
 
@@ -134,5 +135,34 @@ export class GmailService {
     }
 
     return res.data;
+  }
+
+  /**
+   * Envía un correo de sistema (notificaciones internas) usando SMTP propio.
+   * No depende de ningún usuario OAuth del CRM.
+   * Variables necesarias: SMTP_USER, SMTP_PASS (Gmail app password).
+   */
+  async sendNotificationEmail(to: string, subject: string, html: string): Promise<void> {
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+
+    if (!smtpUser || !smtpPass) {
+      this.logger.warn('SMTP_USER o SMTP_PASS no configurados — notificación omitida.');
+      return;
+    }
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: smtpUser, pass: smtpPass },
+    });
+
+    await transporter.sendMail({
+      from: `"CRM Roesan" <${smtpUser}>`,
+      to,
+      subject,
+      html,
+    });
+
+    this.logger.log(`Notificación enviada a ${to}: ${subject}`);
   }
 }

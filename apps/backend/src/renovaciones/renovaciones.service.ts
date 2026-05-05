@@ -91,26 +91,56 @@ export class RenovacionesService {
       this.logger.log(`Total polizas fetched from Soft Seguros: ${allPolizas.length}`);
 
       // ── PASO 2: Filtrar por fecha_fin dentro del próximo mes calendario ────
+      // Usamos comparación de cadenas YYYY-MM para evitar problemas de zona horaria con objetos Date
+      const targetYear = inicioProximoMes.getFullYear();
+      const targetMonth = inicioProximoMes.getMonth() + 1;
+      const targetYearMonth = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+      
       const polizasAVencer = allPolizas.filter((poliza: any) => {
-        const fechaFin = poliza.fecha_fin ? new Date(poliza.fecha_fin) : null;
-        if (!fechaFin) return false;
+        if (!poliza.fecha_fin) return false;
+        
+        // Formato esperado: YYYY-MM-DD
+        const [year, month] = poliza.fecha_fin.split('-');
+        const polizaYearMonth = `${year}-${month}`;
+        
+        const dentroDelRango = polizaYearMonth === targetYearMonth;
 
         const estadoPoliza = poliza.estado_poliza;
-        const esVigente =
-          estadoPoliza?.codigo_generico === '01' ||
+        const esVigente = 
+          estadoPoliza?.codigo_generico === '01' || 
           String(estadoPoliza?.codigo_generico) === '01' ||
           estadoPoliza?.id === 45909 ||
+          (typeof estadoPoliza === 'object' && estadoPoliza?.id === 45909) ||
           estadoPoliza === 45909 ||
-          estadoPoliza === 'Vigente';
+          (typeof estadoPoliza === 'string' && (estadoPoliza.toLowerCase() === 'vigente' || estadoPoliza === '45909'));
 
-        const esRenovable = poliza.renovable === true || poliza.renovable === 1;
-        const dentroDelRango = fechaFin >= inicioProximoMes && fechaFin <= finProximoMes;
+        const esRenovable = poliza.renovable === true || poliza.renovable === 1 || String(poliza.renovable) === 'true';
 
         return esVigente && esRenovable && dentroDelRango;
       });
 
       result.totalConsultadas = polizasAVencer.length;
       this.logger.log(`Pólizas a vencer en ${mesLabel}: ${polizasAVencer.length}`);
+      
+      let skippedByRange = 0;
+      let skippedByRenovable = 0;
+      let totalVigentes = allPolizas.length;
+
+      allPolizas.forEach((p: any) => {
+        if (!p.fecha_fin) return;
+        const [year, month] = p.fecha_fin.split('-');
+        const polizaYearMonth = `${year}-${month}`;
+        
+        if (polizaYearMonth !== targetYearMonth) skippedByRange++;
+        else if (!(p.renovable === true || p.renovable === 1 || String(p.renovable) === 'true')) skippedByRenovable++;
+      });
+
+      this.logger.log(
+        `Stats del set "Vigente": Total=${totalVigentes}, ` +
+        `En rango ${mesLabel}=${polizasAVencer.length}, ` +
+        `Fuera de rango=${skippedByRange}, ` +
+        `No renovables en rango=${skippedByRenovable}`
+      );
 
       // ── PASO 3: Traer renovaciones existentes en InstantDB ─────────────────
       const existingData = await this.db.query({ leads: { $: { where: { pipeline_tipo: 'renovacion' } } } });
@@ -242,22 +272,28 @@ export class RenovacionesService {
       try {
         const response = await this.softApi['request']('GET', '/api/poliza/', undefined, {
           order_by: 'id',
-          sort_by: 'asc',
+          sort_by: 'desc', // Recent first
+          estado_poliza: 45909, // Solo pólizas VIGENTES (ID confirmado en Soft Seguros)
           page,
           page_size: 100,
         });
 
-        const items = response.results || response;
+        // Soft Seguros can return { results: [...] } or just [...]
+        const items = response.results || (Array.isArray(response) ? response : []);
         if (Array.isArray(items)) {
           allPolizas.push(...items);
         }
 
+        // Check if there is a next page
         hasMore = !!response.next;
-        page++;
-
-        if (page > 500) {
-          this.logger.warn('Reached page limit (500). Stopping pagination.');
-          break;
+        
+        if (hasMore) {
+          page++;
+          // Safe limit to avoid infinite loops in case of API issues, but much higher than 500
+          if (page > 2000) {
+            this.logger.warn('Reached safety page limit (2000). Stopping pagination.');
+            hasMore = false;
+          }
         }
       } catch (error: any) {
         this.logger.error(`Error fetching page ${page}: ${error.message}`);

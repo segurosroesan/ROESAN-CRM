@@ -35,7 +35,7 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
   const [isParsing, setIsParsing] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<"idle" | "success" | "error">("idle");
+  const [syncStatus, setSyncStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

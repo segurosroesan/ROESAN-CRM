@@ -332,7 +332,7 @@ export default function ConfigPage() {
             {users.map(user => (
               <div key={user.id} className="flex items-center gap-4 px-4 py-3.5 bg-white hover:bg-slate-50/50 transition-colors">
                 <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-sm font-black text-white flex-shrink-0 shadow-sm">
-                  {user.name.charAt(0)}
+                  {user.name?.charAt(0) ?? user.email?.charAt(0) ?? "?"}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-700 truncate">{user.name}</p>

@@ -1,7 +1,7 @@
 # Memoria del Proyecto — ROESAN CRM
 
 > **AGENTES DE IA:** Leer este archivo al inicio de CADA sesión antes de escribir cualquier código. Actualizar al finalizar avances importantes.
-> Última actualización: 2026-05-04
+> Última actualización: 2026-05-05
 
 ---
 
@@ -28,7 +28,7 @@
 | **SBS SOAP** | ✅ **FUNCIONAL** (QA) | Proceso de 2 pasos (Sesión + Cotización). |
 | Comparador IA (Gemini Flash) | ✅ Funcional | Override determinístico para opción más barata |
 | Parse-PDF de cotizaciones | ✅ Funcional | Endpoint `/parse-pdf` y `/parse-pdfs` (bulk) |
-| **Módulo Documentos Legales** | ✅ **FUNCIONAL** | Extracción IA (Cédula, RUT, Sarlaft, Póliza) + Auto-registro póliza actual |
+| **Módulo Documentos Legales** | ✅ **FUNCIONAL** | Extracción IA + **Persistencia en InstantDB** + Sincronización a Soft (Clientes/Pólizas) |
 | Generador de correo IA | ✅ Funcional | Endpoint `/email` con contexto renovación/nuevo |
 | Schema InstantDB cotizaciones | ✅ Actualizado | Campos: `cobertura`, `prima_total`, `es_renovacion` |
 | **SYNC-6 (Anexos)** | ✅ **FUNCIONAL** | Subida de archivos a Soft Seguros mediante `/documentos/sync` |
@@ -129,6 +129,7 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 ## 🏗️ Arquitectura de Datos
 
 - **InstantDB** (no Prisma, no PostgreSQL). Schema en `apps/frontend/src/lib/instant-schema.ts`
+- **`leads` tiene `docs_metadata`** — persiste el estado de sincronización de archivos.
 - **`leads` tiene `fecha_nacimiento` y `genero`** — se capturan al parsear la cédula (remisiones + ficha de lead)
 - **Cotizaciones** guardan tanto `valor` como `prima_total` (el comparador usa `prima_total`)
 - **Flag `es_renovacion`:** Se guarda explícitamente en InstantDB — el comparador NO puede inferirlo
@@ -184,6 +185,24 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 ## 🎯 Próximos Pasos (prioridad)
 
 1. **Probar SYNC-1 a SYNC-4 en producción** — Soft Seguros ya tiene permisos en `/api/cliente/`
-2. **Resolver Qualitas QA** — Contactar Edgar Bello / Brayan Florez
+2. **Implementar Qualitas Prod** — Una vez confirmado el acceso a producción.
 3. **SYNC-5** — Beneficiarios (Fase 2)
 4. **PDF comparativo online** — Evaluar integración de `comparativo.py` al backend
+5. **Mover leads manualmente** — Asegurar que la actualización manual de etapa en la ficha de lead sea 100% persistente (ya implementado, monitorear).
+
+---
+
+## 🚀 Mejoras Recientes (2026-05-05)
+
+### Persistencia de Documentos ✅
+- Se implementó el campo `docs_metadata` (JSON) en la entidad `leads`.
+- Los componentes de frontend ahora recuperan el estado de sincronización y los datos extraídos de la DB, evitando la pérdida de información al cambiar entre pestañas o recargar la página.
+
+### Wizard de Remisiones Pro ✅
+- **Vinculación de Póliza:** Ahora soporta correctamente el campo `poliza_padre_id` para renovaciones.
+- **Pagos Dinámicos:** Se añadió soporte para elegir **Forma de Pago** (Contado/Cuotas) y **Periodicidad** (Mensual, Trimestral, Semestral, Anual).
+- **Cálculo de Cuotas:** El backend genera automáticamente los registros de pago en Soft Seguros proyectando las fechas de vencimiento según la periodicidad elegida.
+
+### Refuerzo de Integración Soft Seguros ✅
+- **Ruteo de Anexos:** Los documentos tipo `POLIZA` se envían exclusivamente a la entidad Póliza en Soft Seguros.
+- **Estandarización de Links:** Todos los enlaces a fichas de cliente apuntan ahora a `/editar/persona/` para compatibilidad total con la v1 de Soft Seguros.

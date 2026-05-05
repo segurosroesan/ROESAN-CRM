@@ -74,16 +74,25 @@ export class DocumentosService {
 
       // 3. Upload Attachment (SYNC-6)
       if (fileBuffer && fileName) {
-        const id_entidad = tipo === 'POLIZA' && softPolicyId ? Number(softPolicyId) : Number(softClientId);
-        const tipo_entidad = tipo === 'POLIZA' && softPolicyId ? 'P' : 'C';
+        const isPolicyFile = tipo === 'POLIZA';
+        
+        if (isPolicyFile && !softPolicyId) {
+          throw new Error('No se puede subir una carátula de póliza sin un ID de póliza en Soft Seguros. Sincroniza la póliza primero.');
+        }
+
+        const id_entidad = isPolicyFile ? Number(softPolicyId) : Number(softClientId);
+        const tipo_entidad = isPolicyFile ? 'P' : 'C';
 
         if (id_entidad) {
+          this.logger.log(`Subiendo anexo ${tipo} a entidad ${tipo_entidad}:${id_entidad}`);
           syncResult.attachment = await this.softApi.createAnexo({
             id_entidad,
             tipo_entidad,
             nombre_archivo: fileName,
             archivo_base64: fileBuffer.toString('base64'),
           });
+        } else {
+          this.logger.warn(`No se pudo determinar el ID de la entidad para subir el anexo ${tipo}`);
         }
       }
 

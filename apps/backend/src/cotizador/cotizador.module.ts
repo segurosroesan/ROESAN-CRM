@@ -5,6 +5,7 @@ import { CotizadorService } from './cotizador.service';
 import { ComparadorService } from './comparador.service';
 import { QualitasApi } from '../lib/qualitas-api';
 import { AllianzApi } from '../lib/allianz-api';
+import { SBSApi } from '../lib/sbs-api';
 
 @Module({
   imports: [ConfigModule],
@@ -35,6 +36,16 @@ import { AllianzApi } from '../lib/allianz-api';
           config.get('ALLIANZ_AGENT_CODE', ''),
           config.get('ALLIANZ_CERT_PATH', './certs/CP100074_Int_PruebasRN2026.pfx'),
           config.get('ALLIANZ_CERT_PASSWORD', ''),
+        ),
+      inject: [ConfigService],
+    },
+    {
+      provide: 'SBS_API',
+      useFactory: (config: ConfigService) =>
+        new SBSApi(
+          config.get('SBS_URL', 'https://test.cotizadoresgenerales.com/wsCotizaAutos/CotizaAutos.asmx'),
+          config.get('SBS_USER', ''),
+          config.get('SBS_PASSWORD', ''),
         ),
       inject: [ConfigService],
     },

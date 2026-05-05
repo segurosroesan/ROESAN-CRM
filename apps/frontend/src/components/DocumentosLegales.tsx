@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   FileText, 
   Upload, 
@@ -30,31 +30,77 @@ const DOC_TYPES: { id: DocType; label: string; icon: any; color: string }[] = [
   { id: "POLIZA", label: "Póliza Anterior", icon: FileText, color: "text-emerald-600 bg-emerald-50" },
 ];
 
+type DocState = {
+  extractedData: any;
+  syncStatus: "idle" | "loading" | "success" | "error";
+  currentFile: File | null;
+};
+
 export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
   const [selectedType, setSelectedType] = useState<DocType>("CEDULA");
   const [isParsing, setIsParsing] = useState(false);
-  const [extractedData, setExtractedData] = useState<any>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  
+  const [docsState, setDocsState] = useState<Record<DocType, DocState>>({
+    CEDULA: { extractedData: null, syncStatus: "idle", currentFile: null },
+    RUT: { extractedData: null, syncStatus: "idle", currentFile: null },
+    SARLAFT: { extractedData: null, syncStatus: "idle", currentFile: null },
+    POLIZA: { extractedData: null, syncStatus: "idle", currentFile: null },
+  });
+
+  // Load existing metadata from InstantDB
+  useEffect(() => {
+    if (lead?.docs_metadata) {
+      const metadata = lead.docs_metadata as Record<string, any>;
+      setDocsState(prev => {
+        const newState = { ...prev };
+        let changed = false;
+        Object.keys(metadata).forEach((type) => {
+          const t = type as DocType;
+          if (newState[t]) {
+            // Only overwrite if it's currently idle and we have success in DB, 
+            // or if it was already success but metadata might have changed.
+            if (metadata[t].synced && newState[t].syncStatus !== "success") {
+              newState[t] = {
+                ...newState[t],
+                syncStatus: "success",
+                extractedData: metadata[t].extractedData || newState[t].extractedData,
+              };
+              changed = true;
+            }
+          }
+        });
+        return changed ? newState : prev;
+      });
+    }
+  }, [lead?.docs_metadata]); // Depend on metadata changes
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const currentState = docsState[selectedType];
+  const { extractedData, syncStatus, currentFile } = currentState;
+
+  const updateState = (type: DocType, updates: Partial<DocState>) => {
+    setDocsState(prev => ({
+      ...prev,
+      [type]: { ...prev[type], ...updates }
+    }));
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCurrentFile(file);
-    handleParse(file);
+    updateState(selectedType, { currentFile: file, syncStatus: "idle", extractedData: null });
+    handleParse(file, selectedType);
   };
 
-  const handleParse = async (file: File) => {
+  const handleParse = async (file: File, type: DocType) => {
     setIsParsing(true);
-    setExtractedData(null);
-    setSyncStatus("idle");
-
+    
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("tipo", selectedType);
+      formData.append("tipo", type);
 
       const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const response = await fetch(`${backendUrl}/documentos/parse`, {
@@ -65,7 +111,7 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
       if (!response.ok) throw new Error("Error al analizar el documento");
       
       const data = await response.json();
-      setExtractedData(data);
+      updateState(type, { extractedData: data });
     } catch (err) {
       console.error(err);
       alert("No se pudo extraer información del documento.");
@@ -77,12 +123,10 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
   const handleApplyToLead = async () => {
     if (!extractedData) return;
 
-    // Map extracted data to Lead fields
     const updates: any = {};
     if (selectedType === "CEDULA") {
       updates.name = `${extractedData.nombres} ${extractedData.apellidos}`;
       updates.documento = extractedData.numero_documento;
-      // Capturar fecha de nacimiento para cumpleaños y género
       if (extractedData.fecha_nacimiento) updates.fecha_nacimiento = extractedData.fecha_nacimiento;
       if (extractedData.genero) updates.genero = extractedData.genero;
     } else if (selectedType === "RUT") {
@@ -94,7 +138,6 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
       if (extractedData.modelo) updates.vehicleYear = String(extractedData.modelo);
       if (extractedData.fasecolda) updates.vehicleFasecolda = extractedData.fasecolda;
       
-      // Also create a "current policy" cotizacion for the comparison engine
       const cotId = crypto.randomUUID();
       const prima = parseFloat(extractedData.prima_total) || 0;
       
@@ -126,9 +169,7 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
       db.tx.leads[leadId].update({ ...updates, updatedAt: Date.now() }),
     ]);
 
-    // AUTO-SYNC: Si el cliente ya existe en Soft Seguros, sincronizar documento automáticamente
     if (lead.soft_cliente_id) {
-      console.log("Auto-syncing document to Soft Seguros...");
       handleSyncToSoft();
     } else {
       alert(selectedType === "POLIZA" ? "Datos del vehículo actualizados y póliza actual registrada." : "Datos aplicados al prospecto localmente.");
@@ -138,7 +179,7 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
   const handleSyncToSoft = async () => {
     if (!extractedData || !currentFile) return;
     setIsSyncing(true);
-    setSyncStatus("loading");
+    updateState(selectedType, { syncStatus: "loading" });
 
     try {
       const formData = new FormData();
@@ -157,14 +198,30 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
 
       const result = await response.json();
       if (result.success) {
-        setSyncStatus("success");
+        updateState(selectedType, { syncStatus: "success" });
+        
+        // Save metadata to InstantDB for persistence
+        const currentMetadata = (lead.docs_metadata as Record<string, any>) || {};
+        await db.transact([
+          db.tx.leads[leadId].update({
+            docs_metadata: {
+              ...currentMetadata,
+              [selectedType]: {
+                synced: true,
+                fileName: currentFile.name,
+                syncedAt: Date.now(),
+                extractedData: extractedData
+              }
+            }
+          })
+        ]);
       } else {
-        setSyncStatus("error");
+        updateState(selectedType, { syncStatus: "error" });
         alert(`Error: ${result.error}`);
       }
     } catch (err) {
       console.error(err);
-      setSyncStatus("error");
+      updateState(selectedType, { syncStatus: "error" });
     } finally {
       setIsSyncing(false);
     }
@@ -172,32 +229,28 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
 
   return (
     <div className="space-y-6">
-      {/* Type Selector */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {DOC_TYPES.map((type) => (
           <button
             key={type.id}
-            onClick={() => {
-              setSelectedType(type.id);
-              setExtractedData(null);
-              setSyncStatus("idle");
-              setCurrentFile(null);
-            }}
+            onClick={() => setSelectedType(type.id)}
             className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
               selectedType === type.id
                 ? "border-amber-500 bg-amber-50/50 shadow-sm"
                 : "border-slate-100 bg-white hover:border-slate-200"
             }`}
           >
-            <div className={`p-2 rounded-xl ${type.color}`}>
+            <div className={`p-2 rounded-xl ${type.color} relative`}>
               <type.icon className="h-5 w-5" />
+              {docsState[type.id].currentFile && (
+                <div className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white" />
+              )}
             </div>
             <span className="text-xs font-bold text-slate-700">{type.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Upload Area */}
       <div 
         onClick={() => fileInputRef.current?.click()}
         className="group relative cursor-pointer"
@@ -229,7 +282,7 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
                 <p className="text-xs text-slate-400">Archivo listo para procesar</p>
               </div>
               <button 
-                onClick={(e) => { e.stopPropagation(); setCurrentFile(null); setExtractedData(null); }}
+                onClick={(e) => { e.stopPropagation(); updateState(selectedType, { currentFile: null, extractedData: null, syncStatus: "idle" }); }}
                 className="text-xs font-bold text-rose-500 hover:underline"
               >
                 Cambiar archivo
@@ -240,14 +293,13 @@ export function DocumentosLegales({ lead, leadId }: DocumentosLegalesProps) {
               <div className="h-16 w-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <CloudUpload className="h-8 w-8" />
               </div>
-              <p className="text-sm font-bold text-slate-600">Haz clic para subir documento</p>
+              <p className="text-sm font-bold text-slate-600">Haz clic para subir {selectedType.toLowerCase()}</p>
               <p className="text-xs text-slate-400 mt-1">PDF o Imagen (Máx 10MB)</p>
             </>
           )}
         </div>
       </div>
 
-      {/* Results & Actions */}
       {extractedData && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">

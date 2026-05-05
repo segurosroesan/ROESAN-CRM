@@ -25,6 +25,7 @@
 | Gmail integration | ✅ Funcional | OAuth, drafts, labels |
 | Módulo Cotizador backend | ✅ Funcional | Controller + Service + Module |
 | **Allianz SOAP** | ✅ **FUNCIONAL** | UAT probado, 4 paquetes |
+| **SBS SOAP** | ✅ **FUNCIONAL** (QA) | Proceso de 2 pasos (Sesión + Cotización). |
 | Comparador IA (Gemini Flash) | ✅ Funcional | Override determinístico para opción más barata |
 | Parse-PDF de cotizaciones | ✅ Funcional | Endpoint `/parse-pdf` y `/parse-pdfs` (bulk) |
 | **Módulo Documentos Legales** | ✅ **FUNCIONAL** | Extracción IA (Cédula, RUT, Sarlaft, Póliza) + Auto-registro póliza actual |
@@ -39,7 +40,7 @@
 
 | Item | Estado | Acción requerida |
 |------|--------|-----------------|
-| **Qualitas REST** | ⚠️ Conectado, QA limitado | Contactar Edgar Bello / Brayan Florez para activar tarifas en QA y confirmar formato `fechaNacimiento` |
+| **Qualitas REST** | ✅ **FUNCIONAL** (QA) | Formato `fechaNacimiento` (DD/MM/YYYY) y regla 56 corregidos. Usar Fasecolda `01601276` para pruebas en QA. |
 | **SYNC-1 a SYNC-4 en producción** | ⏳ Listo para probar | Permisos Soft Seguros ya habilitados — hacer prueba con lead real en "Ganado/Aprobado" |
 | Comparativo PDF offline (`comparativo.py`) | ✅ Independiente | Script Python v3.0 local para asesores, no integrar al backend |
 
@@ -75,12 +76,24 @@
 - **Prueba exitosa:** Suzuki Ertiga 2020 (Fasecolda `4517106`), 4 paquetes: Esencial → Llave en Mano
 - **rejectUnauthorized: false** en UAT (certificado autofirmado)
 
-### Qualitas REST ⚠️ QA LIMITADO
+### Qualitas REST ✅ FUNCIONAL (QA)
 - **Auth:** HTTP Basic Auth
-- **Estado:** Servidor QA responde. Errores son de configuración QA (no de código):
-  - Error `0005`: Fasecolda sin tarifa configurada en QA
-  - Error `0235`: Problema con `fechaNacimiento` en QA
-- **Acción pendiente:** Contactar equipo Qualitas para habilitar tarifas de prueba
+- **Estado:** Corregido y probado en QA (2026-05-05).
+- **🚨 CRÍTICO — fechaNacimiento:** Debe ser **`DD/MM/YYYY`**. El backend ahora formatea automáticamente desde `YYYY-MM-DD`.
+- **🚨 CRÍTICO — Reglas:** Se requiere `NoConsideracion: '56'` en `ConsideracionesAdicionalesDG` para habilitar la tarifa vigente.
+- **Error `0005`:** Es por falta de tarifas para ciertos Fasecolda en QA. Para pruebas exitosas usar Suzuki Ertiga 2016 (`01601276`).
+- **Género:** Se envía en `ConsideracionesAdicionalesDA` (TipoRegla 56) como 'M' o 'F'.
+- **Frontend:** La función `handleAutoQuote` ya envía `fecha_nacimiento` y `genero` del lead.
+
+### SBS SOAP ✅ FUNCIONAL (QA)
+- **Protocolo:** SOAP 1.2
+- **Endpoint:** `https://test.cotizadoresgenerales.com/wsCotizaAutos/CotizaAutos.asmx`
+- **Auth:** Usuario/Password (mismos de producción para `gerencia@roesan.com.co`)
+- **Proceso:** 
+  1. `SBSAutos_CrearSesion_Paquete`: Crea la sesión con datos del prospecto y vehículo.
+  2. `SBSAutos_CotizaryCerrarSesion_Paquete`: Genera el valor de la prima.
+- **Mapeo:** El backend orquesta automáticamente los dos pasos requeridos por SBS.
+- **Campos:** Requiere Fasecolda, Modelo, Documento, Género y Fecha de Nacimiento (provenientes del Lead).
 
 ---
 

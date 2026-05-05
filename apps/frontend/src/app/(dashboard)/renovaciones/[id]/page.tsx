@@ -264,29 +264,18 @@ export default function RenovacionDetailPage({ params }: { params: Promise<{ id:
             </div>
           )}
 
-          {/* Referencia Soft Seguros */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-            <h3 className="font-bold text-slate-800 text-sm">Referencia Soft Seguros</h3>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400">ID Póliza</span>
-                <span className="font-mono text-slate-700">{lead.soft_poliza_id || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">ID Cliente</span>
-                <span className="font-mono text-slate-700">{lead.soft_cliente_id || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Sincronizado</span>
-                <span
-                  className={
-                    lead.sincronizado_soft ? "text-emerald-600 font-bold" : "text-slate-400"
-                  }
-                >
-                  {lead.sincronizado_soft ? "✓ Sí" : "Manual"}
-                </span>
-              </div>
             </div>
+
+            {lead.soft_cliente_id && (
+              <a
+                href={`https://app.softseguros.com/srv1/home/clientes/${lead.soft_cliente_id}/editar/persona/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full text-center py-2 mt-4 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all border border-slate-200"
+              >
+                Ver en Soft Seguros ↗
+              </a>
+            )}
           </div>
         </div>
       </div>

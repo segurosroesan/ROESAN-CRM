@@ -20,11 +20,28 @@ export class RemisionesService {
     this.logger.log(`Buscando cliente en Soft Seguros: ${documento}`);
     try {
       const cliente = await this.softApi.getClientByDocument(documento);
+      
+      let polizas: any[] = [];
+      if (cliente) {
+        this.logger.log(`Cliente encontrado (ID: ${cliente.id}). Buscando sus pólizas...`);
+        polizas = await this.softApi.getPolizasByClient(cliente.id);
+        this.logger.log(`Se encontraron ${polizas.length} pólizas para el cliente.`);
+      }
+
       return {
         found: !!cliente,
         cliente: cliente ?? null,
+        polizas: polizas.map(p => ({
+          id: p.id,
+          numero_poliza: p.numero_poliza,
+          ramo_nombre: p.ramo_nombre || p.ramo?.nombre,
+          aseguradora_nombre: p.aseguradora_nombre || p.aseguradora?.nombre,
+          fecha_fin: p.fecha_fin,
+          estado: p.estado_poliza?.nombre || 'Desconocido',
+          prima: p.prima,
+        })),
         message: cliente
-          ? `Cliente encontrado en Soft Seguros (ID: ${cliente.id})`
+          ? `Cliente encontrado con ${polizas.length} pólizas asociadas.`
           : 'Cliente no encontrado — se creará al remisionar.',
       };
     } catch (error) {
@@ -37,7 +54,7 @@ export class RemisionesService {
       }
       // 404 or network errors — assume not found
       this.logger.warn(`Error buscando cliente ${documento}: ${error.message}. Asumiendo no existe.`);
-      return { found: false, cliente: null, message: 'Cliente no encontrado — se creará al remisionar.' };
+      return { found: false, cliente: null, polizas: [], message: 'Cliente no encontrado — se creará al remisionar.' };
     }
   }
 
@@ -111,6 +128,7 @@ export class RemisionesService {
       crear_pago?: boolean;
       forma_pago?: string;
       periodicidad?: string;
+      cuotas?: number;
       poliza_padre_id?: number | string;
       numero_renovacion?: number;
     };
@@ -395,15 +413,19 @@ export class RemisionesService {
     steps.anexos = [];
     for (const file of files) {
       try {
-        const isPoliza = file.tipo === 'POLIZA' && soft_poliza_id;
+        // Routing: POLIZA goes to Policy entity, others (CEDULA, RUT, SARLAFT) go to Client entity
+        const isPolicyFile = file.tipo === 'POLIZA';
+        const targetId = isPolicyFile ? Number(soft_poliza_id) : Number(soft_cliente_id);
+        const targetType = isPolicyFile ? 'P' : 'C';
+
         const anexoResult = await this.softApi.createAnexo({
-          id_entidad: isPoliza ? Number(soft_poliza_id) : Number(soft_cliente_id),
-          tipo_entidad: isPoliza ? 'P' : 'C',
+          id_entidad: targetId,
+          tipo_entidad: targetType,
           nombre_archivo: file.nombre,
           archivo_base64: file.buffer.toString('base64'),
         });
         steps.anexos.push({ tipo: file.tipo, result: anexoResult });
-        this.logger.log(`Anexo ${file.tipo} subido correctamente`);
+        this.logger.log(`Anexo ${file.tipo} subido correctamente a ${targetType}:${targetId}`);
       } catch (err) {
         this.logger.error(`Error subiendo anexo ${file.tipo}: ${err.message}`);
         steps.anexos.push({ tipo: file.tipo, error: err.message });
@@ -411,20 +433,45 @@ export class RemisionesService {
     }
 
     // STEP C.5: Create payment in Soft Seguros (SYNC-7)
-    // Create payment if specifically requested, or if form of payment is Contado
-    const isContado = (policyData.forma_pago === 'Contado' || !policyData.forma_pago);
-    if ((policyData.crear_pago !== false && isContado) && policyData.prima_total) {
+    // Create payment if specifically requested, or if form of payment is set
+    if (policyData.crear_pago !== false && policyData.prima_total) {
       try {
-        this.logger.log(`SYNC-7: Creando pago pendiente para póliza ${soft_poliza_id}`);
-        const pagoResult = await this.softApi.createPago({
-          poliza: Number(soft_poliza_id),
-          valor_a_pagar: policyData.prima_total,
-          valor_pagado: 0,
-        });
-        steps.pago = pagoResult;
+        const numCuotas = Number(policyData.cuotas) || 1;
+        const valorCuota = Math.round(Number(policyData.prima_total) / numCuotas);
+        const periodicidad = policyData.periodicidad || 'Mensual';
+        
+        this.logger.log(`SYNC-7: Creando ${numCuotas} pago(s) (${periodicidad}) para póliza ${soft_poliza_id}`);
+        steps.pagos = [];
+
+        // Mapping periodicidad to months
+        const freqMonths = {
+          'Mensual': 1,
+          'Trimestral': 3,
+          'Semestral': 6,
+          'Anual': 12
+        };
+        const interval = freqMonths[periodicidad] || 1;
+
+        for (let i = 1; i <= numCuotas; i++) {
+          // Calculate due date based on frequency
+          const dueDate = new Date();
+          dueDate.setMonth(dueDate.getMonth() + ((i - 1) * interval));
+          const dateStr = dueDate.toISOString().split('T')[0];
+
+          const pagoResult = await this.softApi.createPago({
+            poliza: Number(soft_poliza_id),
+            valor_a_pagar: i === numCuotas 
+              ? (policyData.prima_total - (valorCuota * (numCuotas - 1))) // Adjust last installment for rounding
+              : valorCuota,
+            valor_pagado: 0,
+            numero_cuota: i,
+            fecha_pago: dateStr
+          });
+          steps.pagos.push(pagoResult);
+        }
       } catch (pagoErr: any) {
         this.logger.warn(`Error creando pago (no crítico): ${pagoErr.message}`);
-        steps.pago = { error: pagoErr.message };
+        steps.pagoError = pagoErr.message;
       }
     }
 

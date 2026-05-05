@@ -39,32 +39,24 @@ import {
 // ✅ Etapas correctas según PRD v2.0
 const STAGES = [
   "Nuevo",
-  "Contacto inmediato",
-  "Contactado",
+  "Contacto",
   "Calificado",
-  "Documentos pendientes",
-  "Cotización enviada",
+  "Cotización",
   "Seguimiento",
-  "Ganado / Aprobado",
-  "Enviando a Soft…",
-  "Sincronizado ✓",
+  "Ganado / Sincronizado",
   "Rechazado",
-  "Perdido / Inactivo",
+  "Perdido",
 ];
 
 const STAGE_CONFIG: Record<string, { color: string; dotColor: string; textColor: string; bgBadge: string }> = {
   "Nuevo":               { color: "border-t-blue-500",    dotColor: "bg-blue-500",    textColor: "text-blue-600",    bgBadge: "bg-blue-50 text-blue-700" },
-  "Contacto inmediato":  { color: "border-t-violet-500",  dotColor: "bg-violet-500",  textColor: "text-violet-600",  bgBadge: "bg-violet-50 text-violet-700" },
-  "Contactado":          { color: "border-t-indigo-500",  dotColor: "bg-indigo-500",  textColor: "text-indigo-600",  bgBadge: "bg-indigo-50 text-indigo-700" },
+  "Contacto":            { color: "border-t-violet-500",  dotColor: "bg-violet-500",  textColor: "text-violet-600",  bgBadge: "bg-violet-50 text-violet-700" },
   "Calificado":          { color: "border-t-purple-500",  dotColor: "bg-purple-500",  textColor: "text-purple-600",  bgBadge: "bg-purple-50 text-purple-700" },
-  "Documentos pendientes":{ color: "border-t-amber-500",  dotColor: "bg-amber-500",   textColor: "text-amber-600",   bgBadge: "bg-amber-50 text-amber-700" },
-  "Cotización enviada":  { color: "border-t-orange-500",  dotColor: "bg-orange-500",  textColor: "text-orange-600",  bgBadge: "bg-orange-50 text-orange-700" },
-  "Seguimiento":         { color: "border-t-cyan-500",    dotColor: "bg-cyan-500",    textColor: "text-cyan-600",    bgBadge: "bg-cyan-50 text-cyan-700" },
-  "Ganado / Aprobado":   { color: "border-t-emerald-500", dotColor: "bg-emerald-500", textColor: "text-emerald-600", bgBadge: "bg-emerald-50 text-emerald-700" },
-  "Enviando a Soft…":    { color: "border-t-teal-500",    dotColor: "bg-teal-500",    textColor: "text-teal-600",    bgBadge: "bg-teal-50 text-teal-700" },
-  "Sincronizado ✓":      { color: "border-t-green-500",   dotColor: "bg-green-500",   textColor: "text-green-600",   bgBadge: "bg-green-50 text-green-700" },
+  "Cotización":          { color: "border-t-amber-500",   dotColor: "bg-amber-500",   textColor: "text-amber-600",   bgBadge: "bg-amber-50 text-amber-700" },
+  "Seguimiento":         { color: "border-t-orange-500",  dotColor: "bg-orange-500",  textColor: "text-orange-600",  bgBadge: "bg-orange-50 text-orange-700" },
+  "Ganado / Sincronizado":{ color: "border-t-emerald-500", dotColor: "bg-emerald-500", textColor: "text-emerald-600", bgBadge: "bg-emerald-50 text-emerald-700" },
   "Rechazado":           { color: "border-t-rose-500",    dotColor: "bg-rose-500",    textColor: "text-rose-600",    bgBadge: "bg-rose-50 text-rose-700" },
-  "Perdido / Inactivo":  { color: "border-t-slate-400",   dotColor: "bg-slate-400",   textColor: "text-slate-500",   bgBadge: "bg-slate-100 text-slate-600" },
+  "Perdido":             { color: "border-t-gray-500",    dotColor: "bg-gray-500",    textColor: "text-gray-600",    bgBadge: "bg-gray-50 text-gray-700" },
 };
 
 const RAMO_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -101,7 +93,7 @@ function ScoreBadge({ score }: { score?: number }) {
 }
 
 // Helper: Visible stages for the compact kanban view (hide terminal stages by default)
-const VISIBLE_STAGES = STAGES.filter(s => s !== "Rechazado" && s !== "Perdido / Inactivo" && s !== "Enviando a Soft…");
+const VISIBLE_STAGES = STAGES.filter(s => s !== "Rechazado" && s !== "Perdido");
 
 export default function LeadsPage() {
   const { isLoading, data, error } = db.useQuery({ leads: {} });
@@ -169,7 +161,7 @@ export default function LeadsPage() {
   };
 
   const totalLeads = allLeads.length;
-  const totalGanados = allLeads.filter(l => l.status === "Ganado / Aprobado" || l.status === "Sincronizado ✓").length;
+  const totalGanados = allLeads.filter(l => l.status === "Ganado / Sincronizado").length;
   const totalNuevos = allLeads.filter(l => l.status === "Nuevo").length;
   const tasaConversion = totalLeads > 0 ? Math.round((totalGanados / totalLeads) * 100) : 0;
 

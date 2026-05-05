@@ -1,0 +1,45 @@
+Buen dia estimados; 
+
+Se parametrizó el usuario gerencia@roesan.com.co para emisión del ramo 205 en el ambiente de pruebas 1. Dicho usuario se encontraba ya creado en producción, por lo que las credenciales para el consumo del Webservice, son las mismas con las que acceden a producción.
+ 
+Adjunto instructivo de implementación del WebService (PDF), archivo Excel con detalle de coberturas en general y documento excel con homologación de ciudades, en caso de ser requerido.
+ 
+Adicionalmente, comparto set de pruebas para la toma de evidencias del proceso de implementación del web service Autos:
+ 
+1.	Vehículo Toyota Hilux
+CodFasecolda: 09008205
+Modelo: 2023 
+ 
+1.	Vehículo Hyundai Tucson
+Cod Fasecolda: 03206083
+Modelo: 2019
+ 
+1.	Vehículo Kia Picanto
+Cod Fasecolda: 04601219
+Modelo: 2017
+ 
+1.	Un vehículo opcional (Mazda, Renault, Chevrolet)
+Cod Fasecolda Mazda: 05606092
+Modelo: 2020
+
+Cod Fasecolda Renault: 08021001
+Modelo 2022
+
+Cod Fasecolda Chevrolet: 01601345
+Modelo:2023
+2.	Vehículo 0 KM
+Placas: ABC000
+ 
+En dichas evidencias se requiere que sea visible la ciudad de circulación, el número de cotización que devuelve el web service, el valor de la prima, el detalle de coberturas de los planes a ofrecer por cada vehículo y los deducibles. Estas evidencias pueden ser la cotización que el intermediario mostrará al cliente. 
+ 
+Una vez se reciban las pruebas, se revisarán y si la información es consistente entre lo que muestra el intermediario y la información de SBS, se solicitará la aprobación a la VP de Autos de SBS para continuar con el paso a producción.
+
+Nota: Solicitamos una producción de 30 pólizas al año para mantener el acceso a webservise.
+
+En caso de necesitar apoyo con la implementación por favor confirmar para agendar reunión con el área encargada de webservise.
+
+Cordialmente 
+
+
+Ivan David Diaz
+Analista tecnico 

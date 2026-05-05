@@ -28,17 +28,13 @@ import Link from "next/link";
 
 const STAGE_ORDER = [
   "Nuevo",
-  "Contacto inmediato",
-  "Contactado",
+  "Contacto",
   "Calificado",
-  "Documentos pendientes",
-  "Cotización enviada",
+  "Cotización",
   "Seguimiento",
-  "Ganado / Aprobado",
-  "Enviando a Soft…",
-  "Sincronizado ✓",
+  "Ganado / Sincronizado",
   "Rechazado",
-  "Perdido / Inactivo",
+  "Perdido",
 ];
 
 const RAMO_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
@@ -118,13 +114,13 @@ export default function DashboardPage() {
   // KPIs
   const totalLeads = leads.length;
   const nuevosHoy = leads.filter(l => (l.createdAt || 0) >= todayTs).length;
-  const enGestion = leads.filter(l => !["Ganado / Aprobado", "Sincronizado ✓", "Rechazado", "Perdido / Inactivo"].includes(l.status || "")).length;
-  const ganados = leads.filter(l => l.status === "Ganado / Aprobado" || l.status === "Sincronizado ✓").length;
+  const enGestion = leads.filter(l => !["Ganado / Sincronizado", "Rechazado", "Perdido"].includes(l.status || "")).length;
+  const ganados = leads.filter(l => l.status === "Ganado / Sincronizado").length;
   const tasaConversion = totalLeads > 0 ? Math.round((ganados / totalLeads) * 100) : 0;
 
   // Leads urgentes/calientes (score >= 60, no terminados)
   const urgentes = leads
-    .filter(l => (l.score || 0) >= 60 && !["Rechazado", "Perdido / Inactivo", "Sincronizado ✓"].includes(l.status || ""))
+    .filter(l => (l.score || 0) >= 60 && !["Rechazado", "Perdido", "Ganado / Sincronizado"].includes(l.status || ""))
     .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 5);
 
@@ -133,12 +129,12 @@ export default function DashboardPage() {
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
     .slice(0, 5);
 
-  // Leads sin contacto (Nuevo y Contacto inmediato)
-  const sinContacto = leads.filter(l => l.status === "Nuevo" || l.status === "Contacto inmediato");
+  // Leads sin contacto (Solo Nuevo)
+  const sinContacto = leads.filter(l => l.status === "Nuevo");
 
   // Embudo stats
   const funnelStages = [
-    "Nuevo", "Contactado", "Calificado", "Cotización enviada", "Ganado / Aprobado"
+    "Nuevo", "Contacto", "Calificado", "Cotización", "Ganado / Sincronizado"
   ];
   const funnelData = funnelStages.map(stage => ({
     stage,
@@ -372,11 +368,13 @@ export default function DashboardPage() {
               const RamoIcon = meta.icon;
               const stageColor: Record<string, string> = {
                 "Nuevo": "bg-blue-100 text-blue-700",
-                "Contactado": "bg-indigo-100 text-indigo-700",
-                "Ganado / Aprobado": "bg-emerald-100 text-emerald-700",
-                "Sincronizado ✓": "bg-green-100 text-green-700",
+                "Contacto": "bg-violet-100 text-violet-700",
+                "Calificado": "bg-purple-100 text-purple-700",
+                "Cotización": "bg-amber-100 text-amber-700",
+                "Seguimiento": "bg-orange-100 text-orange-700",
+                "Ganado / Sincronizado": "bg-emerald-100 text-emerald-700",
                 "Rechazado": "bg-rose-100 text-rose-700",
-                "Perdido / Inactivo": "bg-slate-100 text-slate-500",
+                "Perdido": "bg-slate-100 text-slate-500",
               };
               const sc = stageColor[lead.status || ""] || "bg-slate-100 text-slate-600";
               return (

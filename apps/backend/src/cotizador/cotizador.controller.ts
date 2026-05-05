@@ -40,6 +40,17 @@ export class CotizadorController {
     }
   }
 
+  @Post('sbs')
+  @HttpCode(200)
+  async cotizarSBS(@Body() dto: CotizarDto) {
+    this.logger.log(`Solicitud cotización SBS — doc: ${dto.documento}`);
+    try {
+      return await this.cotizadorService.cotizarSBS(dto);
+    } catch (e: any) {
+      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+    }
+  }
+
   @Post('all')
   @HttpCode(200)
   async cotizarTodo(@Body() dto: CotizarDto) {

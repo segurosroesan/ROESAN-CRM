@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { QualitasApi, CotizarDto } from '../lib/qualitas-api';
 import { AllianzApi } from '../lib/allianz-api';
+import { SBSApi } from '../lib/sbs-api';
 import { ComparadorService } from './comparador.service';
 import { generarCorreo, GenerarCorreoParams } from './email-generator';
 
@@ -11,6 +12,7 @@ export class CotizadorService {
   constructor(
     @Inject('QUALITAS_API') private readonly qualitasApi: QualitasApi,
     @Inject('ALLIANZ_API') private readonly allianzApi: AllianzApi,
+    @Inject('SBS_API') private readonly sbsApi: SBSApi,
     private readonly comparadorService: ComparadorService,
   ) {}
 
@@ -22,10 +24,15 @@ export class CotizadorService {
     return this.allianzApi.cotizar(dto);
   }
 
+  async cotizarSBS(dto: CotizarDto) {
+    return this.sbsApi.cotizar(dto);
+  }
+
   async cotizarTodo(dto: CotizarDto) {
-    const [qualitas, allianz] = await Promise.allSettled([
+    const [qualitas, allianz, sbs] = await Promise.allSettled([
       this.qualitasApi.cotizar(dto),
       this.allianzApi.cotizar(dto),
+      this.sbsApi.cotizar(dto),
     ]);
 
     const result: Record<string, any> = {};
@@ -42,6 +49,13 @@ export class CotizadorService {
     } else {
       this.logger.warn(`Allianz falló: ${allianz.reason?.message}`);
       result.allianz = { error: allianz.reason?.message ?? 'Error desconocido' };
+    }
+
+    if (sbs.status === 'fulfilled') {
+      result.sbs = sbs.value;
+    } else {
+      this.logger.warn(`SBS falló: ${sbs.reason?.message}`);
+      result.sbs = { error: sbs.reason?.message ?? 'Error desconocido' };
     }
 
     return result;

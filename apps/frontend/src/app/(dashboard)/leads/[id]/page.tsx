@@ -42,35 +42,27 @@ import { EmailComposer } from "@/components/EmailComposer";
 import { CotizacionComparativo } from "@/components/CotizacionComparativo";
 import { DocumentosLegales } from "@/components/DocumentosLegales";
 
-// ✅ Etapas PRD v2.0 completas
+// ✅ Etapas simplificadas según feedback
 const STAGES = [
   "Nuevo",
-  "Contacto inmediato",
-  "Contactado",
+  "Contacto",
   "Calificado",
-  "Documentos pendientes",
-  "Cotización enviada",
+  "Cotización",
   "Seguimiento",
-  "Ganado / Aprobado",
-  "Enviando a Soft…",
-  "Sincronizado ✓",
+  "Ganado / Sincronizado",
   "Rechazado",
-  "Perdido / Inactivo",
+  "Perdido",
 ];
 
 const STAGE_COLORS: Record<string, string> = {
   "Nuevo": "bg-blue-600",
-  "Contacto inmediato": "bg-violet-600",
-  "Contactado": "bg-indigo-600",
+  "Contacto": "bg-violet-600",
   "Calificado": "bg-purple-600",
-  "Documentos pendientes": "bg-amber-500",
-  "Cotización enviada": "bg-orange-500",
-  "Seguimiento": "bg-cyan-600",
-  "Ganado / Aprobado": "bg-emerald-600",
-  "Enviando a Soft…": "bg-teal-600",
-  "Sincronizado ✓": "bg-green-600",
+  "Cotización": "bg-amber-500",
+  "Seguimiento": "bg-orange-500",
+  "Ganado / Sincronizado": "bg-emerald-600",
   "Rechazado": "bg-rose-600",
-  "Perdido / Inactivo": "bg-slate-500",
+  "Perdido": "bg-gray-500",
 };
 
 const TIPO_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -212,6 +204,8 @@ export default function LeadDetailPage() {
           municipio: "11001",
           fechaInicio: new Date().toISOString().split('T')[0],
           fechaFin: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+          fechaNacimiento: lead.fecha_nacimiento,
+          sexo: lead.genero,
           leadId: leadId
         }),
       });
@@ -251,11 +245,38 @@ export default function LeadDetailPage() {
             updatedAt: Date.now(),
           }));
           transactions.push(db.tx.cotizaciones[aId].link({ lead: leadId }));
-        }
-      }
+          }
 
-      if (transactions.length > 0) {
-        await db.transact(transactions);
+          if (results.sbs && !results.sbs.error) {
+          const sId = crypto.randomUUID();
+          const prima = results.sbs.primaTotal || 0;
+          transactions.push(db.tx.cotizaciones[sId].update({
+            leadId,
+            aseguradora: "SBS",
+            valor: prima,
+            prima_total: prima,
+            cobertura: "Plan Automóvil - Generado Automáticamente",
+            estado: "enviada",
+            fuente: "API SBS",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }));
+          transactions.push(db.tx.cotizaciones[sId].link({ lead: leadId }));
+          }
+
+          if (transactions.length > 0) {
+          await Promise.all(transactions);
+          }
+
+          let errorSummary = [];
+          if (results.qualitas?.error) errorSummary.push(`Qualitas: ${results.qualitas.error}`);
+          if (results.allianz?.error) errorSummary.push(`Allianz: ${results.allianz.error}`);
+          if (results.sbs?.error) errorSummary.push(`SBS: ${results.sbs.error}`);
+
+          if (errorSummary.length > 0) {
+          alert("Algunas aseguradoras fallaron:\n" + errorSummary.join("\n"));
+          }
+
         const lines: string[] = [`✅ ${transactions.length / 2} cotización(es) guardada(s).`];
         if (results.qualitas?.error) lines.push(`⚠️ Qualitas: ${results.qualitas.error}`);
         if (results.allianz?.error) lines.push(`⚠️ Allianz: ${results.allianz.error}`);
@@ -589,7 +610,7 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Sync button — only show when Ganado */}
-            {(lead.status === "Ganado / Aprobado") && !lead.sincronizado_soft && (
+            {(lead.status === "Ganado / Sincronizado") && !lead.sincronizado_soft && (
               <button
                 onClick={handleSync}
                 disabled={isSyncing}
@@ -602,7 +623,7 @@ export default function LeadDetailPage() {
 
             {lead.sincronizado_soft && lead.soft_cliente_id && (
               <a
-                href={`https://app.softseguros.com/cliente/${lead.soft_cliente_id}`}
+                href={`https://app.softseguros.com/srv1/home/clientes/${lead.soft_cliente_id}/editar/persona/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
@@ -665,7 +686,7 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Timeline Tab */}
-          {activeTab === "timeline" && (
+          <div className={activeTab === "timeline" ? "block" : "hidden"}>
             <div className="space-y-3">
               <button
                 onClick={() => setShowAddInteraccion(true)}
@@ -720,10 +741,11 @@ export default function LeadDetailPage() {
                 </div>
               </div>
             </div>
-          )}
+            </div>
+          </div>
 
           {/* Emails Tab */}
-          {activeTab === "emails" && (
+          <div className={activeTab === "emails" ? "block" : "hidden"}>
             <div className="space-y-4">
               <button
                 onClick={() => setShowEmailComposer(true)}
@@ -757,17 +779,18 @@ export default function LeadDetailPage() {
                 ))}
               </div>
             </div>
-          )}
+            </div>
+          </div>
 
           {/* Documentos Tab */}
-          {activeTab === "documentos" && (
+          <div className={activeTab === "documentos" ? "block" : "hidden"}>
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                <DocumentosLegales lead={lead} leadId={leadId} />
             </div>
-          )}
+          </div>
 
           {/* Cotizaciones Tab */}
-          {activeTab === "cotizaciones" && (
+          <div className={activeTab === "cotizaciones" ? "block" : "hidden"}>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -913,10 +936,11 @@ export default function LeadDetailPage() {
               })}
               </div>
             </div>
-          )}
+            </div>
+          </div>
 
           {/* Datos completos Tab */}
-          {activeTab === "datos" && (
+          <div className={activeTab === "datos" ? "block" : "hidden"}>
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                 <h3 className="font-bold text-slate-700">Datos del prospecto</h3>

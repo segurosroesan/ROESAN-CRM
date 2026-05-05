@@ -78,6 +78,9 @@ const schema = i.schema({
       consentimiento_datos: i.boolean().optional(),
       ip_origen: i.string().optional(),
       
+      // Documentos (Persistencia de metadatos de sincronización)
+      docs_metadata: i.json().optional(),
+      
       createdAt: i.number().indexed(),
       updatedAt: i.number(),
     }),

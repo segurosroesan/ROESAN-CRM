@@ -374,12 +374,31 @@ export class SoftSegurosApi {
   }
 
   /**
+   * Get all policies for a specific client
+   */
+  async getPolizasByClient(clientId: string | number): Promise<any[]> {
+    try {
+      this.logger.log(`Fetching policies for client ID: ${clientId}`);
+      const response = await this.request('GET', '/api/poliza/', undefined, {
+        id_cliente: clientId,
+        page_size: 100,
+      });
+      return response.results || [];
+    } catch (error) {
+      this.logger.error(`Failed to fetch policies for client ${clientId}: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
    * SYNC-7: Create pago pendiente in Soft Seguros
    */
   async createPago(data: {
     poliza: number;
     valor_a_pagar: number;
     valor_pagado: number;
+    numero_cuota?: number;
+    fecha_pago?: string;
   }): Promise<any> {
     try {
       this.logger.log(`Creating pago for policy ID: ${data.poliza}`);
@@ -388,6 +407,8 @@ export class SoftSegurosApi {
         poliza: data.poliza,
         valor_a_pagar: data.valor_a_pagar || 0,
         valor_pagado: data.valor_pagado || 0,
+        numero_cuota: data.numero_cuota || 1,
+        fecha_pago: data.fecha_pago || new Date().toISOString().split('T')[0],
       };
 
       this.logger.debug(`Payload sync-7 (pago): ${JSON.stringify(payload)}`);

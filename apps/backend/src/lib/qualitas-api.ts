@@ -92,11 +92,17 @@ export class QualitasApi {
 
     const consideracionesDA: any[] = [];
     if (dto.fechaNacimiento) {
+      // Qualitas requiere formato DD/MM/YYYY
+      let formattedDate = dto.fechaNacimiento;
+      if (dto.fechaNacimiento.includes('-')) {
+        const [y, m, d] = dto.fechaNacimiento.split('-');
+        formattedDate = `${d}/${m}/${y}`;
+      }
       consideracionesDA.push({ NoConsideracion: '40', TipoRegla: '19', ValorRegla: '1' });
-      consideracionesDA.push({ NoConsideracion: '40', TipoRegla: '20', ValorRegla: dto.fechaNacimiento });
+      consideracionesDA.push({ NoConsideracion: '40', TipoRegla: '20', ValorRegla: formattedDate });
     }
     if (dto.sexo) {
-      consideracionesDA.push({ NoConsideracion: '40', TipoRegla: '56', ValorRegla: dto.sexo });
+      consideracionesDA.push({ NoConsideracion: '40', TipoRegla: '56', ValorRegla: dto.sexo.toUpperCase().substring(0, 1) });
     }
 
     const payload = {
@@ -130,6 +136,9 @@ export class QualitasApi {
               Moneda: '00',
               Agente: this.agente,
               FormaPago: dto.formaPago ?? 'A',
+              ConsideracionesAdicionalesDG: [
+                { NoConsideracion: '56', TipoRegla: '', ValorRegla: '' },
+              ],
             },
           },
         },

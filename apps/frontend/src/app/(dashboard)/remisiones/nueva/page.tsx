@@ -86,8 +86,11 @@ export default function RemisionarPage() {
     searched: boolean;
     found: boolean;
     cliente: SoftCliente | null;
+    polizas: any[];
     message: string;
-  }>({ searched: false, found: false, cliente: null, message: "" });
+  }>({ searched: false, found: false, cliente: null, polizas: [], message: "" });
+
+  const [selectedPolizaId, setSelectedPolizaId] = useState<string | null>(null);
 
   // Step 2
   const [uploadedFiles, setUploadedFiles] = useState<Record<DocTipo, File | null>>({
@@ -128,7 +131,13 @@ export default function RemisionarPage() {
         body: JSON.stringify({ documento: formCliente.numero_documento.trim() }),
       });
       const data = await res.json();
-      setBusquedaResult({ searched: true, found: data.found, cliente: data.cliente, message: data.message });
+      setBusquedaResult({ 
+        searched: true, 
+        found: data.found, 
+        cliente: data.cliente, 
+        polizas: data.polizas || [], 
+        message: data.message 
+      });
       if (data.found && data.cliente) {
         // Cliente existe — pre-llenar con info de Soft Seguros pero la nueva info sobreescribirá
         setFormCliente(prev => ({
@@ -297,7 +306,12 @@ export default function RemisionarPage() {
         formData.append("soft_cliente_id", String(busquedaResult.cliente.id));
       }
       formData.append("clientData", JSON.stringify(clientData));
-      formData.append("policyData", JSON.stringify(policyData));
+      formData.append("policyData", JSON.stringify({
+        ...policyData,
+        poliza_padre_id: selectedPolizaId || undefined,
+        forma_pago: policyData.forma_pago || "contado",
+        cuotas: policyData.num_cuotas || 1
+      }));
 
       const res = await fetch(`${BACKEND}/remisiones/remisionar`, { method: "POST", body: formData });
       const data = await res.json();
@@ -431,13 +445,40 @@ export default function RemisionarPage() {
             </div>
 
             {busquedaResult.searched && (
-              <div className={`rounded-xl p-4 mb-4 flex items-start gap-3 ${busquedaResult.found ? "bg-emerald-50 border border-emerald-100" : "bg-blue-50 border border-blue-100"}`}>
-                {busquedaResult.found
-                  ? <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-                  : <AlertCircle className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />}
-                <p className={`text-sm font-medium ${busquedaResult.found ? "text-emerald-700" : "text-blue-700"}`}>
-                  {busquedaResult.message}
-                </p>
+              <div className="space-y-4 mb-6">
+                <div className={`rounded-xl p-4 flex items-start gap-3 ${busquedaResult.found ? "bg-emerald-50 border border-emerald-100" : "bg-blue-50 border border-blue-100"}`}>
+                  {busquedaResult.found
+                    ? <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                    : <AlertCircle className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />}
+                  <p className={`text-sm font-medium ${busquedaResult.found ? "text-emerald-700" : "text-blue-700"}`}>
+                    {busquedaResult.message}
+                  </p>
+                </div>
+
+                {busquedaResult.polizas && busquedaResult.polizas.length > 0 && (
+                  <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="bg-slate-100 px-4 py-2 border-b border-slate-200">
+                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Seleccionar póliza para renovar (opcional)</p>
+                    </div>
+                    <div className="divide-y divide-slate-200 max-h-48 overflow-y-auto">
+                      {busquedaResult.polizas.map((pol: any) => (
+                        <div 
+                          key={pol.id} 
+                          onClick={() => setSelectedPolizaId(selectedPolizaId === String(pol.id) ? null : String(pol.id))}
+                          className={`p-3 flex items-center justify-between hover:bg-amber-50 cursor-pointer transition-colors ${selectedPolizaId === String(pol.id) ? "bg-amber-50" : ""}`}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-700">#{pol.numero_poliza} - {pol.aseguradora_nombre}</p>
+                            <p className="text-[10px] text-slate-500">{pol.ramo_nombre} | Vence: {pol.fecha_fin}</p>
+                          </div>
+                          <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedPolizaId === String(pol.id) ? "border-amber-500 bg-amber-500" : "border-slate-300"}`}>
+                            {selectedPolizaId === String(pol.id) && <CheckCircle className="h-3 w-3 text-white" />}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -699,6 +740,57 @@ export default function RemisionarPage() {
                     />
                   </div>
                 </div>
+                <div className="col-span-2 border-t border-slate-100 pt-3 mt-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className={labelSmCls}>Forma de Pago</label>
+                    {selectedPolizaId && (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <RefreshCw className="h-2.5 w-2.5" /> Renovación de póliza #{busquedaResult.polizas.find(p => String(p.id) === selectedPolizaId)?.numero_poliza}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <button
+                      onClick={() => setPolicyData(p => ({ ...p, forma_pago: "contado", num_cuotas: 1 }))}
+                      className={`py-2 px-4 rounded-xl text-xs font-bold border-2 transition-all ${policyData.forma_pago !== "cuotas" ? "border-amber-400 bg-amber-50 text-amber-700" : "border-slate-100 text-slate-400"}`}
+                    >
+                      Contado (1 pago)
+                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPolicyData(p => ({ ...p, forma_pago: "cuotas", num_cuotas: p.num_cuotas || 2 }))}
+                        className={`flex-1 py-2 px-4 rounded-xl text-xs font-bold border-2 transition-all ${policyData.forma_pago === "cuotas" ? "border-amber-400 bg-amber-50 text-amber-700" : "border-slate-100 text-slate-400"}`}
+                      >
+                        Cuotas
+                      </button>
+                      {policyData.forma_pago === "cuotas" && (
+                        <input
+                          type="number"
+                          min="2"
+                          max="12"
+                          value={policyData.num_cuotas || 2}
+                          onChange={e => setPolicyData(p => ({ ...p, num_cuotas: Number(e.target.value) }))}
+                          className="w-16 px-2 py-2 bg-slate-50 rounded-xl border border-slate-200 text-sm font-bold text-center"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className={labelSmCls}>Periodicidad de Pago</label>
+                    <select 
+                      value={policyData.periodicidad || "Anual"} 
+                      onChange={e => setPolicyData(p => ({ ...p, periodicidad: e.target.value }))}
+                      className={inputSmCls}
+                    >
+                      <option value="Anual">Anual</option>
+                      <option value="Mensual">Mensual</option>
+                      <option value="Trimestral">Trimestral</option>
+                      <option value="Semestral">Semestral</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="col-span-2">
                   <label className={labelSmCls}>Asesor / Vendedor</label>
                   <select

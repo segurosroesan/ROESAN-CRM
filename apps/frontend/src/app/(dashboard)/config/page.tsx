@@ -112,6 +112,8 @@ function Section({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function ConfigPage() {
+  const { user } = db.useAuth();
+
   // Ramos mapping
   const [ramos, setRamos] = useState(DEFAULT_RAMOS);
 
@@ -163,11 +165,8 @@ export default function ConfigPage() {
             
             <button
               onClick={() => {
-                const userId = (document.querySelector<HTMLElement>('[data-current-user-id]') as HTMLElement | null)?.dataset.currentUserId
-                  ?? localStorage.getItem('currentUserId')
-                  ?? '';
-                if (!userId) { alert('Inicia sesión antes de vincular tu cuenta Gmail.'); return; }
-                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${encodeURIComponent(userId)}`;
+                if (!user?.id) { alert('Inicia sesión antes de vincular tu cuenta Gmail.'); return; }
+                window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/google/login?userId=${encodeURIComponent(user.id)}`;
               }}
               className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all shadow-sm"
             >

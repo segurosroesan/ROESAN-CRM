@@ -907,8 +907,7 @@ export default function LeadDetailPage() {
                           leadId: leadId,
                           extracted: payloadPropuesta.extracted,
                           analysis: payloadPropuesta.analysis,
-                          createdAt: Date.now(),
-                          updatedAt: Date.now()
+                          createdAt: Date.now()
                         }),
                         db.tx.propuestas[propuestaId].link({ lead: leadId })
                       ]);

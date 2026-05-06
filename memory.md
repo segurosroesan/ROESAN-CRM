@@ -192,7 +192,11 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 
 ---
 
-## 🚀 Mejoras Recientes (2026-05-05)
+## 🚀 Mejoras y Correcciones Recientes (2026-05-05)
+
+### Correcciones de Build (Render/Netlify) ✅
+- **Backend:** Se corrigieron errores de tipado en `sbs-api.ts` (parámetros de xml2js) y `remisiones.service.ts` (indexado de objetos).
+- **Frontend:** Se resolvieron errores de sintaxis JSX (divs extra y etiquetas mal cerradas) en las fichas de Lead y Renovación que impedían el despliegue.
 
 ### Persistencia de Documentos ✅
 - Se implementó el campo `docs_metadata` (JSON) en la entidad `leads`.

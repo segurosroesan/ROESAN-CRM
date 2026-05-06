@@ -120,7 +120,7 @@ export default function PropuestaPage() {
         </div>
         <div 
           className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-[#51408d] to-[#61bbe4] transition-all duration-100 ease-out"
-          style={{ width: \`\${scrollProgress}%\` }}
+          style={{ width: `${scrollProgress}%` }}
         ></div>
       </nav>
 
@@ -190,7 +190,7 @@ export default function PropuestaPage() {
           </h2>
           <p className="text-base text-[#0f172a] leading-relaxed mb-6">
             Confirma que los datos coincidan con tu tarjeta de propiedad. Si hay algún error, da clic aquí:
-            <a href={\`https://wa.me/\${phoneAsesor}?text=\${encodeURIComponent(\`Hola soy \${ext.cliente.nombre}, encontré el siguiente error en la cotización: \`)}\`} 
+            <a href={`https://wa.me/${phoneAsesor}?text=${encodeURIComponent(`Hola soy ${ext.cliente.nombre}, encontré el siguiente error en la cotización: `)}`} 
                target="_blank" rel="noreferrer"
                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#25D366] text-white no-underline font-bold text-[13px] ml-2 align-middle shadow-[0_3px_10px_rgba(37,211,102,0.35)]">
                <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.553 4.103 1.523 5.824L.057 23.428a.75.75 0 0 0 .915.915l5.604-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.732 9.732 0 0 1-4.964-1.355l-.356-.212-3.679.963.981-3.587-.232-.369A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
@@ -270,11 +270,11 @@ export default function PropuestaPage() {
               const pct = maxP > minP ? Math.round(((q.prima_anual - minP) / (maxP - minP)) * 100) : 50;
               const isRec = q.aseguradora.toLowerCase().includes(an.recomendada.toLowerCase());
               const isMin = q.prima_anual === minP;
-              const waMsg = encodeURIComponent(\`Hola soy \${ext.cliente.nombre}, les solicito procedan a emitir esta Póliza con \${q.aseguradora} para el vehículo \${ext.vehiculo.placa}. ¡Gracias!\`);
+              const waMsg = encodeURIComponent(`Hola soy ${ext.cliente.nombre}, les solicito procedan a emitir esta Póliza con ${q.aseguradora} para el vehículo ${ext.vehiculo.placa}. ¡Gracias!`);
               
               return (
-                <div key={i} className={\`rounded-[18px] p-5 md:p-6 relative shadow-sm transition-all
-                  \${isRec ? "bg-gradient-to-br from-[#51408d]/5 to-[#61bbe4]/10 border-2 border-[#51408d] shadow-[#51408d]/10 shadow-lg" : "bg-white border border-[#e2e8f0]"}\`}>
+                <div key={i} className={`rounded-[18px] p-5 md:p-6 relative shadow-sm transition-all
+                  ${isRec ? "bg-gradient-to-br from-[#51408d]/5 to-[#61bbe4]/10 border-2 border-[#51408d] shadow-[#51408d]/10 shadow-lg" : "bg-white border border-[#e2e8f0]"}`}>
                   
                   {isRec && (
                     <span className="absolute -top-2.5 left-5 bg-[#2a2960] text-white text-[9px] font-bold tracking-widest uppercase px-3 py-1 rounded-full">
@@ -297,8 +297,8 @@ export default function PropuestaPage() {
                       <div className="text-[10px] text-[#94a3b8] uppercase tracking-widest mt-0.5">Prima anual · IVA</div>
                       <div className="h-1 bg-[#f1f5f9] rounded-full mt-2 overflow-hidden">
                         <div 
-                          className={\`h-full rounded-full \${isRec ? 'bg-[#51408d]' : isMin ? 'bg-[#fddf45]' : 'bg-[#61bbe4]'}\`}
-                          style={{ width: \`\${100 - pct}%\` }}
+                          className={`h-full rounded-full ${isRec ? 'bg-[#51408d]' : isMin ? 'bg-[#fddf45]' : 'bg-[#61bbe4]'}`}
+                          style={{ width: `${100 - pct}%` }}
                         ></div>
                       </div>
                     </div>
@@ -309,7 +309,7 @@ export default function PropuestaPage() {
                       <div><div className="text-[#94a3b8] text-[9px] uppercase tracking-wider mb-0.5">Cond. elegido</div><div className="text-[#1e293b] font-semibold">{q.conductor_elegido || "-"}</div></div>
                     </div>
                     <div className="mt-2 md:mt-0">
-                      <a href={\`https://wa.me/\${phoneAsesor}?text=\${waMsg}\`} target="_blank" rel="noreferrer"
+                      <a href={`https://wa.me/${phoneAsesor}?text=${waMsg}`} target="_blank" rel="noreferrer"
                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#25D366] text-white no-underline font-bold text-[12px] whitespace-nowrap shadow-[0_3px_10px_rgba(37,211,102,0.3)] transition-transform hover:scale-105">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.116.553 4.103 1.523 5.824L.057 23.428a.75.75 0 0 0 .915.915l5.604-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.732 9.732 0 0 1-4.964-1.355l-.356-.212-3.679.963.981-3.587-.232-.369A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/></svg>
                         Seleccionar esta póliza
@@ -337,7 +337,7 @@ export default function PropuestaPage() {
                 </h2>
                 <p className="text-[16px] text-white/75 leading-relaxed mb-6">Si tienes alguna duda, agenda 30 minutos con tu asesora y lo resolvemos.</p>
                 <div className="flex gap-3 flex-wrap">
-                  <a href={\`https://wa.me/\${phoneAsesor}\`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#25D366] text-white no-underline font-bold text-sm transition-transform hover:scale-105">
+                  <a href={`https://wa.me/${phoneAsesor}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#25D366] text-white no-underline font-bold text-sm transition-transform hover:scale-105">
                     <span className="text-lg leading-none">📱</span> WhatsApp
                   </a>
                   <a href="mailto:autos@roesan.com.co" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/10 border border-white/30 text-white no-underline font-bold text-sm hover:bg-white/20 transition-colors">
@@ -360,16 +360,16 @@ export default function PropuestaPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 mb-5">
-                  <a href={\`https://wa.me/\${phoneAsesor}\`} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-[15px] text-white no-underline font-medium hover:text-[#25D366] transition-colors">
+                  <a href={`https://wa.me/${phoneAsesor}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-[15px] text-white no-underline font-medium hover:text-[#25D366] transition-colors">
                     <span className="w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center text-base shrink-0">📱</span>
                     <span>{phoneAsesor}</span>
                   </a>
-                  <a href={\`mailto:\${ext.asesor?.email || 'autos@roesan.com.co'}\`} className="flex items-center gap-3 text-[15px] text-white no-underline font-medium hover:text-[#61bbe4] transition-colors">
+                  <a href={`mailto:${ext.asesor?.email || 'autos@roesan.com.co'}`} className="flex items-center gap-3 text-[15px] text-white no-underline font-medium hover:text-[#61bbe4] transition-colors">
                     <span className="w-8 h-8 rounded-full bg-[#61bbe4] flex items-center justify-center text-base shrink-0">✉️</span>
                     <span>{ext.asesor?.email || "autos@roesan.com.co"}</span>
                   </a>
                 </div>
-                <a href={\`https://wa.me/\${phoneAsesor}\`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2.5 p-3.5 rounded-[14px] bg-[#25D366] text-white no-underline font-extrabold text-[15px] tracking-wide shadow-lg transition-transform hover:scale-[1.02]">
+                <a href={`https://wa.me/${phoneAsesor}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2.5 p-3.5 rounded-[14px] bg-[#25D366] text-white no-underline font-extrabold text-[15px] tracking-wide shadow-lg transition-transform hover:scale-[1.02]">
                   <span className="text-xl">📱</span> Hablar con Asesor
                 </a>
               </div>

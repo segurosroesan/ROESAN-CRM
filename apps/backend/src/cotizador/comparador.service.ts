@@ -34,8 +34,14 @@ Responde ÚNICAMENTE con este JSON:
 {
   "accion": "{acciones_validas}",
   "aseguradora_recomendada": "nombre exacto de la aseguradora recomendada (la de menor prima total)",
+  "plan_recomendado": "nombre del plan de la aseguradora recomendada",
   "aseguradora_renovacion": "{valor_renovacion}",
   "justificacion_corta": "texto corto para el correo",
+  "razon_principal": "razón principal para recomendarla (puede ser igual a justificacion_corta)",
+  "puntos_fuertes": ["punto fuerte 1", "punto fuerte 2", "punto fuerte 3"],
+  "analisis_general": "un análisis general y profesional (1 o 2 párrafos) justificando la recomendación para mostrar en la propuesta formal",
+  "alternativa": "nombre de la segunda mejor opción (aseguradora alternativa)",
+  "razon_alternativa": "por qué el cliente podría considerar la alternativa",
   "diferencia_prima": 0,
   "ranking": [
     {"aseguradora": "...", "prima_total": 0, "posicion": 1, "es_renovacion": false}

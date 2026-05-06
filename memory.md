@@ -42,6 +42,7 @@
 |------|--------|-----------------|
 | **Qualitas REST** | ✅ **FUNCIONAL** (QA) | Formato `fechaNacimiento` (DD/MM/YYYY) y regla 56 corregidos. Usar Fasecolda `01601276` para pruebas en QA. |
 | **SYNC-1 a SYNC-4 en producción** | ⏳ Listo para probar | Permisos Soft Seguros ya habilitados — hacer prueba con lead real en "Ganado/Aprobado" |
+| Generador de Propuesta Pro | ✅ Funcional | Link público interactivo generado automáticamente, con schema guardado en InstantDB |
 | Comparativo PDF offline (`comparativo.py`) | ✅ Independiente | Script Python v3.0 local para asesores, no integrar al backend |
 
 ---
@@ -210,3 +211,9 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 ### Refuerzo de Integración Soft Seguros ✅
 - **Ruteo de Anexos:** Los documentos tipo `POLIZA` se envían exclusivamente a la entidad Póliza en Soft Seguros.
 - **Estandarización de Links:** Todos los enlaces a fichas de cliente apuntan ahora a `/editar/persona/` para compatibilidad total con la v1 de Soft Seguros.
+
+### Integración de Propuesta Pro ✅ (2026-05-06)
+- **Generación en un Clic:** El flujo de cotización genera un enlace dinámico `/propuesta/[id]` en Next.js basándose en la plantilla visual de Propuestas Pro (basada en HTML previo).
+- **Almacenamiento InstantDB:** La estructura de la propuesta y los resultados del análisis IA (`comparador.service.ts`) se persisten bajo la entidad `propuestas`.
+- **Nuevo Formato de Email:** En lugar del largo texto plano, el cliente recibe un correo profesional y directo invitándole a revisar su propuesta en la URL interactiva y ver su comparativo detallado.
+

@@ -139,6 +139,13 @@ const schema = i.schema({
       detalleErrores: i.string().optional(),
       duracionMs: i.number().optional(),
     }),
+
+    propuestas: i.entity({
+      extracted: i.json(), // Datos estructurados del comparativo y cliente
+      analysis: i.json(),  // Análisis de IA con la recomendación
+      leadId: i.string().indexed(),
+      createdAt: i.number(),
+    }),
   },
   links: {
     leadTasks: {
@@ -185,6 +192,18 @@ const schema = i.schema({
       },
       reverse: {
         on: "cotizaciones",
+        has: "one",
+        label: "lead",
+      },
+    },
+    leadPropuestas: {
+      forward: {
+        on: "leads",
+        has: "many",
+        label: "propuestas",
+      },
+      reverse: {
+        on: "propuestas",
         has: "one",
         label: "lead",
       },

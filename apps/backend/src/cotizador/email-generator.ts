@@ -40,6 +40,7 @@ export interface GenerarCorreoParams {
   aseguradoraRenovacion?: string;
   diferenciaPrima?: number;
   esNuevo?: boolean;
+  enlacePropuesta?: string;
 }
 
 /**
@@ -48,12 +49,11 @@ export interface GenerarCorreoParams {
 export function generarCorreo(params: GenerarCorreoParams): string {
   const {
     cotizacionSeleccionada,
-    todasCotizaciones,
-    justificacionIA,
     datosExtra = {},
     accionIA = "",
     aseguradoraRenovacion = "",
     esNuevo = false,
+    enlacePropuesta = ""
   } = params;
 
   const cot = cotizacionSeleccionada;
@@ -86,48 +86,34 @@ export function generarCorreo(params: GenerarCorreoParams): string {
   lineas.push("");
 
   if (esNuevo) {
-    lineas.push(
-      `Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`
-    );
+    lineas.push(`Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`);
     lineas.push("");
-    lineas.push(
-      `Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}, que ofrece la mejor relación precio-cobertura del mercado.`
-    );
+    lineas.push(`Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}, que ofrece la mejor relación precio-cobertura del mercado.`);
   } else if (accionIA === "CAMBIAR" && aseguradoraRenovacion) {
-    lineas.push(
-      `Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer y le tenemos una buena noticia.`
-    );
+    lineas.push(`Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer y le tenemos una buena noticia.`);
     lineas.push("");
-    lineas.push(
-      `Cotizamos con varias aseguradoras y encontramos que ${aseguradora} le ofrece mejor precio: ${primaTotal} anuales — por debajo de lo que paga hoy con ${aseguradoraRenovacion.toUpperCase()}.`
-    );
-    lineas.push("");
-    lineas.push(`Para hacer el cambio necesitamos:`);
-    lineas.push(`  → Formato adjunto diligenciado`);
-    lineas.push(`  → Copia cédula y tarjeta de propiedad`);
-    lineas.push(`  → Inspección del vehículo (coordinamos nosotros)`);
+    lineas.push(`Cotizamos con varias aseguradoras y encontramos que ${aseguradora} le ofrece mejor precio: ${primaTotal} anuales — por debajo de lo que paga hoy con ${aseguradoraRenovacion.toUpperCase()}.`);
     lineas.push("");
     lineas.push(`Si prefiere quedarse con ${aseguradoraRenovacion.toUpperCase()}, con solo confirmarnos gestionamos la renovación.`);
   } else if (accionIA === "RENOVAR" && aseguradoraRenovacion) {
-    lineas.push(
-      `Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer.`
-    );
+    lineas.push(`Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer.`);
     lineas.push("");
-    lineas.push(
-      `Revisamos el mercado y ${aseguradora} sigue siendo la mejor opción para usted — prima anual de ${primaTotal} con excelentes coberturas.`
-    );
+    lineas.push(`Revisamos el mercado y ${aseguradora} sigue siendo la mejor opción para usted — prima anual de ${primaTotal} con excelentes coberturas.`);
     lineas.push("");
     lineas.push(`Con solo confirmarnos por este medio, gestionamos la renovación.`);
   } else {
-    lineas.push(
-      `Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`
-    );
+    lineas.push(`Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`);
     lineas.push("");
-    lineas.push(
-      `Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}.`
-    );
+    lineas.push(`Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}.`);
   }
   lineas.push("");
+
+  if (enlacePropuesta) {
+    lineas.push(`Hemos preparado una propuesta interactiva para que pueda revisar los detalles, comparar las demás opciones y descargar el resumen. Por favor haga clic en el siguiente enlace:`);
+    lineas.push("");
+    lineas.push(`${enlacePropuesta}`);
+    lineas.push("");
+  }
 
   // ── Link PSE ──
   let linkPSE = null;
@@ -143,88 +129,17 @@ export function generarCorreo(params: GenerarCorreoParams): string {
     lineas.push("");
   }
 
-  // ── Detalle SOLO de la póliza ganadora ──
-  lineas.push("─".repeat(60));
-  lineas.push(`PROPUESTA ${aseguradora}`);
-  lineas.push("─".repeat(60));
-  lineas.push("");
-
-  // Datos básicos
-  lineas.push(`  Valor asegurado:       ${fmtPeso(cot?.valor_asegurado)}`);
-  lineas.push("");
-
-  // Coberturas principales
-  const coberturas = cot?.coberturas || [];
-  if (coberturas.length > 0) {
-    lineas.push("  COBERTURAS:");
-    for (const cob of coberturas) {
-      const nombre = cob?.nombre || "";
-      const valor = cob?.valor || "INCLUIDA";
-      let valorFmt;
-      try {
-        const num = parseFloat(String(valor).replace(/\./g, "").replace(",", "."));
-        valorFmt = isNaN(num) ? valor : fmtPeso(valor);
-      } catch {
-        valorFmt = valor;
-      }
-      lineas.push(`  • ${nombre.padEnd(45)} ${valorFmt}`);
-    }
+  if (accionIA === "CAMBIAR" && aseguradoraRenovacion) {
+    lineas.push(`Para hacer el cambio necesitamos:`);
+    lineas.push(`  → Formato adjunto diligenciado`);
+    lineas.push(`  → Copia cédula y tarjeta de propiedad`);
+    lineas.push(`  → Inspección del vehículo (coordinamos nosotros)`);
     lineas.push("");
   }
 
-  // Deducibles
-  const deducibles = cot?.deducibles || [];
-  if (deducibles.length > 0) {
-    lineas.push("  DEDUCIBLES:");
-    for (const ded of deducibles) {
-      lineas.push(`  • ${(ded?.cobertura || "").padEnd(45)} ${ded?.deducible || ""}`);
-    }
-    lineas.push("");
-  }
-
-  // Prima desglosada
-  lineas.push("  PRIMA:");
-  lineas.push(`  • Prima sin IVA:       ${fmtPeso(cot?.prima_neta)}`);
-  if (cot?.valor_asistencia > 0) {
-    lineas.push(`  • Valor Asistencia:    ${fmtPeso(cot?.valor_asistencia)}`);
-  }
-  lineas.push(`  • Gastos expedición:   ${fmtPeso(cot?.gastos_expedicion)}`);
-  lineas.push(`  • IVA (Prima):         ${fmtPeso(cot?.iva)}`);
-  if (cot?.iva_asistencia > 0) {
-    lineas.push(`  • IVA (Asistencia):    ${fmtPeso(cot?.iva_asistencia)}`);
-  }
-  lineas.push(`  • PRIMA TOTAL ANUAL:   ${primaTotal}`);
-  lineas.push("");
-
-  // ── Nota adjunto ──
-  lineas.push("");
-  lineas.push("Adjunto el comparativo completo con todas las opciones para que tenga el panorama claro.");
-  lineas.push("");
-  lineas.push("RESUMEN DE OPCIONES:");
-  lineas.push("");
-
-  // Ordenar: renovación primero, luego de menor a mayor
-  const renovaciones = todasCotizaciones.filter((c) => !c.error && c.es_renovacion);
-  const resto = todasCotizaciones
-    .filter((c) => !c.error && !c.es_renovacion)
-    .sort((a, b) => {
-      const pa = parseFloat(String(a.prima_total || 0).replace(/\./g, "").replace(",", ".")) || Infinity;
-      const pb = parseFloat(String(b.prima_total || 0).replace(/\./g, "").replace(",", ".")) || Infinity;
-      return pa - pb;
-    });
-
-  const ordenadas = [...renovaciones, ...resto];
-  for (const c of ordenadas) {
-    const nombre = (c.aseguradora || "Desconocida").toUpperCase();
-    const esRenov = c.es_renovacion;
-    const esSel = c === cotizacionSeleccionada;
-    const etiqueta = esRenov ? `RENOVACIÓN ${nombre}` : nombre;
-    const marca = esSel ? " ← OPCIÓN RECOMENDADA" : esRenov ? " (PÓLIZA ACTUAL)" : "";
-    lineas.push(`  • ${etiqueta.padEnd(30)} ${fmtPeso(c.prima_total).padStart(15)}${marca}`);
-  }
-  lineas.push("");
   lineas.push("Cualquier duda, con gusto la atendemos.");
   lineas.push("");
 
   return lineas.join("\n");
 }
+

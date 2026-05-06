@@ -854,31 +854,90 @@ export default function LeadDetailPage() {
                   esNuevo={lead.pipeline_tipo !== "renovacion"}
                   onGenerarCorreo={async () => {
                     try {
+                      // 1. Guardar la propuesta en InstantDB
+                      const propuestaId = crypto.randomUUID();
+                      const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
+                      
+                      const cots = cotizaciones.map(c => ({
+                        aseguradora: c.aseguradora,
+                        plan: c.cobertura || c.nombre_plan || "",
+                        prima_anual: c.prima_total || c.valor || 0,
+                        rc_limite: c.coberturas?.rce_limite || "0",
+                        ded_daño: c.deducibles?.danio_total_ded_pct ? `${c.deducibles.danio_total_ded_pct}%` : c.deducibles?.danio_total_ded_smmlv ? `${c.deducibles.danio_total_ded_smmlv} SMMLV` : "0",
+                        reemplazo_total: c.coberturas?.reemplazo_total ? "Si" : "No",
+                        conductor_elegido: c.coberturas?.conductor_elegido ? "Si" : "No",
+                      }));
+
+                      const payloadPropuesta = {
+                        extracted: {
+                          folio: lead.documento || lead.id.slice(0,6),
+                          vigencia_oferta: "10 días",
+                          cliente: {
+                            nombre: lead.name,
+                            cedula: lead.documento || "",
+                          },
+                          vehiculo: {
+                            marca: lead.vehicleBrand || "",
+                            linea: lead.vehicleModel || "",
+                            año: lead.vehicleYear || "",
+                            placa: lead.vehiclePlate || "",
+                            ciudad: lead.city || "",
+                            valor_asegurado: cotizaciones[0]?.valor_asegurado || 0,
+                          },
+                          asesor: {
+                            nombre: "Adriana Garzón",
+                            email: "autos@roesan.com.co",
+                            telefono: "573197282277"
+                          },
+                          cotizaciones: cots,
+                        },
+                        analysis: {
+                           recomendada: aseguradoraRecomendada,
+                           plan_recomendado: comparativoData.comparativo_ia?.plan_recomendado || "",
+                           razon_principal: comparativoData.comparativo_ia?.razon_principal || comparativoData.comparativo_ia?.justificacion_corta || "",
+                           puntos_fuertes: comparativoData.comparativo_ia?.puntos_fuertes || [],
+                           analisis_general: comparativoData.comparativo_ia?.analisis_general || "",
+                           alternativa: comparativoData.comparativo_ia?.alternativa || "",
+                           razon_alternativa: comparativoData.comparativo_ia?.razon_alternativa || "",
+                        }
+                      };
+
+                      await db.transact([
+                        db.tx.propuestas[propuestaId].update({
+                          leadId: leadId,
+                          extracted: payloadPropuesta.extracted,
+                          analysis: payloadPropuesta.analysis,
+                          createdAt: Date.now(),
+                          updatedAt: Date.now()
+                        }),
+                        db.tx.propuestas[propuestaId].link({ lead: leadId })
+                      ]);
+
                       const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
                       const response = await fetch(`${backendUrl}/cotizador/email`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          cotizacionSeleccionada: cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === (comparativoData.comparativo_ia?.aseguradora_recomendada || "").toUpperCase()),
+                          cotizacionSeleccionada: cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraRecomendada.toUpperCase()),
                           todasCotizaciones: cotizaciones,
-                          aseguradoraRecomendada: comparativoData.comparativo_ia?.aseguradora_recomendada,
+                          aseguradoraRecomendada: aseguradoraRecomendada,
                           justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
-                          datosExtra: { tomador: lead.name, placa: lead.placa, descripcion_vehiculo: lead.vehiculo },
+                          datosExtra: { tomador: lead.name, placa: lead.vehiclePlate, descripcion_vehiculo: `${lead.vehicleBrand || ""} ${lead.vehicleModel || ""} ${lead.vehicleYear || ""}`.trim() },
                           accionIA: comparativoData.accion,
                           aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
                           diferenciaPrima: comparativoData.diferencia_prima,
-                          esNuevo: lead.pipeline_tipo !== "renovacion"
+                          esNuevo: lead.pipeline_tipo !== "renovacion",
+                          propuestaUrl: `${window.location.origin}/propuesta/${propuestaId}`
                         }),
                       });
                       const result = await response.json();
                       if (result.body) {
-                        // Opcional: abrir el composer con el body ya seteado o copiar al portapapeles
                         navigator.clipboard.writeText(result.body);
-                        alert("Correo copiado al portapapeles. (Puedes abrir tu gestor de correo para pegarlo)");
+                        alert("Propuesta Pro generada y guardada. El correo ha sido copiado al portapapeles. (Puedes abrir tu gestor de correo para pegarlo)");
                       }
                     } catch(err) {
                       console.error(err);
-                      alert("Error generando correo");
+                      alert("Error generando propuesta y correo");
                     }
                   }}
                 />

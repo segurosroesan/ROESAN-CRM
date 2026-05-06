@@ -779,7 +779,6 @@ export default function LeadDetailPage() {
                 ))}
               </div>
             </div>
-            </div>
           </div>
 
           {/* Documentos Tab */}
@@ -935,7 +934,6 @@ export default function LeadDetailPage() {
                 );
               })}
               </div>
-            </div>
             </div>
           </div>
 

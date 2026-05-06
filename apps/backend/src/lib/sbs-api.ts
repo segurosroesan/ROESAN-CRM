@@ -72,7 +72,7 @@ export class SBSApi {
         headers: { 'Content-Type': 'text/xml; charset=utf-8' },
       });
 
-      const parsed = await parseStringPromise(response.data, { explicitArray: false, ignoreNamespaces: true });
+      const parsed = await parseStringPromise(response.data, { explicitArray: false });
       const result = parsed.Envelope.Body.SBSAutos_CrearSesion_PaqueteResponse.SBSAutos_CrearSesion_PaqueteResult;
 
       if (result.Mensaje_Validacion && result.Mensaje_Validacion !== 'OK') {
@@ -104,7 +104,7 @@ export class SBSApi {
         headers: { 'Content-Type': 'text/xml; charset=utf-8' },
       });
 
-      const parsed = await parseStringPromise(response.data, { explicitArray: false, ignoreNamespaces: true });
+      const parsed = await parseStringPromise(response.data, { explicitArray: false });
       const res = parsed.Envelope.Body.SBSAutos_CotizaryCerrarSesion_PaqueteResponse.SBSAutos_CotizaryCerrarSesion_PaqueteResult;
 
       if (res.Mensaje_Validacion && res.Mensaje_Validacion !== 'OK') {
@@ -118,7 +118,7 @@ export class SBSApi {
         aseguradora: 'SBS',
         noCotizacion: cotizacion.NoCotizacion,
         primaTotal: primaTotal,
-        coberturas: [] // SBS devuelve un PDF usualmente, o coberturas en el XML si se requiere parsear mas a fondo
+        coberturas: [] 
       };
     } catch (error: any) {
       this.logger.error(`Error en SBS Cotizar: ${error.message}`);

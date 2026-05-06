@@ -264,8 +264,6 @@ export default function RenovacionDetailPage({ params }: { params: Promise<{ id:
             </div>
           )}
 
-            </div>
-
             {lead.soft_cliente_id && (
               <a
                 href={`https://app.softseguros.com/srv1/home/clientes/${lead.soft_cliente_id}/editar/persona/`}

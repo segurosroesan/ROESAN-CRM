@@ -444,7 +444,7 @@ export class RemisionesService {
         steps.pagos = [];
 
         // Mapping periodicidad to months
-        const freqMonths = {
+        const freqMonths: Record<string, number> = {
           'Mensual': 1,
           'Trimestral': 3,
           'Semestral': 6,

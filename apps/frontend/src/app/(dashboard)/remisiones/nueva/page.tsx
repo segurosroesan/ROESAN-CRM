@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, Upload, CheckCircle, AlertCircle, ArrowRight, ArrowLeft,
-  FileText, User, Shield, Building2, Loader2, X, ExternalLink, Plus
+  FileText, User, Shield, Building2, Loader2, X, ExternalLink, Plus, RefreshCw
 } from "lucide-react";
 
 const BACKEND = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
@@ -327,7 +327,7 @@ export default function RemisionarPage() {
   function handleNuevaRemision() {
     setStep(1);
     setResult(null);
-    setBusquedaResult({ searched: false, found: false, cliente: null, message: "" });
+    setBusquedaResult({ searched: false, found: false, cliente: null, polizas: [], message: "" });
     setUploadedFiles({ CEDULA: null, RUT: null, SARLAFT: null, POLIZA: null });
     setExtracted({});
     setClientData({});

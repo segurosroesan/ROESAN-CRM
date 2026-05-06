@@ -1009,7 +1009,7 @@ export default function LeadDetailPage() {
                 ))}
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Right: Quick actions sidebar */}

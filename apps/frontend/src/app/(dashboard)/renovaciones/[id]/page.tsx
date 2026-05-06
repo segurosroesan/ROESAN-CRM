@@ -276,7 +276,6 @@ export default function RenovacionDetailPage({ params }: { params: Promise<{ id:
             )}
           </div>
         </div>
-      </div>
 
       {showConfirmarModal && (
         <ConfirmarRenovacionModal

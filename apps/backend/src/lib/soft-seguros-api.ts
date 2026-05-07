@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from '@nestjs/common';
+import NodeFormData from 'form-data';
 
 export class SoftSegurosApi {
   private client: AxiosInstance;
@@ -195,12 +196,16 @@ export class SoftSegurosApi {
   }
 
   /**
-   * Update client in Soft Seguros
+   * Update client in Soft Seguros.
+   * PATCH silently ignores fecha_nacimiento/fecha_expedicion, so we GET+PUT.
    */
   async updateClient(id: string | number, data: any): Promise<any> {
     try {
-      this.logger.log(`Updating client ID: ${id}`);
-      const response = await this.request('PATCH', `/api/cliente/${id}/`, data);
+      this.logger.log(`GET cliente ${id} para merge antes de PUT`);
+      const existing = await this.request('GET', `/api/cliente/${id}/`);
+      const merged = { ...existing, ...data };
+      this.logger.log(`PUT cliente ${id}`);
+      const response = await this.request('PUT', `/api/cliente/${id}/`, merged);
       return response;
     } catch (error) {
       this.logger.error(`Failed to update client ${id}: ${JSON.stringify(error.response?.data || error.message)}`);
@@ -349,25 +354,40 @@ export class SoftSegurosApi {
    */
   async createAnexo(data: {
     id_entidad: number;
-    tipo_entidad: 'C' | 'P'; // C=Cliente, P=Poliza
+    tipo_entidad: 'C' | 'P';
     nombre_archivo: string;
     archivo_base64: string;
+    fecha_expedicion?: string;
+    fecha_inicio?: string;
+    fecha_fin?: string;
     tipo_anexo?: number;
   }): Promise<any> {
+    if (!this.token) await this.login();
     try {
       this.logger.log(`Uploading attachment ${data.nombre_archivo} to entity ${data.tipo_entidad}:${data.id_entidad}`);
-      
-      const payload = {
-        id_entidad: data.id_entidad,
-        tipo_entidad: data.tipo_entidad,
-        nombre_archivo: data.nombre_archivo,
-        archivo: data.archivo_base64,
-        tipo_anexo: data.tipo_anexo || 1, // Default tipo
-      };
+      const today = new Date().toISOString().split('T')[0];
+      const farFuture = `${new Date().getFullYear() + 10}-12-31`;
 
-      const response = await this.request('POST', '/api/anexopoliza/', payload);
-      return response;
+      const form = new NodeFormData();
+      form.append('id_entidad', String(data.id_entidad));
+      form.append('tipo_entidad', data.tipo_entidad);
+      form.append('nombre_archivo', data.nombre_archivo);
+      form.append('tipo_anexo', String(data.tipo_anexo || 1));
+      form.append('fecha_expedicion', data.fecha_expedicion || today);
+      form.append('fecha_inicio', data.fecha_inicio || data.fecha_expedicion || today);
+      form.append('fecha_fin', data.fecha_fin || farFuture);
+      const fileBuffer = Buffer.from(data.archivo_base64, 'base64');
+      form.append('archivo', fileBuffer, { filename: data.nombre_archivo, contentType: 'application/octet-stream' });
+
+      const response = await this.client.post('/api/anexopoliza/', form, {
+        headers: { Authorization: `Token ${this.token}`, ...form.getHeaders() },
+      });
+      return response.data;
     } catch (error) {
+      if (error.response?.status === 401) {
+        await this.login();
+        return this.createAnexo(data);
+      }
       this.logger.error(`Failed to upload attachment: ${JSON.stringify(error.response?.data || error.message)}`);
       throw error;
     }

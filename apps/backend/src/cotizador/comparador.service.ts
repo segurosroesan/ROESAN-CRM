@@ -311,7 +311,8 @@ Extrae los siguientes datos de esta CÉDULA DE CIUDADANÍA y devuélvelos en JSO
   "nombres": "nombres completos",
   "apellidos": "apellidos completos",
   "genero": "MASCULINO o FEMENINO",
-  "fecha_nacimiento": "YYYY-MM-DD"
+  "fecha_nacimiento": "YYYY-MM-DD",
+  "fecha_expedicion": "YYYY-MM-DD"
 }
 `;
         break;

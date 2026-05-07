@@ -90,6 +90,7 @@ export class RemisionesService {
       nombres?: string;
       apellidos?: string;
       fecha_nacimiento?: string;
+      fecha_expedicion?: string;
       genero?: string;
       email?: string;
       telefono?: string;
@@ -195,6 +196,7 @@ export class RemisionesService {
       if (clientData.nombres) clientUpdate.nombres = clientData.nombres;
       if (clientData.apellidos) clientUpdate.apellidos = clientData.apellidos;
       if (clientData.fecha_nacimiento) clientUpdate.fecha_nacimiento = clientData.fecha_nacimiento;
+      if (clientData.fecha_expedicion) clientUpdate.fecha_expedicion = clientData.fecha_expedicion;
       if (clientData.genero) clientUpdate.genero = clientData.genero;
       if (clientData.email) clientUpdate.correo = clientData.email;
       if (clientData.telefono) { clientUpdate.celular = clientData.telefono; clientUpdate.telefono = clientData.telefono; }
@@ -206,7 +208,9 @@ export class RemisionesService {
 
       if (Object.keys(clientUpdate).length > 0) {
         try {
+          this.logger.log(`PUT cliente ${soft_cliente_id}: ${JSON.stringify(clientUpdate)}`);
           steps.clientUpdate = await this.softApi.updateClient(soft_cliente_id, clientUpdate);
+          this.logger.log(`Cliente ${soft_cliente_id} actualizado OK`);
         } catch (updateErr: any) {
           const detail = updateErr.response?.data ? JSON.stringify(updateErr.response.data) : updateErr.message;
           this.logger.error(`Error actualizando cliente ${soft_cliente_id}: ${detail}`);
@@ -410,19 +414,28 @@ export class RemisionesService {
     }
 
     // STEP C: Upload each file as anexo (SYNC-6)
+    const today = new Date().toISOString().split('T')[0];
     steps.anexos = [];
     for (const file of files) {
       try {
-        // Routing: POLIZA goes to Policy entity, others (CEDULA, RUT, SARLAFT) go to Client entity
         const isPolicyFile = file.tipo === 'POLIZA';
         const targetId = isPolicyFile ? Number(soft_poliza_id) : Number(soft_cliente_id);
         const targetType = isPolicyFile ? 'P' : 'C';
+        // fecha_expedicion: cédula → extraída del doc; póliza → fecha_inicio; resto → hoy
+        let fechaExp = today;
+        if (file.tipo === 'CEDULA' && clientData.fecha_expedicion) fechaExp = clientData.fecha_expedicion;
+        else if (isPolicyFile && policyData.fecha_inicio) fechaExp = policyData.fecha_inicio;
+        const fechaInicio = isPolicyFile && policyData.fecha_inicio ? policyData.fecha_inicio : fechaExp;
+        const fechaFin = isPolicyFile && policyData.fecha_fin ? policyData.fecha_fin : undefined;
 
         const anexoResult = await this.softApi.createAnexo({
           id_entidad: targetId,
           tipo_entidad: targetType,
           nombre_archivo: file.nombre,
           archivo_base64: file.buffer.toString('base64'),
+          fecha_expedicion: fechaExp,
+          fecha_inicio: fechaInicio,
+          fecha_fin: fechaFin,
         });
         steps.anexos.push({ tipo: file.tipo, result: anexoResult });
         this.logger.log(`Anexo ${file.tipo} subido correctamente a ${targetType}:${targetId}`);

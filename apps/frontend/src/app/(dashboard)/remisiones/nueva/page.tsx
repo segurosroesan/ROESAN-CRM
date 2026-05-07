@@ -205,6 +205,7 @@ export default function RemisionarPage() {
         if (data.CEDULA.nombres)          cd.nombres          = data.CEDULA.nombres;
         if (data.CEDULA.apellidos)        cd.apellidos        = data.CEDULA.apellidos;
         if (data.CEDULA.fecha_nacimiento) cd.fecha_nacimiento = data.CEDULA.fecha_nacimiento;
+        if (data.CEDULA.fecha_expedicion) cd.fecha_expedicion = data.CEDULA.fecha_expedicion;
         if (data.CEDULA.genero)           cd.genero           = data.CEDULA.genero;
       } else if (data.POLIZA) {
         // Sin cédula: tomar datos del tomador desde la carátula de póliza

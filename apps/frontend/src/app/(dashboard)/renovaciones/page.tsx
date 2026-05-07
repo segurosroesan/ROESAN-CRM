@@ -93,9 +93,13 @@ interface RenovacionCard {
 }
 
 function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => void }) {
-  const meta = RAMO_META[ren.type] || { icon: Shield, color: "text-slate-600 bg-slate-50" };
+  // Normalizar el tipo para el mapeo de iconos
+  const tipoNormalizado = (ren.type || "auto").toLowerCase().trim();
+  const meta = RAMO_META[tipoNormalizado] || RAMO_META["auto"];
   const RamoIcon = meta.icon;
   const urgency = urgencyBadge(ren.diasVencer);
+
+  const isVehicle = tipoNormalizado === "auto" || tipoNormalizado === "soat";
 
   return (
     <div
@@ -111,7 +115,9 @@ function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => 
           <div>
             <p className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors leading-tight">{ren.name}</p>
             {ren.placa && ren.placa !== "—" && (
-              <p className="text-[10px] text-slate-500 font-bold mt-0.5">Placa: {ren.placa.toUpperCase()}</p>
+              <p className="text-[10px] text-slate-500 font-bold mt-0.5">
+                {isVehicle ? "Placa: " : "Objeto: "}{ren.placa.toUpperCase()}
+              </p>
             )}
             <p className="text-[9px] text-slate-400 font-mono mt-0.5">{ren.poliza}</p>
           </div>

@@ -13,11 +13,36 @@ const SOFT_RAMO_TO_TYPE: Record<number | string, string> = {
   90831: 'salud',
   90850: 'empresarial',
   90829: 'cumplimiento',
+  'Autos': 'auto',
+  'SOAT': 'soat',
+  'Hogar': 'hogar',
+  'Vida': 'vida',
+  'Salud': 'salud',
+  'Pyme': 'pyme',
+  'Empresarial': 'empresarial',
+  'Cumplimiento': 'cumplimiento',
 };
 
 function derivarTipo(poliza: any): string {
-  const ramoId = poliza.ramo?.id || poliza.codigo_ramo || poliza.codio_objeto_asegurado;
-  return SOFT_RAMO_TO_TYPE[ramoId] || 'auto';
+  // 1. Por ID de ramo (más preciso)
+  const ramoId = poliza.ramo?.id || poliza.codigo_ramo;
+  if (ramoId && SOFT_RAMO_TO_TYPE[ramoId]) return SOFT_RAMO_TO_TYPE[ramoId];
+
+  // 2. Por nombre de ramo
+  const ramoNombre = poliza.ramo?.nombre || poliza.ramo_nombre;
+  if (ramoNombre) {
+    const keys = Object.keys(SOFT_RAMO_TO_TYPE);
+    const found = keys.find(k => String(k).toLowerCase() === String(ramoNombre).toLowerCase());
+    if (found) return SOFT_RAMO_TO_TYPE[found];
+  }
+
+  // 3. Por objeto asegurado (heurística de placa)
+  const objeto = poliza.codio_objeto_asegurado || '';
+  if (typeof objeto === 'string' && /^[A-Z]{3}\d{3}$/i.test(objeto.trim())) {
+    return 'auto';
+  }
+
+  return 'auto';
 }
 
 export interface ImportJobResult {
@@ -157,6 +182,9 @@ export class RenovacionesService {
           // Score de renovación según PRD
           const score = this.calcularScoreRenovacion(diasParaVencer, poliza.prima || 0);
 
+          // Documento: Priorizar campo de la póliza (tomador), fallback al ID cliente
+          const documentoPoliza = poliza.cedula_tomador || String(poliza.cliente || '');
+
           if (existingPolizaIds.has(polizaIdStr)) {
             // ── Actualizar si cambió la prima o fecha ────────────────────────
             const existing = existingRenovaciones.find((r: any) => String(r.soft_poliza_id) === polizaIdStr);
@@ -171,6 +199,7 @@ export class RenovacionesService {
                   dias_para_vencer: diasParaVencer,
                   score,
                   // Mantener info actualizada
+                  documento: documentoPoliza || existing.documento || '',
                   numero_poliza: poliza.numero_poliza || existing.numero_poliza || '',
                   aseguradora: poliza.aseguradora?.nombre || existing.aseguradora || '',
                   fecha_fin_poliza: poliza.fecha_fin || existing.fecha_fin_poliza || '',
@@ -186,11 +215,11 @@ export class RenovacionesService {
             // ── PASO 3: Enriquecer con datos del cliente ─────────────────────
             let clienteData: any = {};
             try {
-              clienteData = await this.softApi.getClientByDocument(
-                poliza.cedula_tomador || String(poliza.cliente)
-              ) || {};
+              // Si el documentoPoliza parece ser un ID (solo números y corto) y no un documento real, 
+              // el método getClientByDocument intentará buscarlo.
+              clienteData = await this.softApi.getClientByDocument(documentoPoliza) || {};
             } catch {
-              this.logger.warn(`Could not fetch client data for poliza ${poliza.id}`);
+              this.logger.warn(`Could not fetch client data for poliza ${poliza.id} with doc ${documentoPoliza}`);
             }
 
             // ── Crear nueva oportunidad de renovación ────────────────────────
@@ -203,7 +232,7 @@ export class RenovacionesService {
               // Lead base fields
               type: tipo,
               name: poliza.nombre_tomador || clienteData.nombres || `Cliente ${poliza.id}`,
-              documento: poliza.cedula_tomador || clienteData.numero_documento || '',
+              documento: poliza.cedula_tomador || clienteData.numero_documento || documentoPoliza || '',
               phone: clienteData.celular || clienteData.telefono || '',
               email: clienteData.correo || '',
               pipeline_tipo: 'renovacion',

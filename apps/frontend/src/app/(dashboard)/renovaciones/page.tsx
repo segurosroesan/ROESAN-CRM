@@ -162,7 +162,7 @@ export default function RenovacionesPage() {
       type: lead.type || "auto",
       poliza: lead.numero_poliza || "—",
       aseguradora: lead.aseguradora || "—",
-      prima: lead.prima_actual || 0,
+      prima: Number(lead.prima_actual || 0),
       diasVencer: Math.max(diasVencer, 0),
       status: lead.status || "Importada",
       phone: lead.phone || "",

@@ -163,7 +163,7 @@ export class RenovacionesService {
             if (existing) {
               await this.db.transact([
                 tx.leads[existing.id].update({
-                  prima_actual: poliza.prima || poliza.total || 0,
+                  prima_actual: Number(poliza.prima || poliza.total || 0),
                   dias_para_vencer: diasParaVencer,
                   score,
                   updatedAt: Date.now(),
@@ -201,7 +201,7 @@ export class RenovacionesService {
               numero_poliza: poliza.numero_poliza || '',
               aseguradora: poliza.aseguradora?.nombre || '',
               fecha_fin_poliza: poliza.fecha_fin || '',
-              prima_actual: poliza.prima || poliza.total || 0,
+              prima_actual: Number(poliza.prima || poliza.total || 0),
               dias_para_vencer: diasParaVencer,
               objeto_asegurado: poliza.codio_objeto_asegurado || '',
               createdAt: Date.now(),

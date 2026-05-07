@@ -1,7 +1,7 @@
 # Memoria del Proyecto — ROESAN CRM
 
 > **AGENTES DE IA:** Leer este archivo al inicio de CADA sesión antes de escribir cualquier código. Actualizar al finalizar avances importantes.
-> Última actualización: 2026-05-05
+> Última actualización: 2026-05-07
 
 ---
 
@@ -25,7 +25,7 @@
 | Gmail integration | ✅ Funcional | OAuth, drafts, labels |
 | Módulo Cotizador backend | ✅ Funcional | Controller + Service + Module |
 | **Allianz SOAP** | ✅ **FUNCIONAL** | UAT probado, 4 paquetes |
-| **SBS SOAP** | ✅ **FUNCIONAL** (QA) | Proceso de 2 pasos (Sesión + Cotización). |
+| **SBS SOAP** | ⚠️ **BLOQUEADO** (Soporte) | Error de validación en factor de comisión. Esperando respuesta de Ivan David Diaz (SBS). |
 | Comparador IA (Gemini Flash) | ✅ Funcional | Override determinístico para opción más barata |
 | Parse-PDF de cotizaciones | ✅ Funcional | Endpoint `/parse-pdf` y `/parse-pdfs` (bulk) |
 | **Módulo Documentos Legales** | ✅ **FUNCIONAL** | Extracción IA + **Persistencia en InstantDB** + Sincronización a Soft (Clientes/Pólizas) |
@@ -33,6 +33,8 @@
 | Schema InstantDB cotizaciones | ✅ Actualizado | Campos: `cobertura`, `prima_total`, `es_renovacion` |
 | **SYNC-6 (Anexos)** | ✅ **FUNCIONAL** | Subida de archivos a Soft Seguros mediante `/documentos/sync` |
 | **Auth Google OAuth** | ✅ **FUNCIONAL** | Login con Google via InstantDB. Whitelist: `@roesan.com` + `jorge.jaime.henao.romero@gmail.com` |
+| **Paridad de Pipelines** | ✅ **FUNCIONAL** | Los pipelines de Renovaciones y Pre-venta comparten componentes (`AddInteraccionForm`, `AddCotizacionForm`) y funcionalidades (CRM, Cotizaciones AI). |
+| **Workflow Propuesta Pro** | ✅ **MEJORADO** | Modal de revisión (`PropuestaProModal`) permite previsualizar, editar y enviar propuestas via Email (OAuth) o WhatsApp. |
 
 ---
 
@@ -86,15 +88,13 @@
 - **Género:** Se envía en `ConsideracionesAdicionalesDA` (TipoRegla 56) como 'M' o 'F'.
 - **Frontend:** La función `handleAutoQuote` ya envía `fecha_nacimiento` y `genero` del lead.
 
-### SBS SOAP ✅ FUNCIONAL (QA)
+### SBS SOAP ⚠️ BLOQUEADO (Pruebas)
 - **Protocolo:** SOAP 1.2
 - **Endpoint:** `https://test.cotizadoresgenerales.com/wsCotizaAutos/CotizaAutos.asmx`
-- **Auth:** Usuario/Password (mismos de producción para `gerencia@roesan.com.co`)
-- **Proceso:** 
-  1. `SBSAutos_CrearSesion_Paquete`: Crea la sesión con datos del prospecto y vehículo.
-  2. `SBSAutos_CotizaryCerrarSesion_Paquete`: Genera el valor de la prima.
-- **Mapeo:** El backend orquesta automáticamente los dos pasos requeridos por SBS.
-- **Campos:** Requiere Fasecolda, Modelo, Documento, Género y Fecha de Nacimiento (provenientes del Lead).
+- **Auth:** Usuario/Password (configurados en `.env`).
+- **Estado Actual:** El conector está implementado, pero el servicio devuelve error: *"No se pudo determinar el factor de comisión del usuario"*.
+- **Acción Pendiente:** Se redactó borrador de correo para Ivan David Diaz (SBS) solicitando el valor correcto para `<codFactComision>`.
+- **Set de Pruebas listo:** Una vez desbloqueado, se probará con Toyota Hilux (09008205), Hyundai Tucson (03206083) y Kia Picanto (04601219).
 
 ---
 
@@ -212,8 +212,15 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 - **Ruteo de Anexos:** Los documentos tipo `POLIZA` se envían exclusivamente a la entidad Póliza en Soft Seguros.
 - **Estandarización de Links:** Todos los enlaces a fichas de cliente apuntan ahora a `/editar/persona/` para compatibilidad total con la v1 de Soft Seguros.
 
-### Integración de Propuesta Pro ✅ (2026-05-06)
+### Integración de Propuesta Pro ✅ (Actualizado 2026-05-07)
 - **Generación en un Clic:** El flujo de cotización genera un enlace dinámico `/propuesta/[id]` en Next.js basándose en la plantilla visual de Propuestas Pro (basada en HTML previo).
 - **Almacenamiento InstantDB:** La estructura de la propuesta y los resultados del análisis IA (`comparador.service.ts`) se persisten bajo la entidad `propuestas`.
-- **Nuevo Formato de Email:** En lugar del largo texto plano, el cliente recibe un correo profesional y directo invitándole a revisar su propuesta en la URL interactiva y ver su comparativo detallado.
+- **Workflow de Revisión:** Implementación de `PropuestaProModal` para que el asesor previsualice y edite el texto antes de enviar.
+- **Multicanal:** Envío directo mediante Gmail (via API OAuth integrada) o copia de link para WhatsApp manual.
+- **Regeneración IA:** Opción de regenerar la comparación y propuesta directamente desde el modal si es necesario.
+
+### Paridad de Componentes CRM ✅ (2026-05-07)
+- Se extrajeron `AddInteraccionForm` y `AddCotizacionForm` a componentes globales.
+- El pipeline de **Renovaciones** ahora cuenta con las mismas herramientas comerciales que el de **Pre-venta**: registro de interacciones, cotizador manual/AI, carga de documentos y generación de Propuesta Pro.
+- Corrección de labels de relación (`lead` en lugar de `leads`) para mantener consistencia con el schema de InstantDB.
 

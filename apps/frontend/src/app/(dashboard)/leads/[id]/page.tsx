@@ -41,6 +41,9 @@ import {
 import { EmailComposer } from "@/components/EmailComposer";
 import { CotizacionComparativo } from "@/components/CotizacionComparativo";
 import { DocumentosLegales } from "@/components/DocumentosLegales";
+import { AddInteraccionForm } from "@/components/AddInteraccionForm";
+import { AddCotizacionForm } from "@/components/AddCotizacionForm";
+import { PropuestaProModal } from "@/components/PropuestaProModal";
 
 // ✅ Etapas simplificadas según feedback
 const STAGES = [
@@ -137,13 +140,16 @@ export default function LeadDetailPage() {
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   const [showAddInteraccion, setShowAddInteraccion] = useState(false);
   const [showAddCotizacion, setShowAddCotizacion] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [copied, setCopied] = useState(false);
-   const [isComparing, setIsComparing] = useState(false);
+  const [isComparing, setIsComparing] = useState(false);
   const [comparativoData, setComparativoData] = useState<any>(null);
+  const [propuestaProData, setPropuestaProData] = useState<{ body: string; url: string } | null>(null);
   const [isAutoQuoting, setIsAutoQuoting] = useState(false);
   const [uploadingBulk, setUploadingBulk] = useState(false);
   const [isSearchingPlaca, setIsSearchingPlaca] = useState(false);
@@ -182,16 +188,17 @@ export default function LeadDetailPage() {
   const RamoIcon = ramoMeta.icon;
 
 
-  const handleAutoQuote = async () => {
+  const handleSingleAutoQuote = async (insurer: "all" | "allianz" | "qualitas" | "sbs") => {
     if (!lead.vehicleFasecolda || !lead.vehicleYear || !lead.documento) {
-      alert("Faltan datos críticos para cotizar (Fasecolda, Modelo o Documento). Por favor completa los datos del lead o sube un PDF de otra aseguradora.");
+      alert("Faltan datos críticos para cotizar (Fasecolda, Modelo o Documento). Por favor completa los datos del lead.");
       return;
     }
 
     setIsAutoQuoting(true);
     try {
       const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
-      const response = await fetch(`${backendUrl}/cotizador/all`, {
+      const endpoint = insurer === "all" ? "all" : insurer;
+      const response = await fetch(`${backendUrl}/cotizador/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -213,9 +220,31 @@ export default function LeadDetailPage() {
       const results = await response.json();
       const transactions = [];
       
-      if (results.qualitas && !results.qualitas.error) {
+      // Manejar respuesta de Allianz (puede venir en results.allianz o directo en results si se llamó solo a allianz)
+      const allianzData = insurer === "allianz" ? results : results.allianz;
+      if (allianzData && !allianzData.error) {
+        for (const pkg of (allianzData.paquetes || [])) {
+          const aId = crypto.randomUUID();
+          transactions.push(db.tx.cotizaciones[aId].update({
+            leadId,
+            aseguradora: "Allianz",
+            valor: pkg.primaTotal,
+            prima_total: pkg.primaTotal,
+            cobertura: pkg.nombre,
+            estado: "enviada",
+            fuente: "API Allianz",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }));
+          transactions.push(db.tx.cotizaciones[aId].link({ lead: leadId }));
+        }
+      }
+
+      // Manejar respuesta de Qualitas
+      const qualitasData = insurer === "qualitas" ? results : results.qualitas;
+      if (qualitasData && !qualitasData.error) {
         const qId = crypto.randomUUID();
-        const prima = results.qualitas.primaTotal || results.qualitas.prima_total || 0;
+        const prima = qualitasData.primaTotal || qualitasData.prima_total || 0;
         transactions.push(db.tx.cotizaciones[qId].update({
           leadId,
           aseguradora: "Qualitas",
@@ -230,64 +259,31 @@ export default function LeadDetailPage() {
         transactions.push(db.tx.cotizaciones[qId].link({ lead: leadId }));
       }
 
-      if (results.allianz && !results.allianz.error) {
-        for (const pkg of (results.allianz.paquetes || [])) {
-          const aId = crypto.randomUUID();
-          transactions.push(db.tx.cotizaciones[aId].update({
-            leadId,
-            aseguradora: "Allianz",
-            valor: pkg.primaTotal,
-            prima_total: pkg.primaTotal,
-            cobertura: pkg.nombre,
-            estado: "enviada",
-            fuente: "API Allianz",
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          }));
-          transactions.push(db.tx.cotizaciones[aId].link({ lead: leadId }));
-          }
+      // Manejar respuesta de SBS
+      const sbsData = insurer === "sbs" ? results : results.sbs;
+      if (sbsData && !sbsData.error) {
+        const sId = crypto.randomUUID();
+        const prima = sbsData.primaTotal || 0;
+        transactions.push(db.tx.cotizaciones[sId].update({
+          leadId,
+          aseguradora: "SBS",
+          valor: prima,
+          prima_total: prima,
+          cobertura: "Plan Automóvil - Generado Automáticamente",
+          estado: "enviada",
+          fuente: "API SBS",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }));
+        transactions.push(db.tx.cotizaciones[sId].link({ lead: leadId }));
+      }
 
-          if (results.sbs && !results.sbs.error) {
-          const sId = crypto.randomUUID();
-          const prima = results.sbs.primaTotal || 0;
-          transactions.push(db.tx.cotizaciones[sId].update({
-            leadId,
-            aseguradora: "SBS",
-            valor: prima,
-            prima_total: prima,
-            cobertura: "Plan Automóvil - Generado Automáticamente",
-            estado: "enviada",
-            fuente: "API SBS",
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-          }));
-          transactions.push(db.tx.cotizaciones[sId].link({ lead: leadId }));
-          }
-
-          if (transactions.length > 0) {
-          await Promise.all(transactions);
-          }
-
-          let errorSummary = [];
-          if (results.qualitas?.error) errorSummary.push(`Qualitas: ${results.qualitas.error}`);
-          if (results.allianz?.error) errorSummary.push(`Allianz: ${results.allianz.error}`);
-          if (results.sbs?.error) errorSummary.push(`SBS: ${results.sbs.error}`);
-
-          if (errorSummary.length > 0) {
-          alert("Algunas aseguradoras fallaron:\n" + errorSummary.join("\n"));
-          }
-
-        const lines: string[] = [`✅ ${transactions.length / 2} cotización(es) guardada(s).`];
-        if (results.qualitas?.error) lines.push(`⚠️ Qualitas: ${results.qualitas.error}`);
-        if (results.allianz?.error) lines.push(`⚠️ Allianz: ${results.allianz.error}`);
-        alert(lines.join("\n"));
+      if (transactions.length > 0) {
+        await db.transact(transactions);
+        alert(`✅ ${transactions.length / 2} cotización(es) guardada(s) exitosamente.`);
       } else {
-        const lines: string[] = ["No se guardaron cotizaciones."];
-        if (results.qualitas?.error) lines.push(`Qualitas: ${results.qualitas.error}`);
-        else lines.push("Qualitas: sin respuesta");
-        if (results.allianz?.error) lines.push(`Allianz: ${results.allianz.error}`);
-        else if (!results.allianz?.paquetes?.length) lines.push("Allianz: sin paquetes");
-        alert(lines.join("\n"));
+        const errorMsg = results.error || results.qualitas?.error || results.allianz?.error || results.sbs?.error || "La aseguradora no devolvió resultados.";
+        alert(`Atención: ${errorMsg}`);
       }
     } catch (err) {
       console.error("Error en auto-quote:", err);
@@ -790,22 +786,13 @@ export default function LeadDetailPage() {
           {/* Cotizaciones Tab */}
           <div className={activeTab === "cotizaciones" ? "block" : "hidden"}>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <button
                   onClick={() => setShowAddCotizacion(true)}
                   className="w-full flex items-center justify-center gap-2 py-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-sm font-bold text-slate-400 hover:border-emerald-400 hover:text-emerald-500 hover:bg-emerald-50/30 transition-all"
                 >
                   <Plus className="h-4 w-4" />
                   Agregar manual
-                </button>
-                <button
-                  onClick={handleAutoQuote}
-                  disabled={isAutoQuoting}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-white transition-all shadow-md disabled:opacity-50 hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #f59e0b, #f97316)", fontFamily: "var(--font-outfit)" }}
-                >
-                  <Zap className={`h-4 w-4 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                  {isAutoQuoting ? "Cotizando..." : "Cotizar Allianz / Qualitas"}
                 </button>
                 <button
                   onClick={() => bulkFileInputRef.current?.click()}
@@ -816,6 +803,32 @@ export default function LeadDetailPage() {
                   {uploadingBulk ? <RefreshCw className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                   {uploadingBulk ? "Procesando..." : "Subir varios PDFs"}
                 </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleSingleAutoQuote("allianz")}
+                    disabled={isAutoQuoting}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-blue-600"
+                  >
+                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
+                    Cotizar Allianz
+                  </button>
+                  <button
+                    onClick={() => handleSingleAutoQuote("qualitas")}
+                    disabled={isAutoQuoting}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-sky-500"
+                  >
+                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
+                    Cotizar Qualitas
+                  </button>
+                  <button
+                    onClick={() => handleSingleAutoQuote("sbs")}
+                    disabled={isAutoQuoting}
+                    className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-slate-700"
+                  >
+                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
+                    Cotizar SBS (Pruebas)
+                  </button>
+                </div>
               </div>
 
               {showAddCotizacion && (
@@ -931,8 +944,7 @@ export default function LeadDetailPage() {
                       });
                       const result = await response.json();
                       if (result.body) {
-                        navigator.clipboard.writeText(result.body);
-                        alert("Propuesta Pro generada y guardada. El correo ha sido copiado al portapapeles. (Puedes abrir tu gestor de correo para pegarlo)");
+                        setPropuestaProData({ body: result.body, url: `${window.location.origin}/propuesta/${propuestaId}` });
                       }
                     } catch(err) {
                       console.error(err);
@@ -1107,6 +1119,53 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
+          {/* Notas de gestión */}
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Notas de gestión</h3>
+              {!isEditingNotes ? (
+                <button
+                  onClick={() => { setNotesValue(lead.notes || ""); setIsEditingNotes(true); }}
+                  className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 px-2 py-1 rounded-lg transition-all border border-slate-100"
+                >
+                  <Edit3 className="h-3 w-3" />
+                  Editar
+                </button>
+              ) : (
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setIsEditingNotes(false)}
+                    className="flex items-center gap-0.5 text-[10px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1 rounded-lg transition-all"
+                  >
+                    <X className="h-3 w-3" /> Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await db.transact([db.tx.leads[leadId].update({ notes: notesValue, updatedAt: Date.now() })]);
+                      setIsEditingNotes(false);
+                    }}
+                    className="flex items-center gap-0.5 text-[10px] font-bold text-white bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded-lg transition-all"
+                  >
+                    <Save className="h-3 w-3" /> Guardar
+                  </button>
+                </div>
+              )}
+            </div>
+            {isEditingNotes ? (
+              <textarea
+                value={notesValue}
+                onChange={e => setNotesValue(e.target.value)}
+                rows={4}
+                placeholder="Escribe notas sobre la gestión de este lead..."
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all resize-none"
+              />
+            ) : lead.notes ? (
+              <p className="text-[13px] text-slate-600 leading-relaxed whitespace-pre-wrap">{lead.notes}</p>
+            ) : (
+              <p className="text-[12px] text-slate-300 italic">Sin notas. Haz clic en Editar para agregar.</p>
+            )}
+          </div>
+
           {/* Meta */}
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-2.5">
             <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest" style={{ fontFamily: "var(--font-jetbrains-mono)" }}>Información del registro</h3>
@@ -1159,6 +1218,20 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+
+      {propuestaProData && lead.email && (
+        <PropuestaProModal
+          leadId={leadId}
+          toEmail={lead.email}
+          initialBody={propuestaProData.body}
+          propuestaUrl={propuestaProData.url}
+          onClose={() => setPropuestaProData(null)}
+          onRegenerate={() => {
+            setPropuestaProData(null);
+            handleCompararCotizaciones();
+          }}
+        />
+      )}
 
       {/* Email Composer Modal */}
       {showEmailComposer && lead.email && (
@@ -1213,223 +1286,5 @@ function buildCoberturas(data: any): object {
   };
 }
 
-// ── Sub-forms ──────────────────────────────────────────────────────────────
 
-function AddInteraccionForm({ leadId, onClose }: { leadId: string; onClose: () => void }) {
-  const [tipo, setTipo] = useState("llamada");
-  const [notas, setNotas] = useState("");
-  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    const newId = crypto.randomUUID();
-    await db.transact([
-      db.tx.interacciones[newId].update({
-        leadId,
-        tipo,
-        notas,
-        createdAt: Date.now(),
-      }),
-      // Link to lead
-      db.tx.interacciones[newId].link({ lead: leadId }),
-    ]);
-    setSaving(false);
-    onClose();
-  };
-
-  const tipoOptions = [
-    { value: "llamada", label: "📞 Llamada" },
-    { value: "whatsapp", label: "💬 WhatsApp" },
-    { value: "email", label: "📧 Email" },
-    { value: "nota", label: "📝 Nota" },
-    { value: "reunion", label: "🤝 Reunión" },
-  ];
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-blue-100 shadow-sm p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
-      <div className="flex items-center justify-between">
-        <h4 className="font-bold text-slate-700">Nueva interacción</h4>
-        <button type="button" onClick={onClose} className="text-slate-300 hover:text-slate-500"><X className="h-4 w-4" /></button>
-      </div>
-      <div className="flex gap-2 flex-wrap">
-        {tipoOptions.map(opt => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => setTipo(opt.value)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${tipo === opt.value ? "bg-blue-600 text-white shadow-sm" : "bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-100"}`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-      <textarea
-        required
-        value={notas}
-        onChange={e => setNotas(e.target.value)}
-        rows={3}
-        placeholder="Describe la interacción, resultado, próximos pasos..."
-        className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all text-sm resize-none"
-      />
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancelar</button>
-        <button type="submit" disabled={saving} className="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-sm transition-all disabled:opacity-50">
-          {saving ? "Guardando…" : "Guardar"}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function AddCotizacionForm({ leadId, onClose, lead }: { leadId: string; onClose: () => void; lead: any }) {
-  const [form, setForm] = useState({
-    aseguradora: "",
-    valor: "",
-    prima_neta: "",
-    valor_asegurado: "",
-    cobertura: "",
-    estado: "enviada",
-    es_renovacion: false,
-  });
-  const [parsedCoverage, setParsedCoverage] = useState<any>(null);
-  const [saving, setSaving] = useState(false);
-  const [uploadingPdf, setUploadingPdf] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingPdf(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
-      const res = await fetch(`${backendUrl}/cotizador/parse-pdf`, {
-        method: "POST",
-        body: formData,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setForm(prev => ({
-          ...prev,
-          aseguradora: data.aseguradora || prev.aseguradora,
-          valor: data.prima_total ? String(data.prima_total) : prev.valor,
-          prima_neta: data.prima_neta ? String(data.prima_neta) : prev.prima_neta,
-          valor_asegurado: data.valor_asegurado ? String(data.valor_asegurado) : prev.valor_asegurado,
-          cobertura: data.cobertura || prev.cobertura,
-        }));
-        setParsedCoverage(data);
-
-        const updates: any = {};
-        if (data.placa && !lead.vehiclePlate) updates.vehiclePlate = data.placa;
-        if (data.modelo && !lead.vehicleYear) updates.vehicleYear = String(data.modelo);
-        if (data.fasecolda && !lead.vehicleFasecolda) updates.vehicleFasecolda = data.fasecolda;
-        if (data.documento && !lead.documento) updates.documento = data.documento;
-        if (Object.keys(updates).length > 0) {
-          await db.transact([db.tx.leads[leadId].update(updates)]);
-        }
-      } else {
-        alert("Error al analizar el documento de la cotización");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error de conexión al subir el PDF");
-    } finally {
-      setUploadingPdf(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    const newId = crypto.randomUUID();
-    const prima = parseFloat(form.valor) || 0;
-    await db.transact([
-      db.tx.cotizaciones[newId].update({
-        leadId,
-        aseguradora: form.aseguradora,
-        valor: prima,
-        prima_total: prima,
-        prima_neta: parseFloat(form.prima_neta) || 0,
-        valor_asegurado: parseFloat(form.valor_asegurado) || 0,
-        cobertura: form.cobertura,
-        coberturas: parsedCoverage ? buildCoberturas(parsedCoverage) : undefined,
-        estado: form.estado,
-        es_renovacion: form.es_renovacion,
-        fuente: parsedCoverage ? "IA (PDF)" : "Manual",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      }),
-      db.tx.cotizaciones[newId].link({ lead: leadId }),
-    ]);
-    setSaving(false);
-    onClose();
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
-      <div className="flex items-center justify-between">
-        <h4 className="font-bold text-slate-700">Nueva cotización</h4>
-        <div className="flex items-center gap-2">
-          <input type="file" accept="application/pdf,image/*" className="hidden" ref={fileInputRef} onChange={handlePdfUpload} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingPdf} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors">
-            {uploadingPdf ? "Analizando..." : "📄 Autocompletar con PDF"}
-          </button>
-          <button type="button" onClick={onClose} className="text-slate-300 hover:text-slate-500 ml-2"><X className="h-4 w-4" /></button>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aseguradora <span className="text-red-500">*</span></label>
-          <input
-            required value={form.aseguradora}
-            onChange={e => setForm({ ...form, aseguradora: e.target.value })}
-            placeholder="Ej. Sura, Allianz, Axa"
-            className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prima Total (COP) <span className="text-red-500">*</span></label>
-          <input
-            required type="number" value={form.valor}
-            onChange={e => setForm({ ...form, valor: e.target.value })}
-            placeholder="1500000"
-            className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm"
-          />
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Descripción / Plan de Cobertura</label>
-        <input
-          value={form.cobertura}
-          onChange={e => setForm({ ...form, cobertura: e.target.value })}
-          placeholder="Todo riesgo, básico, etc."
-          className="w-full px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all text-sm"
-        />
-      </div>
-
-      {/* Renovation flag */}
-      <label className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors group">
-        <input
-          type="checkbox"
-          checked={form.es_renovacion}
-          onChange={e => setForm({ ...form, es_renovacion: e.target.checked })}
-          className="w-4 h-4 accent-blue-600"
-        />
-        <div>
-          <span className="text-sm font-bold text-blue-800">🔄 Es póliza vigente (para renovación)</span>
-          <p className="text-[10px] text-blue-500 mt-0.5">Márcala si es la prima actual que se quiere comparar vs. nuevas opciones</p>
-        </div>
-      </label>
-
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600">Cancelar</button>
-        <button type="submit" disabled={saving} className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-sm transition-all disabled:opacity-50">
-          {saving ? "Guardando…" : "Guardar cotización"}
-        </button>
-      </div>
-    </form>
-  );
-}

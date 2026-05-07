@@ -89,6 +89,7 @@ interface RenovacionCard {
   diasVencer: number;
   status: string;
   phone: string;
+  placa: string;
 }
 
 function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => void }) {
@@ -108,8 +109,11 @@ function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => 
             <RamoIcon className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{ren.name}</p>
-            <p className="text-[9px] text-slate-400 font-mono">{ren.poliza}</p>
+            <p className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors leading-tight">{ren.name}</p>
+            {ren.placa && ren.placa !== "—" && (
+              <p className="text-[10px] text-slate-500 font-bold mt-0.5">Placa: {ren.placa.toUpperCase()}</p>
+            )}
+            <p className="text-[9px] text-slate-400 font-mono mt-0.5">{ren.poliza}</p>
           </div>
         </div>
         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${urgency.cls}`}>
@@ -166,6 +170,7 @@ export default function RenovacionesPage() {
       diasVencer: Math.max(diasVencer, 0),
       status: lead.status || "Importada",
       phone: lead.phone || "",
+      placa: lead.placa || lead.vehiclePlate || lead.objeto_asegurado || "—",
     };
   });
 

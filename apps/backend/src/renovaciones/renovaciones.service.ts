@@ -161,11 +161,22 @@ export class RenovacionesService {
             // ── Actualizar si cambió la prima o fecha ────────────────────────
             const existing = existingRenovaciones.find((r: any) => String(r.soft_poliza_id) === polizaIdStr);
             if (existing) {
+              const tipo = derivarTipo(poliza);
+              const isVehicle = tipo === 'auto' || tipo === 'soat';
+              const placa = isVehicle ? (poliza.codio_objeto_asegurado || '') : '';
+
               await this.db.transact([
                 tx.leads[existing.id].update({
                   prima_actual: Number(poliza.prima || poliza.total || 0),
                   dias_para_vencer: diasParaVencer,
                   score,
+                  // Mantener info actualizada
+                  numero_poliza: poliza.numero_poliza || existing.numero_poliza || '',
+                  aseguradora: poliza.aseguradora?.nombre || existing.aseguradora || '',
+                  fecha_fin_poliza: poliza.fecha_fin || existing.fecha_fin_poliza || '',
+                  objeto_asegurado: poliza.codio_objeto_asegurado || existing.objeto_asegurado || '',
+                  placa: placa || existing.placa || '',
+                  vehiclePlate: placa || existing.vehiclePlate || '',
                   updatedAt: Date.now(),
                 }),
               ]);
@@ -184,10 +195,15 @@ export class RenovacionesService {
 
             // ── Crear nueva oportunidad de renovación ────────────────────────
             const newId = id();
+            const tipo = derivarTipo(poliza);
+            const isVehicle = tipo === 'auto' || tipo === 'soat';
+            const placa = isVehicle ? (poliza.codio_objeto_asegurado || '') : '';
+
             const renovacionData = {
               // Lead base fields
-              type: derivarTipo(poliza),
+              type: tipo,
               name: poliza.nombre_tomador || clienteData.nombres || `Cliente ${poliza.id}`,
+              documento: poliza.cedula_tomador || clienteData.numero_documento || '',
               phone: clienteData.celular || clienteData.telefono || '',
               email: clienteData.correo || '',
               pipeline_tipo: 'renovacion',
@@ -204,6 +220,8 @@ export class RenovacionesService {
               prima_actual: Number(poliza.prima || poliza.total || 0),
               dias_para_vencer: diasParaVencer,
               objeto_asegurado: poliza.codio_objeto_asegurado || '',
+              placa: placa,
+              vehiclePlate: placa,
               createdAt: Date.now(),
               updatedAt: Date.now(),
             };

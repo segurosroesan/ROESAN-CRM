@@ -480,6 +480,7 @@ export class RemisionesService {
     let leadId: string | null = null;
     try {
       leadId = id();
+
       await this.db.transact([
         tx.leads[leadId].update({
           name: fullName,
@@ -503,7 +504,9 @@ export class RemisionesService {
           prima_neta: policyData.prima_neta || 0,
           iva: policyData.iva || 0,
           gastos_expedicion: policyData.gastos_expedicion || 0,
-          objeto_asegurado: policyData.objeto_asegurado || '',
+          objeto_asegurado: policyData.objeto_asegurado || objetoAseguradoFinal || '',
+          placa: isVehiclePolicy ? objetoAseguradoFinal : '',
+          vehiclePlate: isVehiclePolicy ? objetoAseguradoFinal : '',
           // Datos personales del cliente (para cumpleaños y perfil)
           fecha_nacimiento: clientData.fecha_nacimiento || '',
           genero: clientData.genero || '',

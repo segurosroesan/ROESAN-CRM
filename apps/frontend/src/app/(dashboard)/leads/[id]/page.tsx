@@ -189,8 +189,9 @@ export default function LeadDetailPage() {
 
 
   const handleSingleAutoQuote = async (insurer: "all" | "allianz" | "qualitas" | "sbs") => {
+    console.log('[Cotizador] click ->', insurer, { fasecolda: lead.vehicleFasecolda, year: lead.vehicleYear, doc: lead.documento });
     if (!lead.vehicleFasecolda || !lead.vehicleYear || !lead.documento) {
-      alert("Faltan datos críticos para cotizar (Fasecolda, Modelo o Documento). Por favor completa los datos del lead.");
+      window.alert("Faltan datos del vehículo para cotizar.\n\nRevisa en la pestaña Datos que el lead tenga:\n• Código Fasecolda\n• Año/Modelo\n• Número de documento");
       return;
     }
 
@@ -216,6 +217,11 @@ export default function LeadDetailPage() {
           leadId: leadId
         }),
       });
+
+      if (!response.ok) {
+        const texto = await response.text().catch(() => "");
+        throw new Error(`El servidor respondió con error ${response.status}. ${texto.length < 200 ? texto : "Revisa que el backend esté activo en Render."}`);
+      }
 
       const results = await response.json();
       const transactions = [];
@@ -306,9 +312,9 @@ export default function LeadDetailPage() {
         const errorMsg = warnings.length > 0 ? warnings.join("\n") : (results.error || "La aseguradora no devolvió resultados.");
         alert(`Atención:\n${errorMsg}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error en auto-quote:", err);
-      alert("Error llamando al servicio de cotización.");
+      window.alert(`Error al cotizar:\n${err?.message || "Error desconocido. Revisa que el backend esté activo."}`);
     } finally {
       setQuotingInsurer(null);
     }

@@ -1,24 +1,63 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from '@nestjs/common';
+import { IsString, IsNumber, IsOptional, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CotizarDto {
+  @IsString()
   claveFasecolda: string;
+
+  @IsNumber()
+  @Type(() => Number)
   modelo: number;
+
+  @IsOptional() @IsString()
   placa?: string;
+
+  @IsOptional() @IsString()
   uso?: string;
+
+  @IsOptional() @IsString()
   servicio?: string;
+
+  @IsString()
   tipoDocumento: string;
+
+  @IsString()
   documento: string;
+
+  @IsOptional() @IsString()
   fechaNacimiento?: string;
+
+  @IsOptional() @IsString()
   sexo?: string;
+
+  @IsString()
   departamento: string;
+
+  @IsString()
   municipio: string;
+
+  @IsString()
   fechaInicio: string;
+
+  @IsString()
   fechaFin: string;
+
+  @IsOptional() @IsString()
   formaPago?: string;
+
+  @IsOptional() @IsString()
   paquete?: string;
+
+  @IsOptional() @IsNumber()
+  @Type(() => Number)
   sumaAsegurada?: number;
-  continuidad?: 'S' | 'N'; // S = renovación/tiene póliza previa, N = primera vez (vehículo nuevo)
+
+  @IsOptional() @IsIn(['S', 'N'])
+  continuidad?: 'S' | 'N';
+
+  @IsOptional() @IsString()
   leadId?: string;
 }
 

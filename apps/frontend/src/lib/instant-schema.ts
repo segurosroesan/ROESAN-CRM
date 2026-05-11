@@ -153,6 +153,20 @@ const schema = i.schema({
       leadId: i.string().indexed(),
       createdAt: i.number(),
     }),
+
+    fasecolda: i.entity({
+      codigo: i.string().indexed(), // 8 dígitos
+      marca: i.string().indexed(),
+      clase: i.string().indexed(),
+      referencia1: i.string(),
+      referencia2: i.string(),
+      referencia3: i.string(),
+      cilindraje: i.number().optional(),
+      combustible: i.string().optional(),
+      transmision: i.string().optional(),
+      precios: i.json(), // { "2025": 1000000, "2024": 950000, ... }
+      updatedAt: i.number(),
+    }),
   },
   links: {
     leadTasks: {

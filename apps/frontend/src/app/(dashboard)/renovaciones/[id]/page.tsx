@@ -451,8 +451,8 @@ export default function RenovacionDetailPage() {
       </button>
 
       {/* Hero Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className={`h-1 bg-gradient-to-r from-blue-500 to-indigo-600`} />
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100">
+        <div className={`h-1 rounded-t-xl bg-gradient-to-r from-blue-500 to-indigo-600`} />
 
         <div className="p-5 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">

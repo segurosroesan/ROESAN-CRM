@@ -215,7 +215,7 @@ export class AllianzApi {
       }));
 
       const rawPayments = Array.isArray(pkg.Payment) ? pkg.Payment : pkg.Payment ? [pkg.Payment] : [];
-      const anual = rawPayments.find((p: any) => p.PaymentId === 'ANUAL');
+      const anual = rawPayments.find((p: any) => String(p.PaymentId ?? '').toUpperCase() === 'ANUAL') ?? rawPayments[0];
       const primaTotal = parseFloat(anual?.PremiumValue ?? '0');
 
       return {

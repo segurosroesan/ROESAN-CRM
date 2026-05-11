@@ -31,7 +31,10 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  useDroppable,
+  useDraggable,
 } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
@@ -145,6 +148,15 @@ export default function LeadsPage() {
 
   const displayedStages = showAll ? STAGES : VISIBLE_STAGES;
 
+  const moveToNextStage = async (leadId: string, currentStage: string) => {
+    const nextIndex = STAGES.indexOf(currentStage) + 1;
+    if (nextIndex > 0 && nextIndex < STAGES.length) {
+      await db.transact([
+        db.tx.leads[leadId].update({ status: STAGES[nextIndex], updatedAt: Date.now() }),
+      ]);
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
@@ -230,37 +242,21 @@ export default function LeadsPage() {
             const stageLeads = filteredLeads.filter((lead) => lead.status === stage);
 
             return (
-              <div 
-                key={stage}
-                id={stage}
-                className={`flex-shrink-0 w-64 flex flex-col bg-white/50 backdrop-blur-2xl rounded-xl border-t-[3px] ${cfg.color} border border-white shadow-sm overflow-hidden`}
-              >
-                {/* Column Header */}
-                <div className="px-3 py-2.5 flex items-center justify-between bg-white/40 border-b border-slate-200/30">
-                  <div className="flex items-center space-x-2">
-                    <div className={`h-2 w-2 rounded-full ${cfg.dotColor}`} />
-                    <h3 className="font-bold text-slate-700 text-xs tracking-wide">{stage}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${cfg.bgBadge}`}>
-                      {stageLeads.length}
-                    </span>
+              <DroppableColumn key={stage} stage={stage} cfg={cfg} count={stageLeads.length}>
+                {stageLeads.length === 0 && (
+                  <div className="flex items-center justify-center h-14 rounded-lg border-2 border-dashed border-slate-200/60 pointer-events-none">
+                    <p className="text-[11px] text-slate-300 font-medium">Sin prospectos</p>
                   </div>
-                  <button className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-white transition-colors">
-                    <MoreVertical className="h-3.5 w-3.5 text-slate-400" />
-                  </button>
-                </div>
-                
-                {/* Cards */}
-                <div className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[120px]">
-                  {stageLeads.length === 0 && (
-                    <div className="flex items-center justify-center h-14 rounded-lg border-2 border-dashed border-slate-200/60">
-                      <p className="text-[11px] text-slate-300 font-medium">Sin prospectos</p>
-                    </div>
-                  )}
-                  {stageLeads.map((lead) => (
-                    <LeadCard key={lead.id} lead={lead} onClick={() => router.push(`/leads/${lead.id}`)} />
-                  ))}
-                </div>
-              </div>
+                )}
+                {stageLeads.map((lead) => (
+                  <DraggableLeadCard 
+                    key={lead.id} 
+                    lead={lead} 
+                    onClick={() => router.push(`/leads/${lead.id}`)} 
+                    onMoveToNext={() => moveToNextStage(lead.id, lead.status)}
+                  />
+                ))}
+              </DroppableColumn>
             );
           })}
         </DndContext>
@@ -271,14 +267,62 @@ export default function LeadsPage() {
   );
 }
 
-function LeadCard({ lead, onClick }: { lead: any; onClick: () => void }) {
+function DroppableColumn({ stage, cfg, count, children }: { stage: string; cfg: any; count: number; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage });
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={`flex-shrink-0 w-64 flex flex-col bg-white/50 backdrop-blur-2xl rounded-xl border-t-[3px] ${cfg.color} border shadow-sm overflow-hidden transition-colors ${isOver ? 'ring-2 ring-blue-500 border-blue-200 bg-blue-50/50' : 'border-white'}`}
+    >
+      <div className="px-3 py-2.5 flex items-center justify-between bg-white/40 border-b border-slate-200/30 pointer-events-none">
+        <div className="flex items-center space-x-2">
+          <div className={`h-2 w-2 rounded-full ${cfg.dotColor}`} />
+          <h3 className="font-bold text-slate-700 text-xs tracking-wide">{stage}</h3>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${cfg.bgBadge}`}>
+            {count}
+          </span>
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-2.5 space-y-2 min-h-[120px]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DraggableLeadCard({ lead, onClick, onMoveToNext }: { lead: any; onClick: () => void; onMoveToNext: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: lead.id,
+    data: { lead },
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+    position: isDragging ? "relative" : undefined,
+  } as React.CSSProperties;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <LeadCard lead={lead} onClick={onClick} onMoveToNext={onMoveToNext} />
+    </div>
+  );
+}
+
+function LeadCard({ lead, onClick, onMoveToNext }: { lead: any; onClick: () => void; onMoveToNext?: () => void }) {
   const initial = lead.name ? lead.name.charAt(0).toUpperCase() : "?";
   const RamoIcon = RAMO_ICONS[lead.type] || Shield;
+  
+  const nextStageIndex = STAGES.indexOf(lead.status) + 1;
+  const nextStage = nextStageIndex > 0 && nextStageIndex < STAGES.length ? STAGES[nextStageIndex] : null;
 
   return (
     <div
       onClick={onClick}
-      className="bg-white p-3 rounded-lg shadow-sm border border-slate-100 hover:border-blue-300/60 hover:shadow-sm transition-all duration-200 cursor-pointer group"
+      className="bg-white p-3 rounded-lg shadow-sm border border-slate-100 hover:border-blue-300/60 hover:shadow-md transition-all duration-200 cursor-pointer group flex flex-col"
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -325,6 +369,19 @@ function LeadCard({ lead, onClick }: { lead: any; onClick: () => void }) {
           </div>
         )}
       </div>
+
+      {nextStage && onMoveToNext && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveToNext();
+          }}
+          className="mt-2.5 w-full flex items-center justify-center gap-1 bg-slate-50 hover:bg-blue-50 text-blue-600 border border-slate-200 hover:border-blue-200 text-[10px] font-bold py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+        >
+          Mover a {nextStage}
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        </button>
+      )}
     </div>
   );
 }

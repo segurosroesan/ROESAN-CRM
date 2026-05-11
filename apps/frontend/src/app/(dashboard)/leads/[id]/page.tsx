@@ -150,7 +150,7 @@ export default function LeadDetailPage() {
   const [isComparing, setIsComparing] = useState(false);
   const [comparativoData, setComparativoData] = useState<any>(null);
   const [propuestaProData, setPropuestaProData] = useState<{ body: string; url: string } | null>(null);
-  const [isAutoQuoting, setIsAutoQuoting] = useState(false);
+  const [quotingInsurer, setQuotingInsurer] = useState<string | null>(null);
   const [uploadingBulk, setUploadingBulk] = useState(false);
   const [isSearchingPlaca, setIsSearchingPlaca] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
@@ -194,7 +194,7 @@ export default function LeadDetailPage() {
       return;
     }
 
-    setIsAutoQuoting(true);
+    setQuotingInsurer(insurer);
     try {
       const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const endpoint = insurer === "all" ? "all" : insurer;
@@ -219,11 +219,15 @@ export default function LeadDetailPage() {
 
       const results = await response.json();
       const transactions = [];
-      
-      // Manejar respuesta de Allianz (puede venir en results.allianz o directo en results si se llamó solo a allianz)
+      const warnings: string[] = [];
+
+      // Manejar respuesta de Allianz
       const allianzData = insurer === "allianz" ? results : results.allianz;
-      if (allianzData && !allianzData.error) {
+      if (allianzData?.error) {
+        warnings.push(`Allianz: ${allianzData.error}`);
+      } else if (allianzData) {
         for (const pkg of (allianzData.paquetes || [])) {
+          if (!pkg.primaTotal || pkg.primaTotal <= 0) continue;
           const aId = crypto.randomUUID();
           transactions.push(db.tx.cotizaciones[aId].update({
             leadId,
@@ -238,58 +242,75 @@ export default function LeadDetailPage() {
           }));
           transactions.push(db.tx.cotizaciones[aId].link({ lead: leadId }));
         }
+        if (allianzData.paquetes?.length > 0 && transactions.length === 0) {
+          warnings.push("Allianz: la respuesta llegó pero sin valores de prima válidos.");
+        }
       }
 
       // Manejar respuesta de Qualitas
       const qualitasData = insurer === "qualitas" ? results : results.qualitas;
-      if (qualitasData && !qualitasData.error) {
-        const qId = crypto.randomUUID();
+      if (qualitasData?.error) {
+        warnings.push(`Qualitas: ${qualitasData.error}`);
+      } else if (qualitasData) {
         const prima = qualitasData.primaTotal || qualitasData.prima_total || 0;
-        transactions.push(db.tx.cotizaciones[qId].update({
-          leadId,
-          aseguradora: "Qualitas",
-          valor: prima,
-          prima_total: prima,
-          cobertura: "Plan Automóvil - Generado Automáticamente",
-          estado: "enviada",
-          fuente: "API Qualitas",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }));
-        transactions.push(db.tx.cotizaciones[qId].link({ lead: leadId }));
+        if (prima > 0) {
+          const qId = crypto.randomUUID();
+          transactions.push(db.tx.cotizaciones[qId].update({
+            leadId,
+            aseguradora: "Qualitas",
+            valor: prima,
+            prima_total: prima,
+            cobertura: "Plan Automóvil - Generado Automáticamente",
+            estado: "enviada",
+            fuente: "API Qualitas",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }));
+          transactions.push(db.tx.cotizaciones[qId].link({ lead: leadId }));
+        } else {
+          warnings.push("Qualitas: respondió pero sin prima válida (posible error de configuración en QA).");
+        }
       }
 
       // Manejar respuesta de SBS
       const sbsData = insurer === "sbs" ? results : results.sbs;
-      if (sbsData && !sbsData.error) {
-        const sId = crypto.randomUUID();
+      if (sbsData?.error) {
+        warnings.push(`SBS: ${sbsData.error}`);
+      } else if (sbsData) {
         const prima = sbsData.primaTotal || 0;
-        transactions.push(db.tx.cotizaciones[sId].update({
-          leadId,
-          aseguradora: "SBS",
-          valor: prima,
-          prima_total: prima,
-          cobertura: "Plan Automóvil - Generado Automáticamente",
-          estado: "enviada",
-          fuente: "API SBS",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }));
-        transactions.push(db.tx.cotizaciones[sId].link({ lead: leadId }));
+        if (prima > 0) {
+          const sId = crypto.randomUUID();
+          transactions.push(db.tx.cotizaciones[sId].update({
+            leadId,
+            aseguradora: "SBS",
+            valor: prima,
+            prima_total: prima,
+            cobertura: "Plan Automóvil - Generado Automáticamente",
+            estado: "enviada",
+            fuente: "API SBS",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }));
+          transactions.push(db.tx.cotizaciones[sId].link({ lead: leadId }));
+        } else {
+          warnings.push("SBS: respondió pero sin prima válida.");
+        }
       }
 
       if (transactions.length > 0) {
         await db.transact(transactions);
-        alert(`✅ ${transactions.length / 2} cotización(es) guardada(s) exitosamente.`);
+        const saved = transactions.length / 2;
+        const warnPart = warnings.length > 0 ? `\n\n⚠️ ${warnings.join("\n")}` : "";
+        alert(`✅ ${saved} cotización(es) guardada(s) exitosamente.${warnPart}`);
       } else {
-        const errorMsg = results.error || results.qualitas?.error || results.allianz?.error || results.sbs?.error || "La aseguradora no devolvió resultados.";
-        alert(`Atención: ${errorMsg}`);
+        const errorMsg = warnings.length > 0 ? warnings.join("\n") : (results.error || "La aseguradora no devolvió resultados.");
+        alert(`Atención:\n${errorMsg}`);
       }
     } catch (err) {
       console.error("Error en auto-quote:", err);
       alert("Error llamando al servicio de cotización.");
     } finally {
-      setIsAutoQuoting(false);
+      setQuotingInsurer(null);
     }
   };
 
@@ -514,9 +535,9 @@ export default function LeadDetailPage() {
       </button>
 
       {/* Lead Hero Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100">
         {/* Gradient header */}
-        <div className={`h-1 bg-gradient-to-r ${ramoMeta.color}`} />
+        <div className={`h-1 rounded-t-xl bg-gradient-to-r ${ramoMeta.color}`} />
 
         <div className="p-5 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -806,27 +827,27 @@ export default function LeadDetailPage() {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => handleSingleAutoQuote("allianz")}
-                    disabled={isAutoQuoting}
+                    disabled={quotingInsurer !== null}
                     className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-blue-600"
                   >
-                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                    Cotizar Allianz
+                    <Zap className={`h-3.5 w-3.5 ${quotingInsurer === "allianz" ? "animate-spin" : ""}`} />
+                    {quotingInsurer === "allianz" ? "Cotizando..." : "Cotizar Allianz"}
                   </button>
                   <button
                     onClick={() => handleSingleAutoQuote("qualitas")}
-                    disabled={isAutoQuoting}
+                    disabled={quotingInsurer !== null}
                     className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-sky-500"
                   >
-                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                    Cotizar Qualitas
+                    <Zap className={`h-3.5 w-3.5 ${quotingInsurer === "qualitas" ? "animate-spin" : ""}`} />
+                    {quotingInsurer === "qualitas" ? "Cotizando..." : "Cotizar Qualitas"}
                   </button>
                   <button
                     onClick={() => handleSingleAutoQuote("sbs")}
-                    disabled={isAutoQuoting}
+                    disabled={quotingInsurer !== null}
                     className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-slate-700"
                   >
-                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                    Cotizar SBS (Pruebas)
+                    <Zap className={`h-3.5 w-3.5 ${quotingInsurer === "sbs" ? "animate-spin" : ""}`} />
+                    {quotingInsurer === "sbs" ? "Cotizando..." : "Cotizar SBS (Pruebas)"}
                   </button>
                 </div>
               </div>
@@ -1046,9 +1067,18 @@ export default function LeadDetailPage() {
                   { label: "Ciudad", field: "city", value: lead.city },
                   { label: "Ramo", field: "type", value: lead.type },
                   { label: "Fuente", field: "source", value: lead.source },
+                  { label: "Intereses (Formulario)", field: "selectedProducts", value: lead.selectedProducts },
+                  { label: "Observaciones", field: "observaciones", value: lead.observaciones },
+                  { label: "Nombre Empresa", field: "companyName", value: lead.companyName },
+                  { label: "NIT Empresa", field: "companyNit", value: lead.companyNit },
+                  { label: "Representante", field: "responsibleName", value: lead.responsibleName },
+                  { label: "Teléfono Representante", field: "responsiblePhone", value: lead.responsiblePhone },
                   { label: "Placa", field: "vehiclePlate", value: lead.vehiclePlate },
                   { label: "Modelo", field: "vehicleYear", value: lead.vehicleYear },
                   { label: "Fasecolda", field: "vehicleFasecolda", value: lead.vehicleFasecolda },
+                  { label: "¿Tiene Prenda?", field: "hasPledge", value: lead.hasPledge ? "Sí" : lead.hasPledge === false ? "No" : "" },
+                  { label: "Detalles Prenda", field: "pledgeDetails", value: lead.pledgeDetails },
+                  { label: "Zona Circulación", field: "drivingZone", value: lead.drivingZone },
                   { label: "ID Soft Cliente", field: "soft_cliente_id", value: lead.soft_cliente_id },
                 ].map(({ label, field, value }) => (
                   <div key={field} className="space-y-1">

@@ -110,7 +110,7 @@ export default function RenovacionDetailPage() {
     },
   });
 
-  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails" | "documentos">("timeline");
+  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails" | "documentos">("datos");
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -518,7 +518,7 @@ export default function RenovacionDetailPage() {
               
               {isEditingStage && (
                 <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-30">
-                  <div className="p-1.5 max-h-72 overflow-y-auto">
+                  <div className="p-1.5">
                     {STAGES_RENOVACION.map(stage => (
                       <button
                         key={stage}
@@ -579,11 +579,11 @@ export default function RenovacionDetailPage() {
         <div className="lg:col-span-3 space-y-3">
           <div className="flex items-center gap-0.5 bg-white/70 backdrop-blur rounded-xl p-1 border border-slate-100 w-fit shadow-sm">
             {[
+              { id: "datos", label: "Datos completos", icon: User },
               { id: "timeline", label: "Timeline", icon: Clock },
               { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
               { id: "documentos", label: "Documentos", icon: FileText },
               { id: "cotizaciones", label: `Cotizaciones (${cotizaciones.length})`, icon: DollarSign },
-              { id: "datos", label: "Datos completos", icon: User },
             ].map(tab => (
               <button
                 key={tab.id}

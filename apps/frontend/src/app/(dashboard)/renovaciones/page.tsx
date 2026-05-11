@@ -62,15 +62,21 @@ const STAGE_CONFIG: Record<string, { color: string; dot: string; badge: string; 
 };
 
 const RAMO_META: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
-  "auto":         { icon: Car, color: "text-blue-600 bg-blue-50" },
-  "salud":        { icon: Heart, color: "text-rose-600 bg-rose-50" },
-  "vida":         { icon: Heart, color: "text-red-600 bg-red-50" },
-  "soat":         { icon: Car, color: "text-amber-600 bg-amber-50" },
-  "hogar":        { icon: Home, color: "text-teal-600 bg-teal-50" },
-  "pyme":         { icon: Building2, color: "text-violet-600 bg-violet-50" },
-  "empresarial":  { icon: Building2, color: "text-violet-600 bg-violet-50" },
-  "cumplimiento": { icon: Shield, color: "text-slate-600 bg-slate-50" },
+  "auto":         { icon: Car,      color: "text-blue-600 bg-blue-50" },
+  "salud":        { icon: Heart,    color: "text-rose-600 bg-rose-50" },
+  "vida":         { icon: Heart,    color: "text-red-600 bg-red-50" },
+  "soat":         { icon: Car,      color: "text-amber-600 bg-amber-50" },
+  "hogar":        { icon: Home,     color: "text-teal-600 bg-teal-50" },
+  "pyme":         { icon: Building2,color: "text-violet-600 bg-violet-50" },
+  "empresarial":  { icon: Building2,color: "text-violet-600 bg-violet-50" },
+  "cumplimiento": { icon: Shield,   color: "text-slate-600 bg-slate-50" },
+  "responsabilidad_civil": { icon: Shield, color: "text-slate-600 bg-slate-50" },
+  "rc_medica":    { icon: Shield,   color: "text-slate-600 bg-slate-50" },
+  "transportes":  { icon: Car,      color: "text-blue-600 bg-blue-50" },
 };
+
+// Fallback genérico para ramos no mapeados (NO usar Car)
+const RAMO_DEFAULT = { icon: Shield, color: "text-slate-500 bg-slate-50" };
 
 function urgencyBadge(dias: number) {
   if (dias <= 15) return { label: `D-${dias} ⚠️ CRÍTICO`, cls: "text-red-700 bg-red-50 border border-red-200" };
@@ -89,17 +95,18 @@ interface RenovacionCard {
   diasVencer: number;
   status: string;
   phone: string;
-  placa: string;
+  placa: string;    // solo para auto/soat
+  objeto: string;   // para otros ramos
 }
 
 function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => void }) {
   // Normalizar el tipo para el mapeo de iconos
-  const tipoNormalizado = (ren.type || "auto").toLowerCase().trim();
-  const meta = RAMO_META[tipoNormalizado] || RAMO_META["auto"];
+  const tipoNormalizado = (ren.type || "").toLowerCase().trim();
+  const meta = RAMO_META[tipoNormalizado] || RAMO_DEFAULT;
   const RamoIcon = meta.icon;
   const urgency = urgencyBadge(ren.diasVencer);
 
-  const isVehicle = tipoNormalizado === "auto" || tipoNormalizado === "soat";
+  const isVehicle = tipoNormalizado === "auto" || tipoNormalizado === "soat" || tipoNormalizado === "transportes";
 
   return (
     <div
@@ -114,9 +121,14 @@ function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => 
           </div>
           <div>
             <p className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors leading-tight">{ren.name}</p>
-            {ren.placa && ren.placa !== "—" && (
+            {isVehicle && ren.placa && ren.placa !== "—" && (
               <p className="text-[10px] text-slate-500 font-bold mt-0.5">
-                {isVehicle ? "Placa: " : "Objeto: "}{ren.placa.toUpperCase()}
+                Placa: {ren.placa.toUpperCase()}
+              </p>
+            )}
+            {!isVehicle && ren.objeto && ren.objeto !== "—" && (
+              <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[160px]" title={ren.objeto}>
+                {ren.objeto}
               </p>
             )}
             <p className="text-[9px] text-slate-400 font-mono mt-0.5">{ren.poliza}</p>
@@ -166,17 +178,20 @@ export default function RenovacionesPage() {
     const diasVencer = lead.fecha_fin_poliza
       ? Math.ceil((new Date(lead.fecha_fin_poliza).getTime() - Date.now()) / 86_400_000)
       : lead.dias_para_vencer ?? 60;
+    const tipoLead = (lead.type || "").toLowerCase().trim();
+    const esVehiculo = tipoLead === "auto" || tipoLead === "soat" || tipoLead === "transportes";
     return {
       id: lead.id,
       name: lead.name || "Sin nombre",
-      type: lead.type || "auto",
+      type: lead.type || "",
       poliza: lead.numero_poliza || "—",
       aseguradora: lead.aseguradora || "—",
       prima: Number(lead.prima_actual || 0),
       diasVencer: Math.max(diasVencer, 0),
       status: lead.status || "Importada",
       phone: lead.phone || "",
-      placa: lead.placa || lead.vehiclePlate || lead.objeto_asegurado || "—",
+      placa: esVehiculo ? (lead.placa || lead.vehiclePlate || "—") : "—",
+      objeto: !esVehiculo ? (lead.objeto_asegurado || lead.placa || lead.vehiclePlate || "—") : "—",
     };
   });
 

@@ -193,6 +193,12 @@ export class RenovacionesService {
               const isVehicle = tipo === 'auto' || tipo === 'soat';
               const placa = isVehicle ? (poliza.codio_objeto_asegurado || '') : '';
 
+              // Re-enriquecer datos del cliente (puede haberse actualizado en Soft)
+              let clienteDataUpd: any = {};
+              try {
+                clienteDataUpd = await this.softApi.getClientByDocument(documentoPoliza) || {};
+              } catch { /* non-fatal */ }
+
               await this.db.transact([
                 tx.leads[existing.id].update({
                   prima_actual: Number(poliza.prima || poliza.total || 0),
@@ -201,11 +207,21 @@ export class RenovacionesService {
                   // Mantener info actualizada
                   documento: documentoPoliza || existing.documento || '',
                   numero_poliza: poliza.numero_poliza || existing.numero_poliza || '',
-                  aseguradora: poliza.aseguradora?.nombre || existing.aseguradora || '',
+                  aseguradora: poliza.aseguradora?.nombre ||
+                               poliza.aseguradora?.razon_social ||
+                               (typeof poliza.aseguradora === 'string' ? poliza.aseguradora : '') ||
+                               existing.aseguradora || '',
                   fecha_fin_poliza: poliza.fecha_fin || existing.fecha_fin_poliza || '',
                   objeto_asegurado: poliza.codio_objeto_asegurado || existing.objeto_asegurado || '',
                   placa: placa || existing.placa || '',
                   vehiclePlate: placa || existing.vehiclePlate || '',
+                  // Datos del cliente (email y ciudad pueden llegar vacíos al inicio)
+                  email: clienteDataUpd.correo || existing.email || '',
+                  city: clienteDataUpd.municipio_expedicion?.nombre ||
+                        clienteDataUpd.ciudad ||
+                        clienteDataUpd.municipio ||
+                        existing.city || '',
+                  phone: clienteDataUpd.celular || clienteDataUpd.telefono || existing.phone || '',
                   updatedAt: Date.now(),
                 }),
               ]);
@@ -234,7 +250,11 @@ export class RenovacionesService {
               name: poliza.nombre_tomador || clienteData.nombres || `Cliente ${poliza.id}`,
               documento: poliza.cedula_tomador || clienteData.numero_documento || documentoPoliza || '',
               phone: clienteData.celular || clienteData.telefono || '',
-              email: clienteData.correo || '',
+              email: clienteData.correo || clienteData.email || '',
+              city: clienteData.municipio_expedicion?.nombre ||
+                    clienteData.ciudad ||
+                    clienteData.municipio ||
+                    '',
               pipeline_tipo: 'renovacion',
               status: 'Importada',
               score,
@@ -244,7 +264,10 @@ export class RenovacionesService {
               sincronizado_soft: true,
               // Renovation-specific
               numero_poliza: poliza.numero_poliza || '',
-              aseguradora: poliza.aseguradora?.nombre || '',
+              aseguradora: poliza.aseguradora?.nombre ||
+                           poliza.aseguradora?.razon_social ||
+                           (typeof poliza.aseguradora === 'string' ? poliza.aseguradora : '') ||
+                           '',
               fecha_fin_poliza: poliza.fecha_fin || '',
               prima_actual: Number(poliza.prima || poliza.total || 0),
               dias_para_vencer: diasParaVencer,

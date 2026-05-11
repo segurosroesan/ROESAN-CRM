@@ -218,8 +218,16 @@ function DraggableRenovacionCard({ ren, onClick, onMoveToNext }: { ren: Renovaci
   );
 }
 
+const RAMO_LABELS: Record<string, string> = {
+  "auto": "Autos", "soat": "SOAT", "vida": "Vida", "salud": "Salud",
+  "hogar": "Hogar", "pyme": "Pyme", "empresarial": "Empresarial",
+  "cumplimiento": "Cumplimiento", "responsabilidad_civil": "RC", "rc_medica": "RC Médica",
+  "transportes": "Transportes",
+};
+
 export default function RenovacionesPage() {
   const [search, setSearch] = useState("");
+  const [filterRamo, setFilterRamo] = useState<string | null>(null);
   const [isImportando, setIsImportando] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResult, setImportResult] = useState<{
@@ -264,13 +272,22 @@ export default function RenovacionesPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const filtered = search
-    ? renovaciones.filter(r =>
-        r.name.toLowerCase().includes(search.toLowerCase()) ||
-        r.poliza.toLowerCase().includes(search.toLowerCase()) ||
-        r.aseguradora.toLowerCase().includes(search.toLowerCase())
-      )
-    : renovaciones;
+  // Ramos presentes en los datos, con conteo
+  const ramosCounts = renovaciones.reduce<Record<string, number>>((acc, r) => {
+    const t = r.type || "otro";
+    acc[t] = (acc[t] || 0) + 1;
+    return acc;
+  }, {});
+  const ramosDisponibles = Object.entries(ramosCounts).sort((a, b) => b[1] - a[1]);
+
+  const filtered = renovaciones.filter(r => {
+    const matchSearch = !search ||
+      r.name.toLowerCase().includes(search.toLowerCase()) ||
+      r.poliza.toLowerCase().includes(search.toLowerCase()) ||
+      r.aseguradora.toLowerCase().includes(search.toLowerCase());
+    const matchRamo = !filterRamo || r.type === filterRamo;
+    return matchSearch && matchRamo;
+  });
 
   const moveToNextStage = async (leadId: string, currentStage: string) => {
     const nextIndex = STAGES_RENOVACION.indexOf(currentStage) + 1;
@@ -388,6 +405,46 @@ export default function RenovacionesPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Filtros por ramo */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setFilterRamo(null)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+            filterRamo === null
+              ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+              : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+          }`}
+        >
+          Todos
+          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${filterRamo === null ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+            {renovaciones.length}
+          </span>
+        </button>
+        {ramosDisponibles.map(([ramo, count]) => {
+          const meta = RAMO_META[ramo] || RAMO_DEFAULT;
+          const RamoIcon = meta.icon;
+          const label = RAMO_LABELS[ramo] || ramo.charAt(0).toUpperCase() + ramo.slice(1);
+          const isActive = filterRamo === ramo;
+          return (
+            <button
+              key={ramo}
+              onClick={() => setFilterRamo(isActive ? null : ramo)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                isActive
+                  ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+                  : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <RamoIcon className="h-3 w-3" />
+              {label}
+              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Prima en riesgo */}

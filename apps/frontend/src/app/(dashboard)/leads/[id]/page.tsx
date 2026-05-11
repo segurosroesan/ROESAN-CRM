@@ -1125,7 +1125,7 @@ export default function LeadDetailPage() {
             <div className="space-y-2">
               {lead.phone && (
                 <a
-                  href={`https://wa.me/${lead.phone.replace("+", "")}`}
+                  href={`https://wa.me/${lead.phone.replace(/\\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 font-bold text-sm transition-all"

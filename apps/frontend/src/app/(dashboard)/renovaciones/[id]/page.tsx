@@ -868,16 +868,18 @@ export default function RenovacionDetailPage() {
                   { label: "Documento", field: "documento", value: lead.documento },
                   { label: "Celular", field: "phone", value: lead.phone },
                   { label: "Email", field: "email", value: lead.email },
+                  { label: "Fecha Nacimiento", field: "fecha_nacimiento", value: lead.fecha_nacimiento, type: "date" },
                   { label: "Placa", field: "placa", value: lead.placa || lead.vehiclePlate },
                   { label: "Modelo", field: "vehicleYear", value: lead.vehicleYear },
                   { label: "Fasecolda", field: "vehicleFasecolda", value: lead.vehicleFasecolda },
                   { label: "Póliza Actual", field: "numero_poliza", value: lead.numero_poliza },
                   { label: "Aseguradora Actual", field: "aseguradora", value: lead.aseguradora },
-                ].map(({ label, field, value }) => (
+                ].map(({ label, field, value, type }) => (
                   <div key={field} className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">{label}</label>
                     {isEditingInfo ? (
                       <input
+                        type={type || "text"}
                         value={editData?.[field] || ""}
                         onChange={e => setEditData({ ...editData, [field]: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
@@ -897,7 +899,7 @@ export default function RenovacionDetailPage() {
             <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Acciones rápidas</h3>
             <div className="space-y-2">
               {lead.phone && (
-                <a href={`https://wa.me/${lead.phone.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 font-bold text-sm transition-all">
+                <a href={`https://wa.me/${lead.phone.replace(/\\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 font-bold text-sm transition-all">
                   <MessageSquare className="h-4 w-4" /> WhatsApp
                 </a>
               )}

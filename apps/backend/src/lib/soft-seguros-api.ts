@@ -209,6 +209,24 @@ export class SoftSegurosApi {
   }
 
   /**
+   * Fetch client by internal Soft Seguros ID
+   */
+  async getClientById(id: string | number) {
+    try {
+      this.logger.log(`[getClientById] Fetching client id=${id}`);
+      const response = await this.request('GET', '/api/cliente/listar_cliente_por_id/', undefined, {
+        id_cliente: id,
+      });
+      if (response?.results?.[0]) return response.results[0];
+      if (response?.id) return response;
+      return null;
+    } catch (error) {
+      this.logger.warn(`[getClientById] Failed for id=${id}: ${error.message}`);
+      return null;
+    }
+  }
+
+  /**
    * SYNC-4: Create policy in Soft Seguros
    */
   async createPolicy(data: any): Promise<any> {

@@ -27,6 +27,7 @@ import {
   DndContext,
   closestCorners,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   DragEndEvent,

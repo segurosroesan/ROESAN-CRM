@@ -13,6 +13,8 @@ const schema = i.schema({
       documento: i.string().optional(),
       fecha_nacimiento: i.string().optional(), // Extraída de cédula, formato YYYY-MM-DD
       genero: i.string().optional(),           // 'MASCULINO' | 'FEMENINO'
+      selectedProducts: i.string().optional(),
+      observaciones: i.string().optional(),
       
       
       // Vehicle (Auto)
@@ -24,6 +26,9 @@ const schema = i.schema({
       vehicleUse: i.string().optional(),
       driverBirthDate: i.string().optional(),
       driverGender: i.string().optional(),
+      hasPledge: i.boolean().optional(),
+      pledgeDetails: i.string().optional(),
+      drivingZone: i.string().optional(),
       
       // Salud
       patientAge: i.string().optional(),
@@ -36,6 +41,8 @@ const schema = i.schema({
       companySector: i.string().optional(),
       companyEmployees: i.string().optional(),
       companyRisk: i.string().optional(),
+      responsibleName: i.string().optional(),
+      responsiblePhone: i.string().optional(),
       
       // Cumplimiento
       contractType: i.string().optional(),

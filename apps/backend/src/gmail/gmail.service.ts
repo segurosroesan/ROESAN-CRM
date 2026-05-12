@@ -142,7 +142,7 @@ export class GmailService {
    * No depende de ningún usuario OAuth del CRM.
    * Variables necesarias: SMTP_USER, SMTP_PASS (Gmail app password).
    */
-  async sendNotificationEmail(to: string, subject: string, html: string): Promise<void> {
+  async sendNotificationEmail(to: string, subject: string, html: string, cc?: string): Promise<void> {
     const smtpUser = this.configService.get<string>('SMTP_USER');
     const smtpPass = this.configService.get<string>('SMTP_PASS');
 
@@ -159,6 +159,7 @@ export class GmailService {
     await transporter.sendMail({
       from: `"CRM Roesan" <${smtpUser}>`,
       to,
+      ...(cc ? { cc } : {}),
       subject,
       html,
     });

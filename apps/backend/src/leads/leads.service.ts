@@ -91,6 +91,7 @@ export class LeadsService {
         <p style="margin-top:20px;font-size:12px;color:#94a3b8">Este correo fue generado automáticamente por el CRM Roesan.</p>
       </div>
     `;
-    await this.gmailService.sendNotificationEmail('comercial@roesan.com', subject, html);
+    const cc = process.env.NOTIFICATION_CC_EMAIL || undefined;
+    await this.gmailService.sendNotificationEmail('comercial@roesan.com', subject, html, cc);
   }
 }

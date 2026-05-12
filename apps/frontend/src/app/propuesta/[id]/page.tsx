@@ -50,8 +50,8 @@ export default function PropuestaPage() {
   useEffect(() => {
     if (!data || data.propuestas.length === 0 || trackingFired.current) return;
     trackingFired.current = true;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-    fetch(`${backendUrl}/propuestas/${id}/vista`, { method: "POST" }).catch(() => {});
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+    fetch(`${backendUrl}/api/propuestas/${id}/vista`, { method: "POST" }).catch(() => {});
   }, [data, id]);
 
   useEffect(() => {

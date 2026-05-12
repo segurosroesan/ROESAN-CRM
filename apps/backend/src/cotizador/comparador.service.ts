@@ -258,11 +258,11 @@ GUÍA DE EXTRACCIÓN:
 - danio_total_valor: valor asegurado para pérdida total por daños (generalmente = valor_asegurado)
 - danio_total_ded_pct: porcentaje del deducible para pérdida total daños (ej. 10 para 10%)
 - danio_total_ded_smmlv: mínimo del deducible en SMMLV (ej. 0 si no hay mínimo). Si el valor está expresado en pesos colombianos (ej: "$1.200.000" o "1,200,000"), conviértelo a SMMLV dividiendo por ${SMMLV_COLOMBIA} y redondea a 2 decimales
-- danio_parcial_ded_pct: % deducible pérdida parcial daños
+- danio_parcial_ded_pct: % deducible pérdida parcial daños. Si el deducible está expresado solo en pesos (sin porcentaje), devuelve 0
 - danio_parcial_ded_smmlv: mínimo SMMLV pérdida parcial daños. Si el valor está expresado en pesos colombianos (ej: "$1.200.000" o "1,200,000"), conviértelo a SMMLV dividiendo por ${SMMLV_COLOMBIA} y redondea a 2 decimales. Si no hay mínimo = null
-- hurto_total_ded_pct: % deducible hurto total
+- hurto_total_ded_pct: % deducible hurto total. Si el deducible está expresado solo en pesos (sin porcentaje), devuelve 0
 - hurto_total_ded_smmlv: mínimo SMMLV hurto total. Misma regla: si está en pesos, divide por ${SMMLV_COLOMBIA} y redondea a 2 decimales
-- hurto_parcial_ded_pct: % deducible hurto parcial
+- hurto_parcial_ded_pct: % deducible hurto parcial. Si el deducible está expresado solo en pesos (sin porcentaje), devuelve 0
 - hurto_parcial_ded_smmlv: mínimo SMMLV hurto parcial. Misma regla: si está en pesos, divide por ${SMMLV_COLOMBIA} y redondea a 2 decimales
 - terremoto: true si cubre terremotos/eventos naturales/fenómenos naturales
 - proteccion_patrimonial: true si cubre "amparo patrimonial" o "protección patrimonial"

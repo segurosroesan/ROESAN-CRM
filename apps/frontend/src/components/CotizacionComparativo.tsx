@@ -37,8 +37,10 @@ function getCob(c: any): any {
 
 function fmtDed(pct: any, smmlv: any): string {
   const parts: string[] = [];
-  if (pct !== null && pct !== undefined) parts.push(`${pct}%`);
-  if (smmlv !== null && smmlv !== undefined) parts.push(`mín. ${smmlv} SMMLV`);
+  const hasPct   = pct   !== null && pct   !== undefined;
+  const hasSmmlv = smmlv !== null && smmlv !== undefined;
+  if (hasPct || hasSmmlv) parts.push(`${hasPct ? pct : 0}%`);
+  if (hasSmmlv) parts.push(`mín. ${smmlv} SMMLV`);
   return parts.length ? parts.join(" / ") : "—";
 }
 

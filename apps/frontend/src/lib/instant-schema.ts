@@ -154,6 +154,22 @@ const schema = i.schema({
       createdAt: i.number(),
     }),
 
+    propuesta_vistas: i.entity({
+      propuestaId: i.string().indexed(),
+      leadId: i.string().optional(),
+      createdAt: i.number(),
+    }),
+
+    notificaciones: i.entity({
+      tipo: i.string(),                         // 'propuesta_vista'
+      mensaje: i.string(),
+      propuestaId: i.string().optional(),
+      leadId: i.string().optional(),
+      leida: i.boolean(),
+      destinatarioEmail: i.string().indexed(),  // 'comercial@roesan.com' | 'seguros@roesan.com'
+      createdAt: i.number(),
+    }),
+
     fasecolda: i.entity({
       codigo: i.string().indexed(), // 8 dígitos
       marca: i.string().indexed(),

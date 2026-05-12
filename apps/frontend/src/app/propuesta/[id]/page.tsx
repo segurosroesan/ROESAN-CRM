@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { db } from "@/lib/instant-db";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 
 function fmtCOP(n: any) {
@@ -44,6 +44,15 @@ export default function PropuestaPage() {
   });
 
   const [scrollProgress, setScrollProgress] = useState(0);
+  const trackingFired = useRef(false);
+
+  // Notificar al equipo cuando el cliente abre la propuesta
+  useEffect(() => {
+    if (!data || data.propuestas.length === 0 || trackingFired.current) return;
+    trackingFired.current = true;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+    fetch(`${backendUrl}/propuestas/${id}/vista`, { method: "POST" }).catch(() => {});
+  }, [data, id]);
 
   useEffect(() => {
     const handleScroll = () => {

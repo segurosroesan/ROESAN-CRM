@@ -123,6 +123,7 @@ export class QualitasApi {
     this.client = axios.create({
       auth: { username: user, password },
       headers: { 'Content-Type': 'application/json' },
+      timeout: 30000,
     });
   }
 

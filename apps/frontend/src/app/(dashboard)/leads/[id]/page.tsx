@@ -219,8 +219,9 @@ export default function LeadDetailPage() {
       });
 
       if (!response.ok) {
-        const texto = await response.text().catch(() => "");
-        throw new Error(`El servidor respondió con error ${response.status}. ${texto.length < 200 ? texto : "Revisa que el backend esté activo en Render."}`);
+        const body = await response.json().catch(() => null);
+        const msg = body?.message || body?.error || `Error ${response.status} — Revisa que el backend esté activo en Render.`;
+        throw new Error(msg);
       }
 
       const results = await response.json();

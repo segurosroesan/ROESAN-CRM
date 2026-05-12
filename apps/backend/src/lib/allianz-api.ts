@@ -45,21 +45,26 @@ export class AllianzApi {
     private readonly agentcode: string,
     certPath: string,
     certPassword: string,
+    certBase64?: string,
   ) {
     const resolvedCertPath = path.isAbsolute(certPath)
       ? certPath
       : path.resolve(process.cwd(), certPath);
 
+    let certBuffer: Buffer | undefined;
     if (certPath && fs.existsSync(resolvedCertPath)) {
-      this.httpsAgent = new https.Agent({
-        pfx: fs.readFileSync(resolvedCertPath),
-        passphrase: certPassword,
-        rejectUnauthorized: false,
-      });
+      certBuffer = fs.readFileSync(resolvedCertPath);
+    } else if (certBase64) {
+      certBuffer = Buffer.from(certBase64, 'base64');
+      this.logger.log('Allianz: cargando certificado desde variable de entorno base64');
     } else {
-      this.logger.warn(`Cert no encontrado en ${resolvedCertPath}. Allianz deshabilitado.`);
-      this.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+      this.logger.warn(`Cert no encontrado en ${resolvedCertPath} y sin ALLIANZ_CERT_BASE64. mTLS deshabilitado — Allianz fallará.`);
     }
+
+    this.httpsAgent = new https.Agent({
+      ...(certBuffer ? { pfx: certBuffer, passphrase: certPassword } : {}),
+      rejectUnauthorized: false,
+    });
   }
 
   async cotizar(dto: CotizarDto): Promise<AllianzQuoteResult> {

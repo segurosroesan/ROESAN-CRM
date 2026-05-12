@@ -21,6 +21,7 @@ export class SBSApi {
     private readonly url: string,
     private readonly user: string,
     private readonly pass: string,
+    private readonly codFactComision: string = '',
   ) {}
 
   async cotizar(dto: CotizarDto): Promise<SBSQuoteResult> {
@@ -63,6 +64,7 @@ export class SBSApi {
       <idOpcionDeducPTD>1</idOpcionDeducPTD>
       <idOpcionDeducPPH>1</idOpcionDeducPPH>
       <idOpcionDeducPTH>1</idOpcionDeducPTH>
+      <CodFactComision>${this.codFactComision}</CodFactComision>
     </SBSAutos_CrearSesion_Paquete>
   </soap12:Body>
 </soap12:Envelope>`;
@@ -70,6 +72,7 @@ export class SBSApi {
     try {
       const response = await axios.post(this.url, soapEnvelope, {
         headers: { 'Content-Type': 'text/xml; charset=utf-8' },
+        timeout: 30000,
       });
 
       const parsed = await parseStringPromise(response.data, { explicitArray: false });
@@ -102,6 +105,7 @@ export class SBSApi {
     try {
       const response = await axios.post(this.url, soapEnvelope, {
         headers: { 'Content-Type': 'text/xml; charset=utf-8' },
+        timeout: 30000,
       });
 
       const parsed = await parseStringPromise(response.data, { explicitArray: false });

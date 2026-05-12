@@ -850,7 +850,11 @@ export default function LeadDetailPage() {
                       // 1. Guardar la propuesta en InstantDB
                       const propuestaId = crypto.randomUUID();
                       const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
-                      
+                      const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
+                      const aseguradoraSeleccionada = cotizacionAceptada
+                        ? (cotizacionAceptada.aseguradora || "")
+                        : aseguradoraRecomendada;
+
                       const cots = cotizaciones.map(c => ({
                         aseguradora: c.aseguradora,
                         plan: c.cobertura || c.nombre_plan || "",
@@ -885,7 +889,7 @@ export default function LeadDetailPage() {
                           cotizaciones: cots,
                         },
                         analysis: {
-                           recomendada: aseguradoraRecomendada,
+                           recomendada: aseguradoraSeleccionada,
                            plan_recomendado: comparativoData.comparativo_ia?.plan_recomendado || "",
                            razon_principal: comparativoData.comparativo_ia?.razon_principal || comparativoData.comparativo_ia?.justificacion_corta || "",
                            puntos_fuertes: comparativoData.comparativo_ia?.puntos_fuertes || [],
@@ -910,9 +914,9 @@ export default function LeadDetailPage() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          cotizacionSeleccionada: cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraRecomendada.toUpperCase()),
+                          cotizacionSeleccionada: cotizacionAceptada || cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase()),
                           todasCotizaciones: cotizaciones,
-                          aseguradoraRecomendada: aseguradoraRecomendada,
+                          aseguradoraRecomendada: aseguradoraSeleccionada,
                           justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
                           datosExtra: { tomador: lead.name, placa: lead.vehiclePlate, descripcion_vehiculo: `${lead.vehicleBrand || ""} ${lead.vehicleModel || ""} ${lead.vehicleYear || ""}`.trim() },
                           accionIA: comparativoData.accion,

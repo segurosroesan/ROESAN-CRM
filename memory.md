@@ -100,6 +100,12 @@
 
 ---
 
+### SURA 🆕 PRE-INTEGRACIÓN — Carpeta creada
+- **Estado:** Carpeta creada y requerimientos técnicos definidos (`APIS/SURA/Sura_Integration_Info.md`).
+- **Pendiente:** Contacto con el equipo técnico de SURA para recibir documentación y credenciales.
+
+---
+
 ### SBS SOAP ⚠️ BLOQUEADO (Esperando respuesta)
 - **Protocolo:** SOAP 1.2
 - **Endpoint:** `https://test.cotizadoresgenerales.com/wsCotizaAutos/CotizaAutos.asmx`
@@ -200,11 +206,12 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 
 1. **Probar SYNC-1 a SYNC-4 en producción** — Soft Seguros ya tiene permisos en `/api/cliente/`
 2. **HDI — Procesar credenciales e iniciar integración** — Credenciales recibidas el 9 May 2026, sin conector aún.
-3. **SBS — Hacer seguimiento a Ivan David Diaz** — Correo enviado el 6 May, sin respuesta. Reenviarlo si no hay respuesta en los próximos días.
-4. **Qualitas Prod** — Pedir credenciales de producción a Edgar Bello (`ebello@qualitascolombia.com.co`).
-5. **Allianz Prod** — Pedir credenciales de producción (contacto no registrado aún).
-6. **SYNC-5** — Beneficiarios (Fase 2)
-7. **PDF comparativo online** — Evaluar integración de `comparativo.py` al backend
+3. **SURA — Iniciar contacto técnico** — Documentación y credenciales pendientes.
+4. **SBS — Hacer seguimiento a Ivan David Diaz** — Correo enviado el 6 May, sin respuesta. Reenviarlo si no hay respuesta en los próximos días.
+5. **Qualitas Prod** — Pedir credenciales de producción a Edgar Bello (`ebello@qualitascolombia.com.co`).
+6. **Allianz Prod** — Pedir credenciales de producción (contacto no registrado aún).
+7. **SYNC-5** — Beneficiarios (Fase 2)
+8. **PDF comparativo online** — Evaluar integración de `comparativo.py` al backend
 
 ---
 

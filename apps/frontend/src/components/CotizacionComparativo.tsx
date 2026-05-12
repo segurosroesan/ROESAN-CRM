@@ -356,9 +356,9 @@ export function CotizacionComparativo({
                       verticalAlign: "middle",
                     }}>
                       <div>{(c.aseguradora || "—").toUpperCase()}</div>
-                      {c.nombre_plan && (
+                      {(c.nombre_plan || c.cobertura) && (
                         <div style={{ fontSize: "0.62rem", fontWeight: 400, opacity: 0.6, fontFamily: "var(--font-inter)", marginTop: "2px" }}>
-                          {c.nombre_plan}
+                          {c.nombre_plan || c.cobertura}
                         </div>
                       )}
                       <div style={{ marginTop: "5px", display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
@@ -397,7 +397,8 @@ export function CotizacionComparativo({
             <tbody>
               {/* ── PRECIO ── */}
               <tr>
-                <td colSpan={numCols} style={sectionHdrStyle}>PRECIO TOTAL (IVA incluido)</td>
+                <td style={{ ...sectionHdrStyle, position: "sticky", left: 0, zIndex: 10, minWidth: "240px", maxWidth: "240px" }}>PRECIO TOTAL (IVA incluido)</td>
+                <td colSpan={numCols - 1} style={sectionHdrStyle} />
               </tr>
               <tr>
                 <td style={{ ...leftColBase, background: C_LBGD, fontWeight: 700 }}>Total a pagar</td>
@@ -439,7 +440,8 @@ export function CotizacionComparativo({
               {SECCIONES.map((seccion, si) => (
                 <React.Fragment key={si}>
                   <tr>
-                    <td colSpan={numCols} style={sectionHdrStyle}>{seccion.titulo}</td>
+                    <td style={{ ...sectionHdrStyle, position: "sticky", left: 0, zIndex: 10, minWidth: "240px", maxWidth: "240px" }}>{seccion.titulo}</td>
+                    <td colSpan={numCols - 1} style={sectionHdrStyle} />
                   </tr>
                   {seccion.filas.map((fila, fi) => {
                     const isOdd = fi % 2 === 1;

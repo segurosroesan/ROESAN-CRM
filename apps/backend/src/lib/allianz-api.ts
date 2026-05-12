@@ -104,7 +104,9 @@ export class AllianzApi {
 
     const ownerBornDate = dto.fechaNacimiento
       ? dto.fechaNacimiento.replace(/-/g, '')
-      : '';
+      : '19850101';
+
+    const ownerSex = dto.sexo || 'M';
 
     const TIPO_DOC_MAPPING: Record<string, string> = {
       'CC': 'C',
@@ -145,8 +147,8 @@ export class AllianzApi {
       `<vehiclefasecoldacode>${dto.claveFasecolda}</vehiclefasecoldacode>` +
       `<vehicleyear>${dto.modelo}</vehicleyear>` +
       `<riskdata>` +
-      (ownerBornDate ? `<ownerborndate>${ownerBornDate}</ownerborndate>` : '') +
-      (dto.sexo ? `<ownersex>${dto.sexo}</ownersex>` : '') +
+      `<ownerborndate>${ownerBornDate}</ownerborndate>` +
+      `<ownersex>${ownerSex}</ownersex>` +
       `<repowered>N</repowered>` +
       `<protectiondevicecode>4</protectiondevicecode>` +
       `<accessoriesvalue>0</accessoriesvalue>` +

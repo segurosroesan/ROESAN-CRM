@@ -16,19 +16,22 @@ interface Notificacion {
 function playChime() {
   try {
     const ctx = new AudioContext();
-    [523, 659].forEach((freq, i) => {
+    // Melodía pentatónica ascendente-descendente ~5s (10 notas × 0.5s)
+    const notes = [523, 659, 784, 988, 1047, 988, 784, 659, 523, 659];
+    const step = 0.5;
+    notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.frequency.value = freq;
       osc.type = "sine";
-      const t = ctx.currentTime + i * 0.18;
+      const t = ctx.currentTime + i * step;
       gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.3, t + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      gain.gain.linearRampToValueAtTime(0.25, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + step - 0.02);
       osc.start(t);
-      osc.stop(t + 0.6);
+      osc.stop(t + step);
     });
   } catch {
     // El navegador puede bloquear AudioContext sin interacción previa
@@ -44,7 +47,6 @@ export function PropuestaVistaAlerta({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const seenIds = useRef<Set<string>>(new Set());
   const [toasts, setToasts] = useState<Notificacion[]>([]);
-  const isInitialized = useRef(false);
 
   const { data } = db.useQuery({
     notificaciones: {
@@ -58,14 +60,7 @@ export function PropuestaVistaAlerta({ userEmail }: { userEmail: string }) {
   useEffect(() => {
     const notifs: Notificacion[] = (data?.notificaciones ?? []) as Notificacion[];
 
-    if (!isInitialized.current) {
-      // Primera carga: solo registrar IDs existentes, no disparar alertas
-      notifs.forEach((n) => seenIds.current.add(n.id));
-      isInitialized.current = true;
-      return;
-    }
-
-    // Detectar IDs genuinamente nuevas
+    // Detectar IDs no vistas en esta sesión (incluye las pendientes al cargar/refrescar)
     const nuevas = notifs.filter((n) => !seenIds.current.has(n.id));
     if (nuevas.length === 0) return;
 

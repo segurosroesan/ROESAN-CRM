@@ -75,7 +75,10 @@ export class SBSApi {
         timeout: 30000,
       });
 
-      const parsed = await parseStringPromise(response.data, { explicitArray: false });
+      const parsed = await parseStringPromise(response.data, {
+        explicitArray: false,
+        tagNameProcessors: [(name: string) => name.replace(/^[^:]+:/, '')],
+      });
       const result = parsed.Envelope.Body.SBSAutos_CrearSesion_PaqueteResponse.SBSAutos_CrearSesion_PaqueteResult;
 
       if (result.Mensaje_Validacion && result.Mensaje_Validacion !== 'OK') {
@@ -108,7 +111,10 @@ export class SBSApi {
         timeout: 30000,
       });
 
-      const parsed = await parseStringPromise(response.data, { explicitArray: false });
+      const parsed = await parseStringPromise(response.data, {
+        explicitArray: false,
+        tagNameProcessors: [(name: string) => name.replace(/^[^:]+:/, '')],
+      });
       const res = parsed.Envelope.Body.SBSAutos_CotizaryCerrarSesion_PaqueteResponse.SBSAutos_CotizaryCerrarSesion_PaqueteResult;
 
       if (res.Mensaje_Validacion && res.Mensaje_Validacion !== 'OK') {

@@ -997,7 +997,19 @@ export default function LeadDetailPage() {
                         <h4 className="font-bold text-slate-800">{cot.aseguradora}</h4>
                         <p className="text-xs text-slate-400 mt-0.5">{cot.cobertura || "Sin descripción de cobertura"}</p>
                       </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`}>{eConf.label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`} title={cot.estado === "enviada" ? "Esta cotización fue enviada al cliente" : undefined}>{eConf.label}</span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("¿Eliminar esta cotización?")) return;
+                            await db.transact([db.tx.cotizaciones[cot.id].delete()]);
+                          }}
+                          className="h-6 w-6 flex items-center justify-center rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                          title="Eliminar cotización"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-black text-emerald-600">

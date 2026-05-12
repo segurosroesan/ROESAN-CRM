@@ -824,22 +824,65 @@ export default function RenovacionDetailPage() {
               )}
 
               <div className="grid grid-cols-1 gap-4">
-                {cotizaciones.map(cot => (
+                {cotizaciones.map(cot => {
+                  const estadoConfig: Record<string, { color: string; label: string }> = {
+                    "borrador":  { color: "bg-slate-100 text-slate-500",    label: "Borrador" },
+                    "enviada":   { color: "bg-blue-100 text-blue-600",      label: "Enviada al cliente" },
+                    "aceptada":  { color: "bg-emerald-100 text-emerald-600",label: "Aceptada ✓" },
+                    "rechazada": { color: "bg-rose-100 text-rose-600",      label: "Rechazada" },
+                  };
+                  const eConf = estadoConfig[cot.estado] || estadoConfig["borrador"];
+                  return (
                   <div key={cot.id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2.5">
                       <div>
                         <h4 className="font-bold text-slate-800">{cot.aseguradora}</h4>
                         <p className="text-xs text-slate-400 mt-0.5">{cot.cobertura || "Sin descripción"}</p>
                       </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-600`}>{cot.estado}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`}>{eConf.label}</span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("¿Eliminar esta cotización?")) return;
+                            await db.transact([db.tx.cotizaciones[cot.id].delete()]);
+                          }}
+                          className="h-6 w-6 flex items-center justify-center rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                          title="Eliminar cotización"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-black text-emerald-600">
                         ${(cot.valor || cot.prima_total || 0).toLocaleString("es-CO")}
                       </span>
+                      {cot.estado !== "aceptada" ? (
+                        <button
+                          onClick={async () => {
+                            await db.transact([db.tx.cotizaciones[cot.id].update({ estado: "aceptada" })]);
+                          }}
+                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          Marcar como aceptada
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            await db.transact([db.tx.cotizaciones[cot.id].update({ estado: "enviada" })]);
+                          }}
+                          className="text-xs font-bold text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-100 hover:border-rose-100 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          Desmarcar aceptada
+                        </button>
+                      )}
                     </div>
+                    {cot.fuente && (
+                      <p className="text-[10px] text-slate-300 mt-2 font-medium">Fuente: {cot.fuente}</p>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

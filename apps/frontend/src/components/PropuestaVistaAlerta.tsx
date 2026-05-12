@@ -113,11 +113,6 @@ function ToastCard({
   onClose: () => void;
   onVerLead: () => void;
 }) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 15000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
   // Extraer vehículo/folio del mensaje ("👁 Nombre abrió la propuesta Folio XX — Marca Año")
   const vehiculoMatch = notif.mensaje.match(/—\s*(.+)$/);
   const vehiculoInfo = vehiculoMatch ? vehiculoMatch[1].trim() : null;
@@ -137,11 +132,6 @@ function ToastCard({
       className="pointer-events-auto w-[360px] rounded-2xl shadow-2xl border border-amber-200/40 overflow-hidden animate-slide-in-right"
       style={{ background: "linear-gradient(135deg, #1e103c 0%, #2a2960 100%)" }}
     >
-      {/* Barra de progreso */}
-      <div className="h-0.5 bg-amber-400/30">
-        <div className="h-full bg-amber-400" style={{ animation: "shrink 15s linear forwards" }} />
-      </div>
-
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-3">

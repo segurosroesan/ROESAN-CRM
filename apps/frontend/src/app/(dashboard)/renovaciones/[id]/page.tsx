@@ -808,7 +808,7 @@ export default function RenovacionDetailPage() {
                           aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
                           diferenciaPrima: comparativoData.diferencia_prima,
                           esNuevo: false,
-                          propuestaUrl: `${window.location.origin}/propuesta/${propuestaId}`
+                          enlacePropuesta: `${window.location.origin}/propuesta/${propuestaId}`
                         }),
                       });
                       const result = await response.json();
@@ -973,10 +973,10 @@ export default function RenovacionDetailPage() {
         </div>
       </div>
 
-      {propuestaProData && lead.email && (
+      {propuestaProData && (
         <PropuestaProModal
           leadId={leadId}
-          toEmail={lead.email}
+          toEmail={lead.email || ""}
           initialBody={propuestaProData.body}
           propuestaUrl={propuestaProData.url}
           onClose={() => setPropuestaProData(null)}

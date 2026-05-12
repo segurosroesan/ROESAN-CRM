@@ -117,10 +117,12 @@ export default function PropuestaPage() {
       </Head>
 
       {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-[#e2e8f0] px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
-        <div className="font-serif text-xl font-bold text-[#51408d] tracking-tight">
-          Roesan <span className="text-[#61bbe4]">Seguros</span>
-        </div>
+      <nav className="bg-white/95 backdrop-blur-md border-b border-[#e2e8f0] px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+        <img
+          src="/logo-roesan.png"
+          alt="Roesan Seguros"
+          className="h-9 w-auto object-contain"
+        />
         <div className="flex items-center gap-4 text-xs text-[#64748b] flex-wrap">
           <span className="w-2 h-2 rounded-full bg-[#22c55e] shadow-[0_0_0_4px_rgba(34,197,94,0.15)] inline-block"></span>
           Propuesta personalizada · vigencia {ext.vigencia_oferta}

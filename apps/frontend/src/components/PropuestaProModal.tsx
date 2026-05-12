@@ -195,8 +195,9 @@ export function PropuestaProModal({
               </button>
               <button
                 onClick={handleSendEmail}
-                disabled={sending || !body}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                disabled={sending || !body || !toEmail}
+                title={!toEmail ? "Agrega un email al lead para poder enviar por correo" : undefined}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? (
                   <>

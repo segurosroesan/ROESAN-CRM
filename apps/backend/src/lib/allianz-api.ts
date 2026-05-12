@@ -142,17 +142,18 @@ export class AllianzApi {
       `<operationtypecode>TA</operationtypecode>` +
       `<productcode>1243</productcode>` +
       `</operationheaders>` +
-      `<cap>0</cap>` +
+      `<cap>3</cap>` +
       `<effectivedate>${effectiveDate}</effectivedate>` +
       `<TermDate>${termDate}</TermDate>` +
       `<firstbill>0</firstbill>` +
       `<successive>0</successive>` +
       `<holderdoctype>${docType}</holderdoctype>` +
       `<holderdocnumber>${dto.documento}</holderdocnumber>` +
-      `<isholderdriver>S</isholderdriver>` +
-      `<isholderowner>S</isholderowner>` +
       `<ownerdoctype>${docType}</ownerdoctype>` +
       `<ownerdocnumber>${dto.documento}</ownerdocnumber>` +
+      `<isholderdriver>S</isholderdriver>` +
+      `<isholderowner>S</isholderowner>` +
+      `<isnewowner>N</isnewowner>` +
       `<risktype>L0008</risktype>` +
       `<vehicleplate>${dto.placa!.toUpperCase()}</vehicleplate>` +
       `<vehicleorigin>480</vehicleorigin>` +
@@ -168,14 +169,9 @@ export class AllianzApi {
       `<gassystemvalue>0</gassystemvalue>` +
       `<isnewvehicle>N</isnewvehicle>` +
       `<insuredvalue>0</insuredvalue>` +
-      `<continuity>${dto.continuidad ?? 'S'}</continuity>` +
+      `<continuity>${dto.continuidad ?? 'N'}</continuity>` +
       `<circulationareadanecode>${dto.municipio}</circulationareadanecode>` +
-      `<discountextension>N</discountextension>` +
-      `<providefrom>0</providefrom>` +
-      `<typedocdiscount></typedocdiscount>` +
-      `<numdocdiscount></numdocdiscount>` +
       `</riskdata>` +
-      `<isnewowner>N</isnewowner>` +
       `</chargerequest>`;
 
     const escaped = chargeXml

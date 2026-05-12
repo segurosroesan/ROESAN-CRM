@@ -3,13 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/instant-db";
-import { X, Eye } from "lucide-react";
+import { X, Eye, MessageCircle } from "lucide-react";
 
 interface Notificacion {
   id: string;
   mensaje: string;
   leadId?: string | null;
   propuestaId?: string | null;
+  clienteNombre?: string | null;
+  clienteTelefono?: string | null;
   createdAt: number;
 }
 
@@ -112,37 +114,50 @@ function ToastCard({
   onVerLead: () => void;
 }) {
   useEffect(() => {
-    const timer = setTimeout(onClose, 12000);
+    const timer = setTimeout(onClose, 15000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  // Extraer vehículo/folio del mensaje ("👁 Nombre abrió la propuesta Folio XX — Marca Año")
+  const vehiculoMatch = notif.mensaje.match(/—\s*(.+)$/);
+  const vehiculoInfo = vehiculoMatch ? vehiculoMatch[1].trim() : null;
+  const folioMatch = notif.mensaje.match(/Folio\s+([A-Z0-9]+)/);
+  const folio = folioMatch ? folioMatch[1] : null;
+
+  const nombre = notif.clienteNombre || "Cliente";
+
+  const waPhone = notif.clienteTelefono?.replace(/\D/g, "");
+  const waMsg = encodeURIComponent(
+    `Hola ${nombre}, vi que estás revisando tu propuesta de seguro con nosotros. ¿Tienes alguna pregunta? Con gusto te ayudo. 😊`
+  );
+  const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : null;
+
   return (
     <div
-      className="pointer-events-auto w-[340px] rounded-2xl shadow-2xl border border-amber-200/40 overflow-hidden animate-slide-in-right"
-      style={{
-        background: "linear-gradient(135deg, #1e103c 0%, #2a2960 100%)",
-      }}
+      className="pointer-events-auto w-[360px] rounded-2xl shadow-2xl border border-amber-200/40 overflow-hidden animate-slide-in-right"
+      style={{ background: "linear-gradient(135deg, #1e103c 0%, #2a2960 100%)" }}
     >
       {/* Barra de progreso */}
       <div className="h-0.5 bg-amber-400/30">
-        <div
-          className="h-full bg-amber-400"
-          style={{ animation: "shrink 12s linear forwards" }}
-        />
+        <div className="h-full bg-amber-400" style={{ animation: "shrink 15s linear forwards" }} />
       </div>
 
       <div className="p-4">
+        {/* Header */}
         <div className="flex items-start gap-3">
-          <div className="shrink-0 w-9 h-9 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center justify-center mt-0.5">
-            <Eye className="w-4 h-4 text-amber-400" />
+          <div className="shrink-0 w-10 h-10 rounded-full bg-amber-400/20 border border-amber-400/30 flex items-center justify-center mt-0.5">
+            <Eye className="w-5 h-5 text-amber-400" />
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-amber-400/70 mb-0.5">
-              Propuesta vista
+            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/70">
+              👁 Propuesta abierta
             </p>
-            <p className="text-[14px] text-white font-medium leading-snug">
-              {notif.mensaje}
+            <p className="text-[17px] text-white font-black leading-tight mt-0.5">
+              {nombre}
+            </p>
+            <p className="text-[12px] text-white/60 mt-0.5">
+              está viendo tu propuesta ahora mismo
             </p>
           </div>
 
@@ -154,14 +169,37 @@ function ToastCard({
           </button>
         </div>
 
-        {notif.leadId && (
-          <button
-            onClick={onVerLead}
-            className="mt-3 w-full py-2 rounded-xl bg-amber-400 text-[#1e103c] text-[13px] font-bold hover:bg-amber-300 transition-colors"
-          >
-            Ver lead →
-          </button>
+        {/* Detalle vehículo / folio */}
+        {(vehiculoInfo || folio) && (
+          <div className="mt-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2 text-[12px] text-white/70">
+            {folio && <span className="font-bold text-amber-300">Folio {folio}</span>}
+            {folio && vehiculoInfo && <span className="text-white/30">·</span>}
+            {vehiculoInfo && <span>{vehiculoInfo}</span>}
+          </div>
         )}
+
+        {/* Botones */}
+        <div className="mt-3 flex gap-2">
+          {waUrl && (
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#25D366] text-white text-[13px] font-bold hover:bg-[#1ebe5d] transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </a>
+          )}
+          {notif.leadId && (
+            <button
+              onClick={onVerLead}
+              className={`${waUrl ? "flex-1" : "w-full"} py-2 rounded-xl bg-amber-400 text-[#1e103c] text-[13px] font-bold hover:bg-amber-300 transition-colors`}
+            >
+              Ver lead →
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

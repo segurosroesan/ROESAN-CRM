@@ -166,6 +166,8 @@ const schema = i.schema({
       mensaje: i.string(),
       propuestaId: i.string().optional(),
       leadId: i.string().optional(),
+      clienteNombre: i.string().optional(),
+      clienteTelefono: i.string().optional(),   // E.164 ej: 573001234567
       leida: i.boolean(),
       destinatarioEmail: i.string().indexed(),  // 'comercial@roesan.com' | 'seguros@roesan.com'
       createdAt: i.number(),

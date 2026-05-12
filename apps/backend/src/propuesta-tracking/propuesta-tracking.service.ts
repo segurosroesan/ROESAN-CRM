@@ -29,6 +29,16 @@ export class PropuestaTrackingService {
     const vehiculoMarca = ext?.vehiculo?.marca || '';
     const vehiculoAno = ext?.vehiculo?.año || '';
 
+    // Obtener teléfono del lead para el link de WhatsApp
+    let clienteTelefono: string | null = null;
+    if (leadId) {
+      const leadResult = await db.query({ leads: { $: { where: { id: leadId } } } });
+      const lead = leadResult.leads?.[0] as any;
+      if (lead?.phone) {
+        clienteTelefono = String(lead.phone).replace(/\D/g, '');
+      }
+    }
+
     // Verificar si hubo vista reciente (deduplicación)
     const vistasResult = await db.query({
       propuesta_vistas: { $: { where: { propuestaId } } },
@@ -61,6 +71,8 @@ export class PropuestaTrackingService {
             mensaje,
             propuestaId,
             leadId: leadId ?? null,
+            clienteNombre,
+            clienteTelefono: clienteTelefono ?? null,
             leida: false,
             destinatarioEmail: email,
             createdAt: ahora,

@@ -20,6 +20,7 @@ const schema = i.schema({
       // Vehicle (Auto)
       vehiclePlate: i.string().optional(),
       vehicleBrand: i.string().optional(),
+      vehicleLine: i.string().optional(),
       vehicleModel: i.string().optional(),
       vehicleYear: i.string().optional(),
       vehicleFasecolda: i.string().optional(),

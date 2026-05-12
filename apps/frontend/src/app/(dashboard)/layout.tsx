@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/instant-db";
 import { PropuestaVistaAlerta, useNotificacionesCount } from "@/components/PropuestaVistaAlerta";
+import { NuevoLeadAlerta } from "@/components/NuevoLeadAlerta";
 
 const PAGE_TITLES: Record<string, { parent: string; current: string }> = {
   "/":             { parent: "Panel Comercial", current: "Dashboard" },
@@ -243,6 +244,8 @@ export default function DashboardLayout({
           {children}
         </section>
 
+        {/* Alerta en tiempo real cuando entra un lead nuevo */}
+        <NuevoLeadAlerta />
         {/* Alertas en tiempo real cuando un cliente abre una propuesta */}
         <PropuestaVistaAlerta userEmail={user.email ?? ""} />
       </main>

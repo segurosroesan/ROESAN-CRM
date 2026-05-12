@@ -206,7 +206,7 @@ export default function LeadDetailPage() {
           claveFasecolda: lead.vehicleFasecolda,
           modelo: parseInt(lead.vehicleYear),
           placa: lead.vehiclePlate || "PROVIS",
-          tipoDocumento: "CC",
+          tipoDocumento: lead.tipo_documento || "CC",
           documento: lead.documento,
           departamento: "11",
           municipio: "11001",
@@ -967,7 +967,7 @@ export default function LeadDetailPage() {
                           aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
                           diferenciaPrima: comparativoData.diferencia_prima,
                           esNuevo: lead.pipeline_tipo !== "renovacion",
-                          propuestaUrl: `${window.location.origin}/propuesta/${propuestaId}`
+                          enlacePropuesta: `${window.location.origin}/propuesta/${propuestaId}`
                         }),
                       });
                       const result = await response.json();
@@ -1080,7 +1080,10 @@ export default function LeadDetailPage() {
               <div className="p-5 grid grid-cols-2 gap-4">
                 {[
                   { label: "Nombre completo", field: "name", value: lead.name },
+                  { label: "Tipo Documento", field: "tipo_documento", value: lead.tipo_documento },
                   { label: "Cédula / NIT", field: "documento", value: lead.documento },
+                  { label: "Fecha Nacimiento", field: "fecha_nacimiento", value: lead.fecha_nacimiento },
+                  { label: "Género", field: "genero", value: lead.genero },
                   { label: "Celular", field: "phone", value: lead.phone },
                   { label: "Email", field: "email", value: lead.email },
                   { label: "Ciudad", field: "city", value: lead.city },
@@ -1115,11 +1118,37 @@ export default function LeadDetailPage() {
                       )}
                     </div>
                     {isEditingInfo ? (
-                      <input
-                        value={editData?.[field] || ""}
-                        onChange={e => setEditData({ ...editData, [field]: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
-                      />
+                      field === "genero" ? (
+                        <select
+                          value={editData?.[field] || ""}
+                          onChange={e => setEditData({ ...editData, [field]: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+                        >
+                          <option value="">— Sin especificar —</option>
+                          <option value="M">Masculino (M)</option>
+                          <option value="F">Femenino (F)</option>
+                        </select>
+                      ) : field === "tipo_documento" ? (
+                        <select
+                          value={editData?.[field] || ""}
+                          onChange={e => setEditData({ ...editData, [field]: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value="CC">Cédula de Ciudadanía (CC)</option>
+                          <option value="CE">Cédula de Extranjería (CE)</option>
+                          <option value="NIT">NIT</option>
+                          <option value="PP">Pasaporte (PP)</option>
+                          <option value="TI">Tarjeta de Identidad (TI)</option>
+                        </select>
+                      ) : (
+                        <input
+                          type={field === "fecha_nacimiento" ? "date" : "text"}
+                          value={editData?.[field] || ""}
+                          onChange={e => setEditData({ ...editData, [field]: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+                        />
+                      )
                     ) : (
                       <p className="text-sm font-semibold text-slate-700">{value || <span className="text-slate-300 font-normal">—</span>}</p>
                     )}
@@ -1268,10 +1297,10 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {propuestaProData && lead.email && (
+      {propuestaProData && (
         <PropuestaProModal
           leadId={leadId}
-          toEmail={lead.email}
+          toEmail={lead.email || ""}
           initialBody={propuestaProData.body}
           propuestaUrl={propuestaProData.url}
           onClose={() => setPropuestaProData(null)}

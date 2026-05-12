@@ -282,11 +282,13 @@ export default function RenovacionDetailPage() {
       
       if (res.ok) {
         const parsedQuotes = await res.json();
+        const fileArray = Array.from(files);
         const txs: any[] = [];
-        
-        parsedQuotes.forEach((data: any) => {
+
+        parsedQuotes.forEach((data: any, idx: number) => {
           const newId = crypto.randomUUID();
           const prima = parseFloat(String(data.prima_total || 0)) || 0;
+          const esRenovacion = /renovaci/i.test(fileArray[idx]?.name || "");
           txs.push(
             (db.tx.cotizaciones as any)[newId].update({
               leadId,
@@ -297,7 +299,7 @@ export default function RenovacionDetailPage() {
               valor_asegurado: parseFloat(String(data.valor_asegurado || 0)) || 0,
               cobertura: data.cobertura || "",
               estado: "enviada",
-              es_renovacion: false,
+              es_renovacion: esRenovacion,
               fuente: "IA (Múltiples PDFs)",
               createdAt: Date.now(),
               updatedAt: Date.now(),
@@ -844,6 +846,9 @@ export default function RenovacionDetailPage() {
                         <p className="text-xs text-slate-400 mt-0.5">{cot.cobertura || "Sin descripción"}</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        {cot.es_renovacion && (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">🔄 Vigente</span>
+                        )}
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`}>{eConf.label}</span>
                         <button
                           onClick={async () => {

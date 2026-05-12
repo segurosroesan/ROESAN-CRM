@@ -336,11 +336,13 @@ export default function LeadDetailPage() {
       
       if (res.ok) {
         const parsedQuotes = await res.json();
+        const fileArray = Array.from(files);
         const txs: any[] = [];
-        
-        parsedQuotes.forEach((data: any) => {
+
+        parsedQuotes.forEach((data: any, idx: number) => {
           const newId = crypto.randomUUID();
           const prima = parseFloat(String(data.prima_total || 0)) || 0;
+          const esRenovacion = /renovaci/i.test(fileArray[idx]?.name || "");
           txs.push(
             db.tx.cotizaciones[newId].update({
               leadId,
@@ -352,7 +354,7 @@ export default function LeadDetailPage() {
               cobertura: data.cobertura || "",
               coberturas: buildCoberturas(data),
               estado: "enviada",
-              es_renovacion: false,
+              es_renovacion: esRenovacion,
               fuente: "IA (Múltiples PDFs)",
               createdAt: Date.now(),
               updatedAt: Date.now(),
@@ -955,6 +957,9 @@ export default function LeadDetailPage() {
                         <p className="text-xs text-slate-400 mt-0.5">{cot.cobertura || "Sin descripción de cobertura"}</p>
                       </div>
                       <div className="flex items-center gap-2">
+                        {cot.es_renovacion && (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">🔄 Vigente</span>
+                        )}
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`} title={cot.estado === "enviada" ? "Esta cotización fue enviada al cliente" : undefined}>{eConf.label}</span>
                         <button
                           onClick={async () => {

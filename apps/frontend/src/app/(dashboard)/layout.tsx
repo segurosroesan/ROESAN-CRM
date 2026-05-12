@@ -57,6 +57,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isLoading, user, error } = db.useAuth();
+  const notifCount = useNotificacionesCount(user?.email ?? "");
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -98,7 +99,6 @@ export default function DashboardLayout({
 
   const displayName = getDisplayName(user.email);
   const initials = getInitials(user.email);
-  const notifCount = useNotificacionesCount(user.email ?? "");
 
   return (
     <div className="flex h-screen bg-slate-50 selection:bg-amber-100">

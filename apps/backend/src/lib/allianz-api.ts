@@ -191,7 +191,14 @@ export class AllianzApi {
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"');
+      .replace(/&quot;/g, '"')
+      .replace(/^﻿/, '')
+      .trim();
+
+    if (!xml.startsWith('<')) {
+      this.logger.error(`Allianz return tag contiene texto plano (no XML): ${xml.slice(0, 300)}`);
+      throw new Error(`Allianz error: ${xml}`);
+    }
 
     const parsed = await parseStringPromise(xml, { explicitArray: false });
     // Root element can be ChargeResponse or chargerequest depending on env

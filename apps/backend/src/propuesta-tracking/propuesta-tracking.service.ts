@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { getInstantAdmin } from '../lib/instant-admin';
 
-const DESTINATARIOS = ['comercial@roesan.com', 'seguros@roesan.com'];
+const DESTINATARIOS = ['comercial@roesan.com', 'seguros@roesan.com', 'jorge.jaime.henao.romero@gmail.com'];
 const DEDUP_WINDOW_MS = 60 * 60 * 1000; // 60 minutos
 
 @Injectable()

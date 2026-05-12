@@ -85,11 +85,23 @@ export class AllianzApi {
 
     this.logger.log(`Cotizando en Allianz — Placa: ${dto.placa}, Fasecolda: ${dto.claveFasecolda}`);
 
-    const response = await axios.post(`${this.url}?codCia=3`, soapEnvelope, {
-      httpsAgent: this.httpsAgent,
-      headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: 'urn:call4' },
-      timeout: 60000,
-    });
+    let response: any;
+    try {
+      response = await axios.post(`${this.url}?codCia=3`, soapEnvelope, {
+        httpsAgent: this.httpsAgent,
+        headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: 'urn:call4' },
+        timeout: 60000,
+      });
+    } catch (axiosError: any) {
+      if (axiosError.response) {
+        const data: string = typeof axiosError.response.data === 'string' ? axiosError.response.data : '';
+        this.logger.error(`Allianz HTTP ${axiosError.response.status}: ${data.slice(0, 500)}`);
+        const faultMatch = data.match(/<faultstring[^>]*>([\s\S]*?)<\/faultstring>/i);
+        if (faultMatch) throw new Error(`Allianz error: ${faultMatch[1].trim()}`);
+        throw new Error(`Allianz HTTP ${axiosError.response.status}: ${data.slice(0, 300) || 'Error del servidor'}`);
+      }
+      throw axiosError;
+    }
 
     return this.parseResponse(response.data);
   }

@@ -171,6 +171,10 @@ export class AllianzApi {
       `<insuredvalue>0</insuredvalue>` +
       `<continuity>${dto.continuidad ?? 'N'}</continuity>` +
       `<circulationareadanecode>${dto.municipio}</circulationareadanecode>` +
+      `<discountextension>N</discountextension>` +
+      `<providefrom>0</providefrom>` +
+      `<typedocdiscount></typedocdiscount>` +
+      `<numdocdiscount></numdocdiscount>` +
       `</riskdata>` +
       `</chargerequest>`;
 

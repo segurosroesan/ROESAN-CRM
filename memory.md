@@ -1,7 +1,7 @@
 # Memoria del Proyecto — ROESAN CRM
 
 > **AGENTES DE IA:** Leer este archivo al inicio de CADA sesión antes de escribir cualquier código. Actualizar al finalizar avances importantes.
-> Última actualización: 2026-05-07
+> Última actualización: 2026-05-12
 
 ---
 
@@ -82,19 +82,32 @@
 ### Qualitas REST ✅ FUNCIONAL (QA)
 - **Auth:** HTTP Basic Auth
 - **Estado:** Corregido y probado en QA (2026-05-05).
+- **Contactos:** Edgar Bello León (Director TI): `ebello@qualitascolombia.com.co` | Brayan Florez (Analista TI): `bflorez@qualitascolombia.com.co`
 - **🚨 CRÍTICO — fechaNacimiento:** Debe ser **`DD/MM/YYYY`**. El backend ahora formatea automáticamente desde `YYYY-MM-DD`.
 - **🚨 CRÍTICO — Reglas:** Se requiere `NoConsideracion: '56'` en `ConsideracionesAdicionalesDG` para habilitar la tarifa vigente.
 - **Error `0005`:** Es por falta de tarifas para ciertos Fasecolda en QA. Para pruebas exitosas usar Suzuki Ertiga 2016 (`01601276`).
 - **Género:** Se envía en `ConsideracionesAdicionalesDA` (TipoRegla 56) como 'M' o 'F'.
 - **Frontend:** La función `handleAutoQuote` ya envía `fecha_nacimiento` y `genero` del lead.
+- **Correo enviado 30 Abr 2026:** Se reportaron errores 0005 y 0235 al equipo de Qualitas. Se resolvieron internamente sin respuesta formal.
+- **Pendiente:** Solicitar credenciales de **producción** a Edgar Bello.
 
-### SBS SOAP ⚠️ BLOQUEADO (Pruebas)
+### HDI 🆕 CREDENCIALES RECIBIDAS — Sin integración iniciada
+- **Estado:** Credenciales recibidas el **9 May 2026** (llegaron encriptadas, pendiente procesarlas).
+- **Credenciales en:** `APIS/HDI/Credenciales_HDI.md`
+  - `ClientId: 3908e0jofl82r1dlfjk8v99af`
+  - `ClientSecret: 1i91kppqi5vracd2jn4n87mtikpl5hl78mjvtct0f4sj2rb6g8d5`
+- **Sin conector implementado** en el backend. Primer paso: revisar la documentación técnica de HDI y crear `apps/backend/src/lib/hdi-api.ts`.
+
+---
+
+### SBS SOAP ⚠️ BLOQUEADO (Esperando respuesta)
 - **Protocolo:** SOAP 1.2
 - **Endpoint:** `https://test.cotizadoresgenerales.com/wsCotizaAutos/CotizaAutos.asmx`
-- **Auth:** Usuario/Password (configurados en `.env`).
-- **Estado Actual:** El conector está implementado, pero el servicio devuelve error: *"No se pudo determinar el factor de comisión del usuario"*.
-- **Acción Pendiente:** Se redactó borrador de correo para Ivan David Diaz (SBS) solicitando el valor correcto para `<codFactComision>`.
-- **Set de Pruebas listo:** Una vez desbloqueado, se probará con Toyota Hilux (09008205), Hyundai Tucson (03206083) y Kia Picanto (04601219).
+- **Auth:** Usuario/Password (configurados en `.env`). Usuario de pruebas: `gerencia@roesan.com.co` (mismas credenciales que producción).
+- **Estado Actual:** El conector está implementado. Correo enviado a Ivan David Diaz el **6 May 2026** reportando el error: *"No se pudo determinar el factor de comisión del usuario"*. Solicitamos el valor correcto de `<codFactComision>`.
+- **Respuesta de Ivan David:** Pendiente.
+- **Set de Pruebas proporcionado por SBS:** Toyota Hilux (09008205/2023), Hyundai Tucson (03206083/2019), Kia Picanto (04601219/2017), Mazda (05606092/2020), Renault (08021001/2022), Chevrolet (01601345/2023).
+- **Nota:** SBS exige 30 pólizas/año para mantener el acceso al webservice.
 
 ---
 
@@ -186,10 +199,12 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 ## 🎯 Próximos Pasos (prioridad)
 
 1. **Probar SYNC-1 a SYNC-4 en producción** — Soft Seguros ya tiene permisos en `/api/cliente/`
-2. **Implementar Qualitas Prod** — Una vez confirmado el acceso a producción.
-3. **SYNC-5** — Beneficiarios (Fase 2)
-4. **PDF comparativo online** — Evaluar integración de `comparativo.py` al backend
-5. **Mover leads manualmente** — Asegurar que la actualización manual de etapa en la ficha de lead sea 100% persistente (ya implementado, monitorear).
+2. **HDI — Procesar credenciales e iniciar integración** — Credenciales recibidas el 9 May 2026, sin conector aún.
+3. **SBS — Hacer seguimiento a Ivan David Diaz** — Correo enviado el 6 May, sin respuesta. Reenviarlo si no hay respuesta en los próximos días.
+4. **Qualitas Prod** — Pedir credenciales de producción a Edgar Bello (`ebello@qualitascolombia.com.co`).
+5. **Allianz Prod** — Pedir credenciales de producción (contacto no registrado aún).
+6. **SYNC-5** — Beneficiarios (Fase 2)
+7. **PDF comparativo online** — Evaluar integración de `comparativo.py` al backend
 
 ---
 

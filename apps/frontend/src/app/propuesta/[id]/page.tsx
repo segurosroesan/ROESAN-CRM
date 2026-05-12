@@ -26,11 +26,16 @@ function fmtRC(v: any) {
   if (!v) return v;
   const s = String(v).trim();
   const mM = s.match(/(\d[\d.,]*)\s*[Mm]/);
-  if (mM) return fmtCOP(parseFloat(mM[1].replace(/[.,]/g, "")) * 1000000);
-  const n = parseInt(s.replace(/[^0-9]/g, ""));
-  if (isNaN(n) || n === 0) return v;
-  if (n <= 10000) return fmtCOP(n * 1000000);
-  return fmtCOP(n);
+  let n: number;
+  if (mM) {
+    n = parseFloat(mM[1].replace(/[.,]/g, "")) * 1_000_000;
+  } else {
+    const raw = parseInt(s.replace(/[^0-9]/g, ""));
+    if (isNaN(raw) || raw === 0) return v;
+    n = raw <= 10000 ? raw * 1_000_000 : raw;
+  }
+  const millions = Math.round(n / 1_000_000);
+  return `$ ${millions.toLocaleString("es-CO")} M`;
 }
 
 export default function PropuestaPage() {
@@ -117,9 +122,9 @@ export default function PropuestaPage() {
       </Head>
 
       {/* Navigation */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-[#e2e8f0] px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+      <nav className="bg-white/95 backdrop-blur-md border-b border-[#e2e8f0] px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
         <img
-          src="/logo-roesan.png"
+          src="/logo-roesan-oficial.png"
           alt="Roesan Seguros"
           className="h-9 w-auto object-contain"
         />

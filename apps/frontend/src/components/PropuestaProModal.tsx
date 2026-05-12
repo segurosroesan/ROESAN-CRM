@@ -42,6 +42,28 @@ export function PropuestaProModal({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const convertToHtml = (text: string): string => {
+    // Escape HTML entities
+    let html = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // Replace the raw propuesta URL with a styled CTA button
+    if (propuestaUrl) {
+      const escapedUrl = propuestaUrl.replace(/&/g, "&amp;");
+      html = html.replace(
+        escapedUrl,
+        `<a href="${escapedUrl}" style="display:inline-block;background-color:#4f46e5;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-family:Arial,sans-serif;font-size:14px;">Ver propuesta interactiva →</a>`
+      );
+    }
+
+    // Convert newlines to <br>
+    html = html.replace(/\n/g, "<br>");
+
+    return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#333;">${html}</div>`;
+  };
+
   const handleSendEmail = async () => {
     if (!user) return;
     setSending(true);
@@ -54,7 +76,7 @@ export function PropuestaProModal({
           userId: user.id,
           to: toEmail,
           subject,
-          body,
+          content: convertToHtml(body),
           leadId,
         }),
       });

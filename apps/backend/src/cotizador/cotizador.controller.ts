@@ -99,7 +99,7 @@ export class CotizadorController {
 
   @Post('parse-pdfs')
   @HttpCode(200)
-  @UseInterceptors(FilesInterceptor('files', 4, PDF_OPTS))
+  @UseInterceptors(FilesInterceptor('files', 20, PDF_OPTS))
   async parsePdfsCotizacion(@UploadedFiles() files: any[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Archivos no proporcionados');

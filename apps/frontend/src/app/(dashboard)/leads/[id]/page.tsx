@@ -36,7 +36,6 @@ import {
   User,
   ExternalLink,
   Copy,
-  Search,
 } from "lucide-react";
 import { EmailComposer } from "@/components/EmailComposer";
 import { CotizacionComparativo } from "@/components/CotizacionComparativo";
@@ -152,7 +151,6 @@ export default function LeadDetailPage() {
   const [propuestaProData, setPropuestaProData] = useState<{ body: string; url: string } | null>(null);
   const [quotingInsurer, setQuotingInsurer] = useState<string | null>(null);
   const [uploadingBulk, setUploadingBulk] = useState(false);
-  const [isSearchingPlaca, setIsSearchingPlaca] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   if (isLoading) return (
@@ -427,52 +425,6 @@ export default function LeadDetailPage() {
       console.error("Sync error:", err);
     } finally {
       setIsSyncing(false);
-    }
-  };
-
-  const handleSearchPlaca = async (placaBuscada?: string) => {
-    const placaAUsar = placaBuscada || (isEditingInfo ? editData?.vehiclePlate : lead?.vehiclePlate);
-    if (!placaAUsar) {
-      alert("Por favor ingresa una placa primero.");
-      return;
-    }
-
-    setIsSearchingPlaca(true);
-    try {
-      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
-      const response = await fetch(`${backendUrl}/vehiculos/placa/${placaAUsar}`);
-      const result = await response.json();
-
-      if (response.ok && result.success && result.data) {
-        const { modelo, fasecolda, marca, linea } = result.data;
-        const infoMsg = `Vehículo encontrado: ${marca} ${linea} ${modelo}`;
-        
-        if (isEditingInfo) {
-          setEditData({
-            ...editData,
-            vehicleYear: modelo,
-            vehicleFasecolda: fasecolda,
-          });
-          alert(`${infoMsg}\n(Datos actualizados en el formulario, recuerda Guardar)`);
-        } else {
-          // Guardar directamente
-          await db.transact([
-            db.tx.leads[leadId].update({
-              vehicleYear: modelo,
-              vehicleFasecolda: fasecolda,
-              updatedAt: Date.now()
-            })
-          ]);
-          alert(`${infoMsg}\n(Datos guardados exitosamente)`);
-        }
-      } else {
-        alert(result.error || "No se encontraron datos para esta placa.");
-      }
-    } catch (err) {
-      console.error("Error consultando placa:", err);
-      alert("Error de conexión al consultar la placa.");
-    } finally {
-      setIsSearchingPlaca(false);
     }
   };
 
@@ -1096,6 +1048,8 @@ export default function LeadDetailPage() {
                   { label: "Representante", field: "responsibleName", value: lead.responsibleName },
                   { label: "Teléfono Representante", field: "responsiblePhone", value: lead.responsiblePhone },
                   { label: "Placa", field: "vehiclePlate", value: lead.vehiclePlate },
+                  { label: "Marca", field: "vehicleBrand", value: lead.vehicleBrand },
+                  { label: "Línea", field: "vehicleLine", value: lead.vehicleLine },
                   { label: "Modelo", field: "vehicleYear", value: lead.vehicleYear },
                   { label: "Fasecolda", field: "vehicleFasecolda", value: lead.vehicleFasecolda },
                   { label: "¿Tiene Prenda?", field: "hasPledge", value: lead.hasPledge ? "Sí" : lead.hasPledge === false ? "No" : "" },
@@ -1106,16 +1060,6 @@ export default function LeadDetailPage() {
                   <div key={field} className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</label>
-                      {field === "vehiclePlate" && (
-                        <button
-                          onClick={() => handleSearchPlaca()}
-                          disabled={isSearchingPlaca}
-                          className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded transition-all disabled:opacity-50"
-                        >
-                          <Search className={`h-3 w-3 ${isSearchingPlaca ? "animate-spin" : ""}`} />
-                          {isSearchingPlaca ? "Buscando..." : "Buscar RUNT"}
-                        </button>
-                      )}
                     </div>
                     {isEditingInfo ? (
                       field === "genero" ? (

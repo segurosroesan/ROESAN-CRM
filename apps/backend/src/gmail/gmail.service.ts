@@ -84,7 +84,7 @@ export class GmailService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, auth: { user: smtpUser, pass: smtpPass } };
+    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, localAddress: '0.0.0.0', auth: { user: smtpUser, pass: smtpPass } };
     const transporter = nodemailer.createTransport(smtpOpts);
 
     const result = await transporter.sendMail({
@@ -130,7 +130,7 @@ export class GmailService {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, auth: { user: smtpUser, pass: smtpPass } };
+    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, localAddress: '0.0.0.0', auth: { user: smtpUser, pass: smtpPass } };
     const transporter = nodemailer.createTransport(smtpOpts);
 
     await transporter.sendMail({

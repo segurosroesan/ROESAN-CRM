@@ -45,7 +45,7 @@ interface ToastItem {
   timer: ReturnType<typeof setTimeout>;
 }
 
-export function PropuestaVistaAlerta({ userEmail }: { userEmail: string }) {
+export function PropuestaVistaAlerta({ userEmail, userName }: { userEmail: string; userName?: string }) {
   const router = useRouter();
   const seenIds = useRef<Set<string>>(new Set());
   const [toasts, setToasts] = useState<Notificacion[]>([]);
@@ -95,6 +95,7 @@ export function PropuestaVistaAlerta({ userEmail }: { userEmail: string }) {
           <ToastCard
             key={notif.id}
             notif={notif}
+            userName={userName}
             onClose={() => cerrarToast(notif.id)}
             onVerLead={() => irAlLead(notif)}
           />
@@ -106,10 +107,12 @@ export function PropuestaVistaAlerta({ userEmail }: { userEmail: string }) {
 
 function ToastCard({
   notif,
+  userName,
   onClose,
   onVerLead,
 }: {
   notif: Notificacion;
+  userName?: string;
   onClose: () => void;
   onVerLead: () => void;
 }) {
@@ -122,8 +125,9 @@ function ToastCard({
   const nombre = notif.clienteNombre || "Cliente";
 
   const waPhone = notif.clienteTelefono?.replace(/\D/g, "");
+  const asesor = userName || "tu asesor";
   const waMsg = encodeURIComponent(
-    `Hola ${nombre}, vi que estás revisando tu propuesta de seguro con nosotros. ¿Tienes alguna pregunta? Con gusto te ayudo. 😊`
+    `Hola ${nombre} 👋, soy ${asesor}, ejecutiva de Seguros Roesan. Vi que estás revisando tu propuesta y quería estar disponible por si tienes alguna pregunta. ¡Con gusto te ayudo! 😊`
   );
   const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : null;
 

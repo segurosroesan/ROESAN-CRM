@@ -247,7 +247,7 @@ export default function DashboardLayout({
         {/* Alerta en tiempo real cuando entra un lead nuevo */}
         <NuevoLeadAlerta />
         {/* Alertas en tiempo real cuando un cliente abre una propuesta */}
-        <PropuestaVistaAlerta userEmail={user.email ?? ""} />
+        <PropuestaVistaAlerta userEmail={user.email ?? ""} userName={getDisplayName(user.email)} />
       </main>
     </div>
   );

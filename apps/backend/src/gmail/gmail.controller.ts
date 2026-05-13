@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Res, Body, Param, HttpStatus, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Query, Res, Body, Param, HttpStatus, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import type { Response } from 'express';
 import { GmailService } from './gmail.service';
 
@@ -47,12 +47,16 @@ export class GmailController {
   async sendEmail(
     @Body() body: { userId: string; to: string; subject: string; content: string; leadId: string },
   ) {
-    return this.gmailService.sendEmail(
-      body.userId,
-      body.to,
-      body.subject,
-      body.content,
-      body.leadId,
-    );
+    try {
+      return await this.gmailService.sendEmail(
+        body.userId,
+        body.to,
+        body.subject,
+        body.content,
+        body.leadId,
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error enviando correo');
+    }
   }
 }

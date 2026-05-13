@@ -73,51 +73,30 @@ export class GmailService {
   }
 
   /**
-   * Envía un correo electrónico a nombre del asesor vinculado.
+   * Envía un correo de propuesta al cliente usando SMTP configurado.
    */
   async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
-    // 1. Obtener el refresh token del usuario
-    const userData = await this.db.query({ users: { $: { where: { id: userId } } } });
-    const user = (userData as any)?.users?.[0];
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
 
-    if (!user || !user.googleRefreshToken) {
-      throw new Error('El usuario no tiene una cuenta de Gmail vinculada.');
+    if (!smtpUser || !smtpPass) {
+      throw new Error('SMTP no configurado en el servidor. Contacta al administrador.');
     }
 
-    // 2. Configurar cliente con el refresh token
-    const oauth2Client = this.getOAuth2Client();
-    oauth2Client.setCredentials({ refresh_token: user.googleRefreshToken });
-
-    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-
-    // 3. Construir el correo en formato RFC 2822
-    const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-    const messageParts = [
-      `To: ${to}`,
-      'Content-Type: text/html; charset=utf-8',
-      'MIME-Version: 1.0',
-      `Subject: ${utf8Subject}`,
-      '',
-      body,
-    ];
-    const message = messageParts.join('\n');
-
-    // Codificar en Base64 seguro para URL
-    const encodedMessage = Buffer.from(message)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-
-    // 4. Enviar
-    const res = await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: {
-        raw: encodedMessage,
-      },
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: smtpUser, pass: smtpPass },
     });
 
-    // 5. Registrar en el timeline del lead
+    const result = await transporter.sendMail({
+      from: `"Seguros Roesan" <${smtpUser}>`,
+      to,
+      subject,
+      html: body,
+    });
+
+    this.logger.log(`Correo de propuesta enviado a ${to}: ${subject} (${result.messageId})`);
+
     if (leadId) {
       await this.db.transact([
         tx.interacciones[crypto.randomUUID()].update({
@@ -126,7 +105,7 @@ export class GmailService {
           leadId,
           createdAt: Date.now(),
           metadata: {
-            gmailMessageId: res.data.id,
+            gmailMessageId: result.messageId,
             to,
             subject,
           }
@@ -134,7 +113,7 @@ export class GmailService {
       ]);
     }
 
-    return res.data;
+    return { id: result.messageId };
   }
 
   /**

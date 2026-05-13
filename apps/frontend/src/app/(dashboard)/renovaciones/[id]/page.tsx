@@ -986,12 +986,38 @@ export default function RenovacionDetailPage() {
         <PropuestaProModal
           leadId={leadId}
           toEmail={lead.email || ""}
+          phone={lead.phone || ""}
           initialBody={propuestaProData.body}
           propuestaUrl={propuestaProData.url}
           onClose={() => setPropuestaProData(null)}
-          onRegenerate={() => {
-            setPropuestaProData(null);
-            handleCompararCotizaciones();
+          onRegenerate={async () => {
+            if (!comparativoData) return;
+            try {
+              const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
+              const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
+              const aseguradoraSeleccionada = cotizacionAceptada?.aseguradora || aseguradoraRecomendada;
+              const response = await fetch(`${BACKEND}/cotizador/email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  cotizacionSeleccionada: cotizacionAceptada || cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase()),
+                  todasCotizaciones: cotizaciones,
+                  aseguradoraRecomendada: aseguradoraSeleccionada,
+                  justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
+                  datosExtra: { tomador: lead.name, placa: lead.vehiclePlate || lead.placa, descripcion_vehiculo: `${lead.vehicleBrand || ""} ${lead.vehicleModel || ""} ${lead.vehicleYear || ""}`.trim() },
+                  accionIA: comparativoData.accion,
+                  aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
+                  diferenciaPrima: comparativoData.diferencia_prima,
+                  esNuevo: false,
+                  enlacePropuesta: propuestaProData.url,
+                }),
+              });
+              const result = await response.json();
+              return result.body as string | undefined;
+            } catch (err) {
+              console.error(err);
+              alert("Error regenerando el correo");
+            }
           }}
         />
       )}

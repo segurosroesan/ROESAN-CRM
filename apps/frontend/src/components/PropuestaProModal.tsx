@@ -7,15 +7,17 @@ import { db } from "@/lib/instant-db";
 interface PropuestaProModalProps {
   leadId: string;
   toEmail: string;
+  phone?: string;
   initialBody: string;
   propuestaUrl: string;
   onClose: () => void;
-  onRegenerate?: () => void;
+  onRegenerate?: () => Promise<string | void>;
 }
 
 export function PropuestaProModal({
   leadId,
   toEmail,
+  phone,
   initialBody,
   propuestaUrl,
   onClose,
@@ -27,6 +29,7 @@ export function PropuestaProModal({
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const { user } = db.useAuth();
 
@@ -85,7 +88,8 @@ export function PropuestaProModal({
         setSent(true);
         setTimeout(() => onClose(), 2000);
       } else {
-        alert("Error al enviar el correo. ¿Tienes tu cuenta de Google vinculada?");
+        const err = await response.json().catch(() => ({}));
+        alert(`Error al enviar el correo: ${err?.message || "Error del servidor. Revisa la configuración SMTP."}`);
       }
     } catch (err) {
       console.error(err);
@@ -95,9 +99,27 @@ export function PropuestaProModal({
     }
   };
 
+  const handleRegenerate = async () => {
+    if (!onRegenerate) return;
+    setRegenerating(true);
+    try {
+      const newBody = await onRegenerate();
+      if (typeof newBody === "string" && newBody) {
+        setBody(newBody);
+      }
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   const handleSendWhatsApp = () => {
+    const phoneClean = (phone || "").replace(/\D/g, "");
+    if (!phoneClean) {
+      alert("Este lead no tiene número de celular registrado.");
+      return;
+    }
     const text = encodeURIComponent(`${body}\n\nPuedes ver el detalle aquí: ${propuestaUrl}`);
-    window.open(`https://wa.me/${leadId}?text=${text}`, "_blank");
+    window.open(`https://wa.me/${phoneClean}?text=${text}`, "_blank");
   };
 
   if (sent) {
@@ -198,11 +220,12 @@ export function PropuestaProModal({
             <div className="flex gap-2">
               {onRegenerate && (
                 <button
-                  onClick={onRegenerate}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <RefreshCw className="h-4 w-4" />
-                  Regenerar con IA
+                  <RefreshCw className={`h-4 w-4 ${regenerating ? "animate-spin" : ""}`} />
+                  {regenerating ? "Regenerando..." : "Regenerar con IA"}
                 </button>
               )}
             </div>

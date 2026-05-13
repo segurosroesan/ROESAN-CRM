@@ -83,13 +83,9 @@ export class GmailService {
       throw new Error('SMTP no configurado en el servidor. Contacta al administrador.');
     }
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      family: 4,
-      auth: { user: smtpUser, pass: smtpPass },
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, auth: { user: smtpUser, pass: smtpPass } };
+    const transporter = nodemailer.createTransport(smtpOpts);
 
     const result = await transporter.sendMail({
       from: `"Seguros Roesan" <${smtpUser}>`,
@@ -133,13 +129,9 @@ export class GmailService {
       return;
     }
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      family: 4,
-      auth: { user: smtpUser, pass: smtpPass },
-    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, auth: { user: smtpUser, pass: smtpPass } };
+    const transporter = nodemailer.createTransport(smtpOpts);
 
     await transporter.sendMail({
       from: `"CRM Roesan" <${smtpUser}>`,

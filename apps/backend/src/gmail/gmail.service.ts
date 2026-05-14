@@ -72,8 +72,8 @@ export class GmailService {
     const result = await this.db.query({
       users: { $: { where: { id: userId } } },
     });
-    const userData = (result as { data: { users: Array<{ googleRefreshToken?: string; googleEmail?: string }> } })
-      .data?.users?.[0];
+    const userData = (result as unknown as { users: Array<{ googleRefreshToken?: string; googleEmail?: string }> })
+      .users?.[0];
 
     if (!userData?.googleRefreshToken) {
       throw new Error(

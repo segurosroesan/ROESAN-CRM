@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
-import * as nodemailer from 'nodemailer';
 import { getInstantAdmin } from '../lib/instant-admin';
 import { tx } from '@instantdb/admin';
 
@@ -12,9 +11,6 @@ export class GmailService {
 
   constructor(private configService: ConfigService) {}
 
-  /**
-   * Obtiene un cliente OAuth2 configurado con las credenciales de la app.
-   */
   getOAuth2Client() {
     return new google.auth.OAuth2(
       this.configService.get('GOOGLE_CLIENT_ID'),
@@ -23,10 +19,6 @@ export class GmailService {
     );
   }
 
-  /**
-   * Genera la URL de autenticación para que el usuario vincule su cuenta.
-   * IMPORTANTE: 'offline' y 'consent' son necesarios para obtener el refresh_token.
-   */
   getAuthUrl(userId: string) {
     const oauth2Client = this.getOAuth2Client();
     return oauth2Client.generateAuthUrl({
@@ -39,31 +31,26 @@ export class GmailService {
         'https://www.googleapis.com/auth/gmail.modify',
         'https://www.googleapis.com/auth/gmail.compose',
       ],
-      state: userId, // Pasamos el ID del usuario para saber de quién es el token al volver
+      state: userId,
     });
   }
 
-  /**
-   * Intercambia el código de autorización por tokens y los guarda en InstantDB.
-   */
   async handleCallback(code: string, userId: string) {
     const oauth2Client = this.getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
-    
+
     if (!tokens.refresh_token) {
       this.logger.warn(`No se recibió refresh_token para el usuario ${userId}. ¿Ya estaba vinculado?`);
     }
 
-    // Obtener el correo vinculado
     oauth2Client.setCredentials(tokens);
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const userInfo = await oauth2.userinfo.get();
 
-    // Guardar en InstantDB
     await this.db.transact([
       tx.users[userId].update({
         googleEmail: userInfo.data.email,
-        googleRefreshToken: tokens.refresh_token || undefined, // Solo lo actualizamos si viene nuevo
+        googleRefreshToken: tokens.refresh_token || undefined,
         updatedAt: Date.now(),
       }),
     ]);
@@ -73,28 +60,50 @@ export class GmailService {
   }
 
   /**
-   * Envía un correo de propuesta al cliente usando SMTP configurado.
+   * Envía un correo vía Resend API (HTTP, sin SMTP).
+   * Requiere RESEND_API_KEY y RESEND_FROM en variables de entorno.
    */
-  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
-    const smtpUser = this.configService.get<string>('SMTP_USER');
-    const smtpPass = this.configService.get<string>('SMTP_PASS');
+  private async sendViaResend(
+    to: string,
+    from: string,
+    subject: string,
+    html: string,
+    cc?: string,
+  ): Promise<string> {
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (!apiKey) throw new Error('RESEND_API_KEY no configurado en el servidor.');
 
-    if (!smtpUser || !smtpPass) {
-      throw new Error('SMTP no configurado en el servidor. Contacta al administrador.');
-    }
+    const payload: Record<string, unknown> = { from, to: [to], subject, html };
+    if (cc) payload.cc = [cc];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, localAddress: '0.0.0.0', auth: { user: smtpUser, pass: smtpPass } };
-    const transporter = nodemailer.createTransport(smtpOpts);
-
-    const result = await transporter.sendMail({
-      from: `"Seguros Roesan" <${smtpUser}>`,
-      to,
-      subject,
-      html: body,
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     });
 
-    this.logger.log(`Correo de propuesta enviado a ${to}: ${subject} (${result.messageId})`);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({})) as { message?: string };
+      throw new Error(`Resend: ${err.message || response.statusText}`);
+    }
+
+    const result = await response.json() as { id: string };
+    return result.id;
+  }
+
+  /**
+   * Envía un correo de propuesta al cliente.
+   */
+  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
+    const from =
+      this.configService.get<string>('RESEND_FROM') ||
+      'Seguros Roesan <noreply@segurosroesan.com>';
+
+    const id = await this.sendViaResend(to, from, subject, body);
+    this.logger.log(`Correo de propuesta enviado a ${to}: ${subject} (${id})`);
 
     if (leadId) {
       await this.db.transact([
@@ -103,44 +112,33 @@ export class GmailService {
           notas: `Enviado: ${subject}`,
           leadId,
           createdAt: Date.now(),
-          metadata: {
-            gmailMessageId: result.messageId,
-            to,
-            subject,
-          }
+          metadata: { resendId: id, to, subject },
         }),
       ]);
     }
 
-    return { id: result.messageId };
+    return { id };
   }
 
   /**
-   * Envía un correo de sistema (notificaciones internas) usando SMTP propio.
-   * No depende de ningún usuario OAuth del CRM.
-   * Variables necesarias: SMTP_USER, SMTP_PASS (Gmail app password).
+   * Envía un correo de sistema (notificaciones internas).
    */
   async sendNotificationEmail(to: string, subject: string, html: string, cc?: string): Promise<void> {
-    const smtpUser = this.configService.get<string>('SMTP_USER');
-    const smtpPass = this.configService.get<string>('SMTP_PASS');
-
-    if (!smtpUser || !smtpPass) {
-      this.logger.warn('SMTP_USER o SMTP_PASS no configurados — notificación omitida.');
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('RESEND_API_KEY no configurado — notificación omitida.');
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const smtpOpts: any = { host: 'smtp.gmail.com', port: 465, secure: true, family: 4, localAddress: '0.0.0.0', auth: { user: smtpUser, pass: smtpPass } };
-    const transporter = nodemailer.createTransport(smtpOpts);
+    const from =
+      this.configService.get<string>('RESEND_FROM') ||
+      'CRM Roesan <noreply@segurosroesan.com>';
 
-    await transporter.sendMail({
-      from: `"CRM Roesan" <${smtpUser}>`,
-      to,
-      ...(cc ? { cc } : {}),
-      subject,
-      html,
-    });
-
-    this.logger.log(`Notificación enviada a ${to}: ${subject}`);
+    try {
+      await this.sendViaResend(to, from, subject, html, cc);
+      this.logger.log(`Notificación enviada a ${to}: ${subject}`);
+    } catch (err) {
+      this.logger.error(`Error enviando notificación a ${to}: ${err}`);
+    }
   }
 }

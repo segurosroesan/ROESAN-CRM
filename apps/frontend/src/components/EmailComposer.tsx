@@ -31,14 +31,14 @@ export function EmailComposer({ leadId, toEmail, userId, onClose }: EmailCompose
           userId,
           to: toEmail,
           subject,
-          body,
+          content: body,
           leadId,
         }),
       });
 
       const result = await response.json();
 
-      if (response.ok && result.success) {
+      if (response.ok) {
         setSuccess(true);
         setTimeout(() => onClose(), 2000);
       } else {

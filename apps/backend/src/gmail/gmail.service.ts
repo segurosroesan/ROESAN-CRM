@@ -60,11 +60,15 @@ export class GmailService {
   }
 
   /**
-   * Envía un correo de propuesta desde el Gmail del asesor (OAuth).
-   * El asesor debe haber vinculado su cuenta en Configuración.
+   * Envía un correo usando el Gmail OAuth del asesor.
+   * Lanza error si el asesor no tiene Gmail vinculado.
    */
-  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
-    // Obtener el refresh_token del asesor desde InstantDB
+  private async sendViaGmailOAuth(
+    userId: string,
+    to: string,
+    subject: string,
+    html: string,
+  ): Promise<string> {
     const result = await this.db.query({
       users: { $: { where: { id: userId } } },
     });
@@ -82,10 +86,9 @@ export class GmailService {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Construir mensaje RFC 2822 con asunto codificado en UTF-8
     const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
     const raw = Buffer.from(
-      [`To: ${to}`, `Subject: ${encodedSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/html; charset=UTF-8', '', body].join('\r\n'),
+      [`To: ${to}`, `Subject: ${encodedSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/html; charset=UTF-8', '', html].join('\r\n'),
     ).toString('base64url');
 
     const sent = await gmail.users.messages.send({
@@ -94,6 +97,14 @@ export class GmailService {
     });
 
     this.logger.log(`Correo enviado desde ${userData.googleEmail} a ${to}: ${subject} (${sent.data.id})`);
+    return sent.data.id ?? '';
+  }
+
+  /**
+   * Envía un correo de propuesta al cliente desde el Gmail del asesor (OAuth).
+   */
+  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
+    const id = await this.sendViaGmailOAuth(userId, to, subject, body);
 
     if (leadId) {
       await this.db.transact([
@@ -102,19 +113,36 @@ export class GmailService {
           notas: `Enviado: ${subject}`,
           leadId,
           createdAt: Date.now(),
-          metadata: { gmailMessageId: sent.data.id, to, subject },
+          metadata: { gmailMessageId: id, to, subject },
         }),
       ]);
     }
 
-    return { id: sent.data.id };
+    return { id };
   }
 
   /**
-   * Envía un correo de sistema (notificaciones internas) vía Resend HTTP API.
-   * No depende de ningún usuario OAuth — remitente único configurado en RESEND_FROM.
+   * Envía un correo de sistema o notificación.
+   * Si se pasa userId → intenta Gmail OAuth del asesor; si falla o no hay userId → Resend.
    */
-  async sendNotificationEmail(to: string, subject: string, html: string, cc?: string): Promise<void> {
+  async sendNotificationEmail(
+    to: string,
+    subject: string,
+    html: string,
+    cc?: string,
+    userId?: string,
+  ): Promise<void> {
+    // Intentar Gmail OAuth del asesor si hay contexto de usuario
+    if (userId) {
+      try {
+        await this.sendViaGmailOAuth(userId, to, subject, html);
+        return;
+      } catch (e) {
+        this.logger.warn(`Gmail OAuth no disponible para notificación (${userId}), usando Resend: ${e}`);
+      }
+    }
+
+    // Fallback: Resend HTTP API
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
     if (!apiKey) {
       this.logger.warn('RESEND_API_KEY no configurado — notificación omitida.');

@@ -91,13 +91,26 @@ export class GmailService {
       [`To: ${to}`, `Subject: ${encodedSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/html; charset=UTF-8', '', html].join('\r\n'),
     ).toString('base64url');
 
-    const sent = await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: { raw },
-    });
-
-    this.logger.log(`Correo enviado desde ${userData.googleEmail} a ${to}: ${subject} (${sent.data.id})`);
-    return sent.data.id ?? '';
+    try {
+      const sent = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: { raw },
+      });
+      this.logger.log(`Correo enviado desde ${userData.googleEmail} a ${to}: ${subject} (${sent.data.id})`);
+      return sent.data.id ?? '';
+    } catch (err: unknown) {
+      const message = (err as { message?: string })?.message ?? '';
+      if (message.includes('invalid_grant') || message.includes('Token has been expired')) {
+        // Limpiar token inválido para forzar re-vinculación
+        await this.db.transact([
+          tx.users[userId].update({ googleRefreshToken: null, googleEmail: null }),
+        ]);
+        throw new Error(
+          'Tu sesión de Gmail ha expirado. Ve a Configuración → Vincular Gmail para reconectar tu cuenta.',
+        );
+      }
+      throw err;
+    }
   }
 
   /**

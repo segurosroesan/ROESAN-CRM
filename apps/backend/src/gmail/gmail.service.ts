@@ -60,50 +60,40 @@ export class GmailService {
   }
 
   /**
-   * Envía un correo vía Resend API (HTTP, sin SMTP).
-   * Requiere RESEND_API_KEY y RESEND_FROM en variables de entorno.
-   */
-  private async sendViaResend(
-    to: string,
-    from: string,
-    subject: string,
-    html: string,
-    cc?: string,
-  ): Promise<string> {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    if (!apiKey) throw new Error('RESEND_API_KEY no configurado en el servidor.');
-
-    const payload: Record<string, unknown> = { from, to: [to], subject, html };
-    if (cc) payload.cc = [cc];
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({})) as { message?: string };
-      throw new Error(`Resend: ${err.message || response.statusText}`);
-    }
-
-    const result = await response.json() as { id: string };
-    return result.id;
-  }
-
-  /**
-   * Envía un correo de propuesta al cliente.
+   * Envía un correo de propuesta desde el Gmail del asesor (OAuth).
+   * El asesor debe haber vinculado su cuenta en Configuración.
    */
   async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
-    const from =
-      this.configService.get<string>('RESEND_FROM') ||
-      'Seguros Roesan <noreply@segurosroesan.com>';
+    // Obtener el refresh_token del asesor desde InstantDB
+    const result = await this.db.query({
+      users: { $: { where: { id: userId } } },
+    });
+    const userData = (result as { data: { users: Array<{ googleRefreshToken?: string; googleEmail?: string }> } })
+      .data?.users?.[0];
 
-    const id = await this.sendViaResend(to, from, subject, body);
-    this.logger.log(`Correo de propuesta enviado a ${to}: ${subject} (${id})`);
+    if (!userData?.googleRefreshToken) {
+      throw new Error(
+        'Vincula tu cuenta de Gmail en Configuración antes de enviar correos desde tu dirección personal.',
+      );
+    }
+
+    const oauth2Client = this.getOAuth2Client();
+    oauth2Client.setCredentials({ refresh_token: userData.googleRefreshToken });
+
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+    // Construir mensaje RFC 2822 con asunto codificado en UTF-8
+    const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
+    const raw = Buffer.from(
+      [`To: ${to}`, `Subject: ${encodedSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/html; charset=UTF-8', '', body].join('\r\n'),
+    ).toString('base64url');
+
+    const sent = await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: { raw },
+    });
+
+    this.logger.log(`Correo enviado desde ${userData.googleEmail} a ${to}: ${subject} (${sent.data.id})`);
 
     if (leadId) {
       await this.db.transact([
@@ -112,16 +102,17 @@ export class GmailService {
           notas: `Enviado: ${subject}`,
           leadId,
           createdAt: Date.now(),
-          metadata: { resendId: id, to, subject },
+          metadata: { gmailMessageId: sent.data.id, to, subject },
         }),
       ]);
     }
 
-    return { id };
+    return { id: sent.data.id };
   }
 
   /**
-   * Envía un correo de sistema (notificaciones internas).
+   * Envía un correo de sistema (notificaciones internas) vía Resend HTTP API.
+   * No depende de ningún usuario OAuth — remitente único configurado en RESEND_FROM.
    */
   async sendNotificationEmail(to: string, subject: string, html: string, cc?: string): Promise<void> {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -134,11 +125,21 @@ export class GmailService {
       this.configService.get<string>('RESEND_FROM') ||
       'CRM Roesan <noreply@segurosroesan.com>';
 
-    try {
-      await this.sendViaResend(to, from, subject, html, cc);
-      this.logger.log(`Notificación enviada a ${to}: ${subject}`);
-    } catch (err) {
-      this.logger.error(`Error enviando notificación a ${to}: ${err}`);
+    const payload: Record<string, unknown> = { from, to: [to], subject, html };
+    if (cc) payload.cc = [cc];
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({})) as { message?: string };
+      this.logger.error(`Error Resend al enviar notificación a ${to}: ${err.message || response.statusText}`);
+      return;
     }
+
+    this.logger.log(`Notificación enviada a ${to}: ${subject}`);
   }
 }

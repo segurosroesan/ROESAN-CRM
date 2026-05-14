@@ -7,15 +7,17 @@ import { db } from "@/lib/instant-db";
 interface PropuestaProModalProps {
   leadId: string;
   toEmail: string;
+  phone?: string;
   initialBody: string;
   propuestaUrl: string;
   onClose: () => void;
-  onRegenerate?: () => void;
+  onRegenerate?: () => Promise<string | void>;
 }
 
 export function PropuestaProModal({
   leadId,
   toEmail,
+  phone,
   initialBody,
   propuestaUrl,
   onClose,
@@ -27,6 +29,7 @@ export function PropuestaProModal({
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const { user } = db.useAuth();
 
@@ -42,6 +45,28 @@ export function PropuestaProModal({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const convertToHtml = (text: string): string => {
+    // Escape HTML entities
+    let html = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // Replace the raw propuesta URL with a styled CTA button
+    if (propuestaUrl) {
+      const escapedUrl = propuestaUrl.replace(/&/g, "&amp;");
+      html = html.replace(
+        escapedUrl,
+        `<a href="${escapedUrl}" style="display:inline-block;background-color:#4f46e5;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;font-family:Arial,sans-serif;font-size:14px;">Ver propuesta interactiva →</a>`
+      );
+    }
+
+    // Convert newlines to <br>
+    html = html.replace(/\n/g, "<br>");
+
+    return `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#333;">${html}</div>`;
+  };
+
   const handleSendEmail = async () => {
     if (!user) return;
     setSending(true);
@@ -54,7 +79,7 @@ export function PropuestaProModal({
           userId: user.id,
           to: toEmail,
           subject,
-          body,
+          content: convertToHtml(body),
           leadId,
         }),
       });
@@ -63,7 +88,8 @@ export function PropuestaProModal({
         setSent(true);
         setTimeout(() => onClose(), 2000);
       } else {
-        alert("Error al enviar el correo. ¿Tienes tu cuenta de Google vinculada?");
+        const err = await response.json().catch(() => ({}));
+        alert(`Error al enviar el correo: ${err?.message || "Error del servidor. Revisa la configuración SMTP."}`);
       }
     } catch (err) {
       console.error(err);
@@ -73,9 +99,27 @@ export function PropuestaProModal({
     }
   };
 
+  const handleRegenerate = async () => {
+    if (!onRegenerate) return;
+    setRegenerating(true);
+    try {
+      const newBody = await onRegenerate();
+      if (typeof newBody === "string" && newBody) {
+        setBody(newBody);
+      }
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   const handleSendWhatsApp = () => {
+    const phoneClean = (phone || "").replace(/\D/g, "");
+    if (!phoneClean) {
+      alert("Este lead no tiene número de celular registrado.");
+      return;
+    }
     const text = encodeURIComponent(`${body}\n\nPuedes ver el detalle aquí: ${propuestaUrl}`);
-    window.open(`https://wa.me/${leadId}?text=${text}`, "_blank");
+    window.open(`https://wa.me/${phoneClean}?text=${text}`, "_blank");
   };
 
   if (sent) {
@@ -176,11 +220,12 @@ export function PropuestaProModal({
             <div className="flex gap-2">
               {onRegenerate && (
                 <button
-                  onClick={onRegenerate}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all"
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <RefreshCw className="h-4 w-4" />
-                  Regenerar con IA
+                  <RefreshCw className={`h-4 w-4 ${regenerating ? "animate-spin" : ""}`} />
+                  {regenerating ? "Regenerando..." : "Regenerar con IA"}
                 </button>
               )}
             </div>
@@ -195,8 +240,9 @@ export function PropuestaProModal({
               </button>
               <button
                 onClick={handleSendEmail}
-                disabled={sending || !body}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+                disabled={sending || !body || !toEmail}
+                title={!toEmail ? "Agrega un email al lead para poder enviar por correo" : undefined}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? (
                   <>

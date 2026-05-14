@@ -25,7 +25,8 @@ export class CotizadorController {
     try {
       return await this.cotizadorService.cotizarQualitas(dto);
     } catch (e: any) {
-      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+      this.logger.error(`Qualitas falló: ${e.message}`);
+      throw new HttpException({ error: e.message }, HttpStatus.UNPROCESSABLE_ENTITY);
     }
   }
 
@@ -36,7 +37,8 @@ export class CotizadorController {
     try {
       return await this.cotizadorService.cotizarAllianz(dto);
     } catch (e: any) {
-      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+      this.logger.error(`Allianz falló: ${e.message}`);
+      throw new HttpException({ error: e.message }, HttpStatus.UNPROCESSABLE_ENTITY);
     }
   }
 
@@ -47,7 +49,8 @@ export class CotizadorController {
     try {
       return await this.cotizadorService.cotizarSBS(dto);
     } catch (e: any) {
-      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+      this.logger.error(`SBS falló: ${e.message}`);
+      throw new HttpException({ error: e.message }, HttpStatus.UNPROCESSABLE_ENTITY);
     }
   }
 
@@ -65,7 +68,8 @@ export class CotizadorController {
     try {
       return await this.cotizadorService.compararCotizaciones(cotizaciones);
     } catch (e: any) {
-      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+      this.logger.error(`Comparador IA falló: ${e.message}`);
+      throw new HttpException({ error: e.message }, HttpStatus.UNPROCESSABLE_ENTITY);
     }
   }
 
@@ -88,13 +92,14 @@ export class CotizadorController {
     try {
       return await this.cotizadorService.parsearPdfCotizacion(file.buffer, file.mimetype);
     } catch (e: any) {
-      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+      this.logger.error(`Parse PDF falló: ${e.message}`);
+      throw new HttpException({ error: e.message }, HttpStatus.UNPROCESSABLE_ENTITY);
     }
   }
 
   @Post('parse-pdfs')
   @HttpCode(200)
-  @UseInterceptors(FilesInterceptor('files', 4, PDF_OPTS))
+  @UseInterceptors(FilesInterceptor('files', 20, PDF_OPTS))
   async parsePdfsCotizacion(@UploadedFiles() files: any[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Archivos no proporcionados');
@@ -103,7 +108,8 @@ export class CotizadorController {
     try {
       return await this.cotizadorService.parsearMultiplesPdfsCotizacion(files);
     } catch (e: any) {
-      throw new HttpException({ error: e.message }, HttpStatus.BAD_GATEWAY);
+      this.logger.error(`Parse PDFs falló: ${e.message}`);
+      throw new HttpException({ error: e.message }, HttpStatus.UNPROCESSABLE_ENTITY);
     }
   }
 }

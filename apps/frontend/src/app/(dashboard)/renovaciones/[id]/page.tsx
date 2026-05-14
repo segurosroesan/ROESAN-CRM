@@ -110,7 +110,7 @@ export default function RenovacionDetailPage() {
     },
   });
 
-  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails" | "documentos">("timeline");
+  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails" | "documentos">("datos");
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -282,11 +282,13 @@ export default function RenovacionDetailPage() {
       
       if (res.ok) {
         const parsedQuotes = await res.json();
+        const fileArray = Array.from(files);
         const txs: any[] = [];
-        
-        parsedQuotes.forEach((data: any) => {
+
+        parsedQuotes.forEach((data: any, idx: number) => {
           const newId = crypto.randomUUID();
           const prima = parseFloat(String(data.prima_total || 0)) || 0;
+          const esRenovacion = /renovaci/i.test(fileArray[idx]?.name || "");
           txs.push(
             (db.tx.cotizaciones as any)[newId].update({
               leadId,
@@ -297,7 +299,7 @@ export default function RenovacionDetailPage() {
               valor_asegurado: parseFloat(String(data.valor_asegurado || 0)) || 0,
               cobertura: data.cobertura || "",
               estado: "enviada",
-              es_renovacion: false,
+              es_renovacion: esRenovacion,
               fuente: "IA (Múltiples PDFs)",
               createdAt: Date.now(),
               updatedAt: Date.now(),
@@ -451,8 +453,8 @@ export default function RenovacionDetailPage() {
       </button>
 
       {/* Hero Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className={`h-1 bg-gradient-to-r from-blue-500 to-indigo-600`} />
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100">
+        <div className={`h-1 rounded-t-xl bg-gradient-to-r from-blue-500 to-indigo-600`} />
 
         <div className="p-5 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -518,7 +520,7 @@ export default function RenovacionDetailPage() {
               
               {isEditingStage && (
                 <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-30">
-                  <div className="p-1.5 max-h-72 overflow-y-auto">
+                  <div className="p-1.5">
                     {STAGES_RENOVACION.map(stage => (
                       <button
                         key={stage}
@@ -579,11 +581,11 @@ export default function RenovacionDetailPage() {
         <div className="lg:col-span-3 space-y-3">
           <div className="flex items-center gap-0.5 bg-white/70 backdrop-blur rounded-xl p-1 border border-slate-100 w-fit shadow-sm">
             {[
+              { id: "datos", label: "Datos completos", icon: User },
               { id: "timeline", label: "Timeline", icon: Clock },
               { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
               { id: "documentos", label: "Documentos", icon: FileText },
               { id: "cotizaciones", label: `Cotizaciones (${cotizaciones.length})`, icon: DollarSign },
-              { id: "datos", label: "Datos completos", icon: User },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -747,7 +749,11 @@ export default function RenovacionDetailPage() {
                      try {
                       const propuestaId = crypto.randomUUID();
                       const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
-                      
+                      const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
+                      const aseguradoraSeleccionada = cotizacionAceptada
+                        ? (cotizacionAceptada.aseguradora || "")
+                        : aseguradoraRecomendada;
+
                       const cots = cotizaciones.map(c => ({
                         aseguradora: c.aseguradora,
                         plan: c.cobertura || c.nombre_plan || "",
@@ -775,7 +781,7 @@ export default function RenovacionDetailPage() {
                           cotizaciones: cots,
                         },
                         analysis: {
-                           recomendada: aseguradoraRecomendada,
+                           recomendada: aseguradoraSeleccionada,
                            plan_recomendado: comparativoData.comparativo_ia?.plan_recomendado || "",
                            razon_principal: comparativoData.comparativo_ia?.razon_principal || comparativoData.comparativo_ia?.justificacion_corta || "",
                            puntos_fuertes: comparativoData.comparativo_ia?.puntos_fuertes || [],
@@ -799,16 +805,16 @@ export default function RenovacionDetailPage() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          cotizacionSeleccionada: cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraRecomendada.toUpperCase()),
+                          cotizacionSeleccionada: cotizacionAceptada || cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase()),
                           todasCotizaciones: cotizaciones,
-                          aseguradoraRecomendada: aseguradoraRecomendada,
+                          aseguradoraRecomendada: aseguradoraSeleccionada,
                           justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
                           datosExtra: { tomador: lead.name, placa: lead.vehiclePlate || lead.placa, descripcion_vehiculo: `${lead.vehicleBrand || ""} ${lead.vehicleModel || ""} ${lead.vehicleYear || ""}`.trim() },
                           accionIA: comparativoData.accion,
                           aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
                           diferenciaPrima: comparativoData.diferencia_prima,
                           esNuevo: false,
-                          propuestaUrl: `${window.location.origin}/propuesta/${propuestaId}`
+                          enlacePropuesta: `${window.location.origin}/propuesta/${propuestaId}`
                         }),
                       });
                       const result = await response.json();
@@ -824,22 +830,68 @@ export default function RenovacionDetailPage() {
               )}
 
               <div className="grid grid-cols-1 gap-4">
-                {cotizaciones.map(cot => (
+                {cotizaciones.map(cot => {
+                  const estadoConfig: Record<string, { color: string; label: string }> = {
+                    "borrador":  { color: "bg-slate-100 text-slate-500",    label: "Borrador" },
+                    "enviada":   { color: "bg-blue-100 text-blue-600",      label: "Enviada al cliente" },
+                    "aceptada":  { color: "bg-emerald-100 text-emerald-600",label: "Aceptada ✓" },
+                    "rechazada": { color: "bg-rose-100 text-rose-600",      label: "Rechazada" },
+                  };
+                  const eConf = estadoConfig[cot.estado] || estadoConfig["borrador"];
+                  return (
                   <div key={cot.id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2.5">
                       <div>
                         <h4 className="font-bold text-slate-800">{cot.aseguradora}</h4>
                         <p className="text-xs text-slate-400 mt-0.5">{cot.cobertura || "Sin descripción"}</p>
                       </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-600`}>{cot.estado}</span>
+                      <div className="flex items-center gap-2">
+                        {cot.es_renovacion && (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">🔄 Vigente</span>
+                        )}
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`}>{eConf.label}</span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("¿Eliminar esta cotización?")) return;
+                            await db.transact([db.tx.cotizaciones[cot.id].delete()]);
+                          }}
+                          className="h-6 w-6 flex items-center justify-center rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                          title="Eliminar cotización"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-black text-emerald-600">
                         ${(cot.valor || cot.prima_total || 0).toLocaleString("es-CO")}
                       </span>
+                      {cot.estado !== "aceptada" ? (
+                        <button
+                          onClick={async () => {
+                            await db.transact([db.tx.cotizaciones[cot.id].update({ estado: "aceptada" })]);
+                          }}
+                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          Marcar como aceptada
+                        </button>
+                      ) : (
+                        <button
+                          onClick={async () => {
+                            await db.transact([db.tx.cotizaciones[cot.id].update({ estado: "enviada" })]);
+                          }}
+                          className="text-xs font-bold text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 border border-slate-100 hover:border-rose-100 px-3 py-1.5 rounded-lg transition-all"
+                        >
+                          Desmarcar aceptada
+                        </button>
+                      )}
                     </div>
+                    {cot.fuente && (
+                      <p className="text-[10px] text-slate-300 mt-2 font-medium">Fuente: {cot.fuente}</p>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -868,16 +920,18 @@ export default function RenovacionDetailPage() {
                   { label: "Documento", field: "documento", value: lead.documento },
                   { label: "Celular", field: "phone", value: lead.phone },
                   { label: "Email", field: "email", value: lead.email },
+                  { label: "Fecha Nacimiento", field: "fecha_nacimiento", value: lead.fecha_nacimiento, type: "date" },
                   { label: "Placa", field: "placa", value: lead.placa || lead.vehiclePlate },
                   { label: "Modelo", field: "vehicleYear", value: lead.vehicleYear },
                   { label: "Fasecolda", field: "vehicleFasecolda", value: lead.vehicleFasecolda },
                   { label: "Póliza Actual", field: "numero_poliza", value: lead.numero_poliza },
                   { label: "Aseguradora Actual", field: "aseguradora", value: lead.aseguradora },
-                ].map(({ label, field, value }) => (
+                ].map(({ label, field, value, type }) => (
                   <div key={field} className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-400 uppercase">{label}</label>
                     {isEditingInfo ? (
                       <input
+                        type={type || "text"}
                         value={editData?.[field] || ""}
                         onChange={e => setEditData({ ...editData, [field]: e.target.value })}
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
@@ -897,7 +951,7 @@ export default function RenovacionDetailPage() {
             <h3 className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Acciones rápidas</h3>
             <div className="space-y-2">
               {lead.phone && (
-                <a href={`https://wa.me/${lead.phone.replace("+", "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 font-bold text-sm transition-all">
+                <a href={`https://wa.me/${lead.phone.replace(/\\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 font-bold text-sm transition-all">
                   <MessageSquare className="h-4 w-4" /> WhatsApp
                 </a>
               )}
@@ -928,16 +982,42 @@ export default function RenovacionDetailPage() {
         </div>
       </div>
 
-      {propuestaProData && lead.email && (
+      {propuestaProData && (
         <PropuestaProModal
           leadId={leadId}
-          toEmail={lead.email}
+          toEmail={lead.email || ""}
+          phone={lead.phone || ""}
           initialBody={propuestaProData.body}
           propuestaUrl={propuestaProData.url}
           onClose={() => setPropuestaProData(null)}
-          onRegenerate={() => {
-            setPropuestaProData(null);
-            handleCompararCotizaciones();
+          onRegenerate={async () => {
+            if (!comparativoData) return;
+            try {
+              const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
+              const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
+              const aseguradoraSeleccionada = cotizacionAceptada?.aseguradora || aseguradoraRecomendada;
+              const response = await fetch(`${BACKEND}/cotizador/email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  cotizacionSeleccionada: cotizacionAceptada || cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase()),
+                  todasCotizaciones: cotizaciones,
+                  aseguradoraRecomendada: aseguradoraSeleccionada,
+                  justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
+                  datosExtra: { tomador: lead.name, placa: lead.vehiclePlate || lead.placa, descripcion_vehiculo: `${lead.vehicleBrand || ""} ${lead.vehicleModel || ""} ${lead.vehicleYear || ""}`.trim() },
+                  accionIA: comparativoData.accion,
+                  aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
+                  diferenciaPrima: comparativoData.diferencia_prima,
+                  esNuevo: false,
+                  enlacePropuesta: propuestaProData.url,
+                }),
+              });
+              const result = await response.json();
+              return result.body as string | undefined;
+            } catch (err) {
+              console.error(err);
+              alert("Error regenerando el correo");
+            }
           }}
         />
       )}

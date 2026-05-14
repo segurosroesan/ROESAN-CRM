@@ -193,6 +193,16 @@ export class RenovacionesService {
               const isVehicle = tipo === 'auto' || tipo === 'soat';
               const placa = isVehicle ? (poliza.codio_objeto_asegurado || '') : '';
 
+              // Re-enriquecer datos del cliente (puede haberse actualizado en Soft)
+              let clienteDataUpd: any = {};
+              // Si cedula_tomador está vacío, documentoPoliza es el ID interno → buscar por ID directamente
+              if (documentoPoliza && !/^\d{1,8}$/.test(documentoPoliza)) {
+                try { clienteDataUpd = await this.softApi.getClientByDocument(documentoPoliza) || {}; } catch { /* non-fatal */ }
+              }
+              if (!clienteDataUpd.id && poliza.cliente) {
+                try { clienteDataUpd = await this.softApi.getClientById(poliza.cliente) || {}; } catch { /* non-fatal */ }
+              }
+
               await this.db.transact([
                 tx.leads[existing.id].update({
                   prima_actual: Number(poliza.prima || poliza.total || 0),
@@ -201,11 +211,23 @@ export class RenovacionesService {
                   // Mantener info actualizada
                   documento: documentoPoliza || existing.documento || '',
                   numero_poliza: poliza.numero_poliza || existing.numero_poliza || '',
-                  aseguradora: poliza.aseguradora?.nombre || existing.aseguradora || '',
+                  aseguradora: poliza.aseguradora?.nombre ||
+                               poliza.aseguradora?.razon_social ||
+                               (typeof poliza.aseguradora === 'string' ? poliza.aseguradora : '') ||
+                               existing.aseguradora || '',
                   fecha_fin_poliza: poliza.fecha_fin || existing.fecha_fin_poliza || '',
                   objeto_asegurado: poliza.codio_objeto_asegurado || existing.objeto_asegurado || '',
                   placa: placa || existing.placa || '',
                   vehiclePlate: placa || existing.vehiclePlate || '',
+                  // Datos del cliente
+                  email: clienteDataUpd.correo || existing.email || '',
+                  city: clienteDataUpd.municipio_expedicion?.nombre ||
+                        clienteDataUpd.ciudad ||
+                        clienteDataUpd.municipio ||
+                        existing.city || '',
+                  phone: clienteDataUpd.celular || clienteDataUpd.telefono || existing.phone || '',
+                  fecha_nacimiento: clienteDataUpd.fecha_nacimiento || existing.fecha_nacimiento || '',
+                  genero: clienteDataUpd.genero || existing.genero || '',
                   updatedAt: Date.now(),
                 }),
               ]);
@@ -214,12 +236,21 @@ export class RenovacionesService {
           } else {
             // ── PASO 3: Enriquecer con datos del cliente ─────────────────────
             let clienteData: any = {};
-            try {
-              // Si el documentoPoliza parece ser un ID (solo números y corto) y no un documento real, 
-              // el método getClientByDocument intentará buscarlo.
-              clienteData = await this.softApi.getClientByDocument(documentoPoliza) || {};
-            } catch {
-              this.logger.warn(`Could not fetch client data for poliza ${poliza.id} with doc ${documentoPoliza}`);
+            // Usar búsqueda por documento solo si parece un número de cedula real (>8 dígitos)
+            if (documentoPoliza && !/^\d{1,8}$/.test(documentoPoliza)) {
+              try {
+                clienteData = await this.softApi.getClientByDocument(documentoPoliza) || {};
+              } catch {
+                this.logger.warn(`Could not fetch client data for poliza ${poliza.id} with doc ${documentoPoliza}`);
+              }
+            }
+            // Fallback: buscar por ID interno de Soft Seguros
+            if (!clienteData.id && poliza.cliente) {
+              try {
+                clienteData = await this.softApi.getClientById(poliza.cliente) || {};
+              } catch {
+                this.logger.warn(`Could not fetch client by ID for poliza ${poliza.id}, cliente=${poliza.cliente}`);
+              }
             }
 
             // ── Crear nueva oportunidad de renovación ────────────────────────
@@ -234,7 +265,13 @@ export class RenovacionesService {
               name: poliza.nombre_tomador || clienteData.nombres || `Cliente ${poliza.id}`,
               documento: poliza.cedula_tomador || clienteData.numero_documento || documentoPoliza || '',
               phone: clienteData.celular || clienteData.telefono || '',
-              email: clienteData.correo || '',
+              email: clienteData.correo || clienteData.email || '',
+              city: clienteData.municipio_expedicion?.nombre ||
+                    clienteData.ciudad ||
+                    clienteData.municipio ||
+                    '',
+              fecha_nacimiento: clienteData.fecha_nacimiento || '',
+              genero: clienteData.genero || '',
               pipeline_tipo: 'renovacion',
               status: 'Importada',
               score,
@@ -244,7 +281,10 @@ export class RenovacionesService {
               sincronizado_soft: true,
               // Renovation-specific
               numero_poliza: poliza.numero_poliza || '',
-              aseguradora: poliza.aseguradora?.nombre || '',
+              aseguradora: poliza.aseguradora?.nombre ||
+                           poliza.aseguradora?.razon_social ||
+                           (typeof poliza.aseguradora === 'string' ? poliza.aseguradora : '') ||
+                           '',
               fecha_fin_poliza: poliza.fecha_fin || '',
               prima_actual: Number(poliza.prima || poliza.total || 0),
               dias_para_vencer: diasParaVencer,

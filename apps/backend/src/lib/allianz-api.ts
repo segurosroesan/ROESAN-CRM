@@ -45,21 +45,26 @@ export class AllianzApi {
     private readonly agentcode: string,
     certPath: string,
     certPassword: string,
+    certBase64?: string,
   ) {
     const resolvedCertPath = path.isAbsolute(certPath)
       ? certPath
       : path.resolve(process.cwd(), certPath);
 
+    let certBuffer: Buffer | undefined;
     if (certPath && fs.existsSync(resolvedCertPath)) {
-      this.httpsAgent = new https.Agent({
-        pfx: fs.readFileSync(resolvedCertPath),
-        passphrase: certPassword,
-        rejectUnauthorized: false,
-      });
+      certBuffer = fs.readFileSync(resolvedCertPath);
+    } else if (certBase64) {
+      certBuffer = Buffer.from(certBase64, 'base64');
+      this.logger.log('Allianz: cargando certificado desde variable de entorno base64');
     } else {
-      this.logger.warn(`Cert no encontrado en ${resolvedCertPath}. Allianz deshabilitado.`);
-      this.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+      this.logger.warn(`Cert no encontrado en ${resolvedCertPath} y sin ALLIANZ_CERT_BASE64. mTLS deshabilitado — Allianz fallará.`);
     }
+
+    this.httpsAgent = new https.Agent({
+      ...(certBuffer ? { pfx: certBuffer, passphrase: certPassword } : {}),
+      rejectUnauthorized: false,
+    });
   }
 
   async cotizar(dto: CotizarDto): Promise<AllianzQuoteResult> {
@@ -80,11 +85,23 @@ export class AllianzApi {
 
     this.logger.log(`Cotizando en Allianz — Placa: ${dto.placa}, Fasecolda: ${dto.claveFasecolda}`);
 
-    const response = await axios.post(`${this.url}?codCia=3`, soapEnvelope, {
-      httpsAgent: this.httpsAgent,
-      headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: 'urn:call4' },
-      timeout: 60000,
-    });
+    let response: any;
+    try {
+      response = await axios.post(`${this.url}?codCia=3`, soapEnvelope, {
+        httpsAgent: this.httpsAgent,
+        headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: 'urn:call4' },
+        timeout: 60000,
+      });
+    } catch (axiosError: any) {
+      if (axiosError.response) {
+        const data: string = typeof axiosError.response.data === 'string' ? axiosError.response.data : '';
+        this.logger.error(`Allianz HTTP ${axiosError.response.status}: ${data.slice(0, 500)}`);
+        const faultMatch = data.match(/<faultstring[^>]*>([\s\S]*?)<\/faultstring>/i);
+        if (faultMatch) throw new Error(`Allianz error: ${faultMatch[1].trim()}`);
+        throw new Error(`Allianz HTTP ${axiosError.response.status}: ${data.slice(0, 300) || 'Error del servidor'}`);
+      }
+      throw axiosError;
+    }
 
     return this.parseResponse(response.data);
   }
@@ -99,7 +116,9 @@ export class AllianzApi {
 
     const ownerBornDate = dto.fechaNacimiento
       ? dto.fechaNacimiento.replace(/-/g, '')
-      : '';
+      : '19850101';
+
+    const ownerSex = dto.sexo || 'M';
 
     const TIPO_DOC_MAPPING: Record<string, string> = {
       'CC': 'C',
@@ -123,25 +142,26 @@ export class AllianzApi {
       `<operationtypecode>TA</operationtypecode>` +
       `<productcode>1243</productcode>` +
       `</operationheaders>` +
-      `<cap>0</cap>` +
+      `<cap>3</cap>` +
       `<effectivedate>${effectiveDate}</effectivedate>` +
       `<TermDate>${termDate}</TermDate>` +
       `<firstbill>0</firstbill>` +
       `<successive>0</successive>` +
       `<holderdoctype>${docType}</holderdoctype>` +
       `<holderdocnumber>${dto.documento}</holderdocnumber>` +
-      `<isholderdriver>S</isholderdriver>` +
-      `<isholderowner>S</isholderowner>` +
       `<ownerdoctype>${docType}</ownerdoctype>` +
       `<ownerdocnumber>${dto.documento}</ownerdocnumber>` +
+      `<isholderdriver>S</isholderdriver>` +
+      `<isholderowner>S</isholderowner>` +
+      `<isnewowner>N</isnewowner>` +
       `<risktype>L0008</risktype>` +
       `<vehicleplate>${dto.placa!.toUpperCase()}</vehicleplate>` +
       `<vehicleorigin>480</vehicleorigin>` +
       `<vehiclefasecoldacode>${dto.claveFasecolda}</vehiclefasecoldacode>` +
       `<vehicleyear>${dto.modelo}</vehicleyear>` +
       `<riskdata>` +
-      (ownerBornDate ? `<ownerborndate>${ownerBornDate}</ownerborndate>` : '') +
-      (dto.sexo ? `<ownersex>${dto.sexo}</ownersex>` : '') +
+      `<ownerborndate>${ownerBornDate}</ownerborndate>` +
+      `<ownersex>${ownerSex}</ownersex>` +
       `<repowered>N</repowered>` +
       `<protectiondevicecode>4</protectiondevicecode>` +
       `<accessoriesvalue>0</accessoriesvalue>` +
@@ -149,14 +169,13 @@ export class AllianzApi {
       `<gassystemvalue>0</gassystemvalue>` +
       `<isnewvehicle>N</isnewvehicle>` +
       `<insuredvalue>0</insuredvalue>` +
-      `<continuity>${dto.continuidad ?? 'S'}</continuity>` +
+      `<continuity>${dto.continuidad ?? 'N'}</continuity>` +
       `<circulationareadanecode>${dto.municipio}</circulationareadanecode>` +
       `<discountextension>N</discountextension>` +
       `<providefrom>0</providefrom>` +
       `<typedocdiscount></typedocdiscount>` +
       `<numdocdiscount></numdocdiscount>` +
       `</riskdata>` +
-      `<isnewowner>N</isnewowner>` +
       `</chargerequest>`;
 
     const escaped = chargeXml
@@ -186,7 +205,14 @@ export class AllianzApi {
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"');
+      .replace(/&quot;/g, '"')
+      .replace(/^﻿/, '')
+      .trim();
+
+    if (!xml.startsWith('<')) {
+      this.logger.error(`Allianz return tag contiene texto plano (no XML): ${xml.slice(0, 300)}`);
+      throw new Error(`Allianz error: ${xml}`);
+    }
 
     const parsed = await parseStringPromise(xml, { explicitArray: false });
     // Root element can be ChargeResponse or chargerequest depending on env
@@ -215,7 +241,7 @@ export class AllianzApi {
       }));
 
       const rawPayments = Array.isArray(pkg.Payment) ? pkg.Payment : pkg.Payment ? [pkg.Payment] : [];
-      const anual = rawPayments.find((p: any) => p.PaymentId === 'ANUAL');
+      const anual = rawPayments.find((p: any) => String(p.PaymentId ?? '').toUpperCase() === 'ANUAL') ?? rawPayments[0];
       const primaTotal = parseFloat(anual?.PremiumValue ?? '0');
 
       return {

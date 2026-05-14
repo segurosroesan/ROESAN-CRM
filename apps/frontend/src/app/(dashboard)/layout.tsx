@@ -16,6 +16,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { db } from "@/lib/instant-db";
+import { PropuestaVistaAlerta, useNotificacionesCount } from "@/components/PropuestaVistaAlerta";
+import { NuevoLeadAlerta } from "@/components/NuevoLeadAlerta";
 
 const PAGE_TITLES: Record<string, { parent: string; current: string }> = {
   "/":             { parent: "Panel Comercial", current: "Dashboard" },
@@ -56,6 +58,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isLoading, user, error } = db.useAuth();
+  const notifCount = useNotificacionesCount(user?.email ?? "");
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -221,7 +224,11 @@ export default function DashboardLayout({
           <div className="flex items-center space-x-2">
             <button className="relative p-1.5 text-slate-400 hover:text-amber-600 transition-colors rounded-lg hover:bg-amber-50">
               <Bell className="h-4 w-4" />
-              <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 border border-white" />
+              {notifCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 border-2 border-white text-white text-[9px] font-bold flex items-center justify-center">
+                  {notifCount > 9 ? "9+" : notifCount}
+                </span>
+              )}
             </button>
             {/* Avatar mini en header */}
             <div
@@ -236,6 +243,11 @@ export default function DashboardLayout({
         <section className="flex-1 overflow-auto p-6 relative z-10 w-full">
           {children}
         </section>
+
+        {/* Alerta en tiempo real cuando entra un lead nuevo */}
+        <NuevoLeadAlerta />
+        {/* Alertas en tiempo real cuando un cliente abre una propuesta */}
+        <PropuestaVistaAlerta userEmail={user.email ?? ""} userName={getDisplayName(user.email)} />
       </main>
     </div>
   );

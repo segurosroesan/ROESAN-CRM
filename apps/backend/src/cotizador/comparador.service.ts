@@ -49,6 +49,9 @@ Responde ÚNICAMENTE con este JSON:
 }
 `;
 
+// SMMLV Colombia — actualizar cada enero
+const SMMLV_COLOMBIA = 1_750_905;
+
 function toInt(val: any): number {
   if (val === null || val === undefined) return 0;
   try {
@@ -209,6 +212,7 @@ export class ComparadorService {
     const prompt = `
 Eres un experto analista de seguros de autos en Colombia.
 Extrae TODOS los datos de esta cotización de seguro de vehículo y devuélvelos en un objeto JSON estricto.
+El SMMLV vigente en Colombia es $${SMMLV_COLOMBIA.toLocaleString('es-CO')} pesos.
 
 {
   "aseguradora": "Nombre de la aseguradora (AXA Colpatria, HDI Seguros, Sura, Allianz, Mapfre, La Previsora, Seguros del Estado, etc.)",
@@ -253,11 +257,13 @@ GUÍA DE EXTRACCIÓN:
 - rce_deducible_smmlv: deducible RCE en SMMLV (ej. 2.0). Si dice "sin deducible" = 0
 - danio_total_valor: valor asegurado para pérdida total por daños (generalmente = valor_asegurado)
 - danio_total_ded_pct: porcentaje del deducible para pérdida total daños (ej. 10 para 10%)
-- danio_total_ded_smmlv: mínimo del deducible en SMMLV (ej. 0 si no hay mínimo)
-- danio_parcial_ded_pct: % deducible pérdida parcial daños
-- danio_parcial_ded_smmlv: mínimo SMMLV pérdida parcial daños
-- hurto_total_ded_pct/smmlv: igual para hurto total
-- hurto_parcial_ded_pct/smmlv: igual para hurto parcial
+- danio_total_ded_smmlv: mínimo del deducible en SMMLV (ej. 0 si no hay mínimo). Si el valor está expresado en pesos colombianos (ej: "$1.200.000" o "1,200,000"), conviértelo a SMMLV dividiendo por ${SMMLV_COLOMBIA} y redondea a 2 decimales
+- danio_parcial_ded_pct: % deducible pérdida parcial daños. Si el deducible está expresado solo en pesos (sin porcentaje), devuelve 0
+- danio_parcial_ded_smmlv: mínimo SMMLV pérdida parcial daños. Si el valor está expresado en pesos colombianos (ej: "$1.200.000" o "1,200,000"), conviértelo a SMMLV dividiendo por ${SMMLV_COLOMBIA} y redondea a 2 decimales. Si no hay mínimo = null
+- hurto_total_ded_pct: % deducible hurto total. Si el deducible está expresado solo en pesos (sin porcentaje), devuelve 0
+- hurto_total_ded_smmlv: mínimo SMMLV hurto total. Misma regla: si está en pesos, divide por ${SMMLV_COLOMBIA} y redondea a 2 decimales
+- hurto_parcial_ded_pct: % deducible hurto parcial. Si el deducible está expresado solo en pesos (sin porcentaje), devuelve 0
+- hurto_parcial_ded_smmlv: mínimo SMMLV hurto parcial. Misma regla: si está en pesos, divide por ${SMMLV_COLOMBIA} y redondea a 2 decimales
 - terremoto: true si cubre terremotos/eventos naturales/fenómenos naturales
 - proteccion_patrimonial: true si cubre "amparo patrimonial" o "protección patrimonial"
 - asistencia_juridica_penal/civil: true si incluye asistencia jurídica penal/civil

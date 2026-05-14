@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { db } from "@/lib/instant-db";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 
 function fmtCOP(n: any) {
@@ -26,11 +26,16 @@ function fmtRC(v: any) {
   if (!v) return v;
   const s = String(v).trim();
   const mM = s.match(/(\d[\d.,]*)\s*[Mm]/);
-  if (mM) return fmtCOP(parseFloat(mM[1].replace(/[.,]/g, "")) * 1000000);
-  const n = parseInt(s.replace(/[^0-9]/g, ""));
-  if (isNaN(n) || n === 0) return v;
-  if (n <= 10000) return fmtCOP(n * 1000000);
-  return fmtCOP(n);
+  let n: number;
+  if (mM) {
+    n = parseFloat(mM[1].replace(/[.,]/g, "")) * 1_000_000;
+  } else {
+    const raw = parseInt(s.replace(/[^0-9]/g, ""));
+    if (isNaN(raw) || raw === 0) return v;
+    n = raw <= 10000 ? raw * 1_000_000 : raw;
+  }
+  const millions = Math.round(n / 1_000_000);
+  return `$ ${millions.toLocaleString("es-CO")} M`;
 }
 
 export default function PropuestaPage() {
@@ -44,6 +49,15 @@ export default function PropuestaPage() {
   });
 
   const [scrollProgress, setScrollProgress] = useState(0);
+  const trackingFired = useRef(false);
+
+  // Notificar al equipo cuando el cliente abre la propuesta
+  useEffect(() => {
+    if (!data || data.propuestas.length === 0 || trackingFired.current) return;
+    trackingFired.current = true;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002";
+    fetch(`${backendUrl}/api/propuestas/${id}/vista`, { method: "POST" }).catch(() => {});
+  }, [data, id]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -109,9 +123,11 @@ export default function PropuestaPage() {
 
       {/* Navigation */}
       <nav className="bg-white/95 backdrop-blur-md border-b border-[#e2e8f0] px-6 py-3.5 flex items-center justify-between sticky top-0 z-50">
-        <div className="font-serif text-xl font-bold text-[#51408d] tracking-tight">
-          Roesan <span className="text-[#61bbe4]">Seguros</span>
-        </div>
+        <img
+          src="/logo-roesan-oficial.png"
+          alt="Roesan Seguros"
+          className="h-9 w-auto object-contain"
+        />
         <div className="flex items-center gap-4 text-xs text-[#64748b] flex-wrap">
           <span className="w-2 h-2 rounded-full bg-[#22c55e] shadow-[0_0_0_4px_rgba(34,197,94,0.15)] inline-block"></span>
           Propuesta personalizada · vigencia {ext.vigencia_oferta}

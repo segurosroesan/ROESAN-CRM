@@ -21,6 +21,7 @@ export class SBSApi {
     private readonly url: string,
     private readonly user: string,
     private readonly pass: string,
+    private readonly codFactComision: string = '',
   ) {}
 
   async cotizar(dto: CotizarDto): Promise<SBSQuoteResult> {
@@ -63,6 +64,7 @@ export class SBSApi {
       <idOpcionDeducPTD>1</idOpcionDeducPTD>
       <idOpcionDeducPPH>1</idOpcionDeducPPH>
       <idOpcionDeducPTH>1</idOpcionDeducPTH>
+      <CodFactComision>${this.codFactComision}</CodFactComision>
     </SBSAutos_CrearSesion_Paquete>
   </soap12:Body>
 </soap12:Envelope>`;
@@ -70,9 +72,13 @@ export class SBSApi {
     try {
       const response = await axios.post(this.url, soapEnvelope, {
         headers: { 'Content-Type': 'text/xml; charset=utf-8' },
+        timeout: 30000,
       });
 
-      const parsed = await parseStringPromise(response.data, { explicitArray: false });
+      const parsed = await parseStringPromise(response.data, {
+        explicitArray: false,
+        tagNameProcessors: [(name: string) => name.replace(/^[^:]+:/, '')],
+      });
       const result = parsed.Envelope.Body.SBSAutos_CrearSesion_PaqueteResponse.SBSAutos_CrearSesion_PaqueteResult;
 
       if (result.Mensaje_Validacion && result.Mensaje_Validacion !== 'OK') {
@@ -102,9 +108,13 @@ export class SBSApi {
     try {
       const response = await axios.post(this.url, soapEnvelope, {
         headers: { 'Content-Type': 'text/xml; charset=utf-8' },
+        timeout: 30000,
       });
 
-      const parsed = await parseStringPromise(response.data, { explicitArray: false });
+      const parsed = await parseStringPromise(response.data, {
+        explicitArray: false,
+        tagNameProcessors: [(name: string) => name.replace(/^[^:]+:/, '')],
+      });
       const res = parsed.Envelope.Body.SBSAutos_CotizaryCerrarSesion_PaqueteResponse.SBSAutos_CotizaryCerrarSesion_PaqueteResult;
 
       if (res.Mensaje_Validacion && res.Mensaje_Validacion !== 'OK') {

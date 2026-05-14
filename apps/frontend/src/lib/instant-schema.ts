@@ -13,17 +13,23 @@ const schema = i.schema({
       documento: i.string().optional(),
       fecha_nacimiento: i.string().optional(), // Extraída de cédula, formato YYYY-MM-DD
       genero: i.string().optional(),           // 'MASCULINO' | 'FEMENINO'
+      selectedProducts: i.string().optional(),
+      observaciones: i.string().optional(),
       
       
       // Vehicle (Auto)
       vehiclePlate: i.string().optional(),
       vehicleBrand: i.string().optional(),
+      vehicleLine: i.string().optional(),
       vehicleModel: i.string().optional(),
       vehicleYear: i.string().optional(),
       vehicleFasecolda: i.string().optional(),
       vehicleUse: i.string().optional(),
       driverBirthDate: i.string().optional(),
       driverGender: i.string().optional(),
+      hasPledge: i.boolean().optional(),
+      pledgeDetails: i.string().optional(),
+      drivingZone: i.string().optional(),
       
       // Salud
       patientAge: i.string().optional(),
@@ -36,6 +42,8 @@ const schema = i.schema({
       companySector: i.string().optional(),
       companyEmployees: i.string().optional(),
       companyRisk: i.string().optional(),
+      responsibleName: i.string().optional(),
+      responsiblePhone: i.string().optional(),
       
       // Cumplimiento
       contractType: i.string().optional(),
@@ -145,6 +153,38 @@ const schema = i.schema({
       analysis: i.json(),  // Análisis de IA con la recomendación
       leadId: i.string().indexed(),
       createdAt: i.number(),
+    }),
+
+    propuesta_vistas: i.entity({
+      propuestaId: i.string().indexed(),
+      leadId: i.string().optional(),
+      createdAt: i.number(),
+    }),
+
+    notificaciones: i.entity({
+      tipo: i.string(),                         // 'propuesta_vista'
+      mensaje: i.string(),
+      propuestaId: i.string().optional(),
+      leadId: i.string().optional(),
+      clienteNombre: i.string().optional(),
+      clienteTelefono: i.string().optional(),   // E.164 ej: 573001234567
+      leida: i.boolean(),
+      destinatarioEmail: i.string().indexed(),  // 'comercial@roesan.com' | 'seguros@roesan.com'
+      createdAt: i.number(),
+    }),
+
+    fasecolda: i.entity({
+      codigo: i.string().indexed(), // 8 dígitos
+      marca: i.string().indexed(),
+      clase: i.string().indexed(),
+      referencia1: i.string(),
+      referencia2: i.string(),
+      referencia3: i.string(),
+      cilindraje: i.number().optional(),
+      combustible: i.string().optional(),
+      transmision: i.string().optional(),
+      precios: i.json(), // { "2025": 1000000, "2024": 950000, ... }
+      updatedAt: i.number(),
     }),
   },
   links: {

@@ -31,7 +31,10 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  useDroppable,
+  useDraggable,
 } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
 const BACKEND = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
@@ -62,15 +65,21 @@ const STAGE_CONFIG: Record<string, { color: string; dot: string; badge: string; 
 };
 
 const RAMO_META: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
-  "auto":         { icon: Car, color: "text-blue-600 bg-blue-50" },
-  "salud":        { icon: Heart, color: "text-rose-600 bg-rose-50" },
-  "vida":         { icon: Heart, color: "text-red-600 bg-red-50" },
-  "soat":         { icon: Car, color: "text-amber-600 bg-amber-50" },
-  "hogar":        { icon: Home, color: "text-teal-600 bg-teal-50" },
-  "pyme":         { icon: Building2, color: "text-violet-600 bg-violet-50" },
-  "empresarial":  { icon: Building2, color: "text-violet-600 bg-violet-50" },
-  "cumplimiento": { icon: Shield, color: "text-slate-600 bg-slate-50" },
+  "auto":         { icon: Car,      color: "text-blue-600 bg-blue-50" },
+  "salud":        { icon: Heart,    color: "text-rose-600 bg-rose-50" },
+  "vida":         { icon: Heart,    color: "text-red-600 bg-red-50" },
+  "soat":         { icon: Car,      color: "text-amber-600 bg-amber-50" },
+  "hogar":        { icon: Home,     color: "text-teal-600 bg-teal-50" },
+  "pyme":         { icon: Building2,color: "text-violet-600 bg-violet-50" },
+  "empresarial":  { icon: Building2,color: "text-violet-600 bg-violet-50" },
+  "cumplimiento": { icon: Shield,   color: "text-slate-600 bg-slate-50" },
+  "responsabilidad_civil": { icon: Shield, color: "text-slate-600 bg-slate-50" },
+  "rc_medica":    { icon: Shield,   color: "text-slate-600 bg-slate-50" },
+  "transportes":  { icon: Car,      color: "text-blue-600 bg-blue-50" },
 };
+
+// Fallback genérico para ramos no mapeados (NO usar Car)
+const RAMO_DEFAULT = { icon: Shield, color: "text-slate-500 bg-slate-50" };
 
 function urgencyBadge(dias: number) {
   if (dias <= 15) return { label: `D-${dias} ⚠️ CRÍTICO`, cls: "text-red-700 bg-red-50 border border-red-200" };
@@ -89,17 +98,21 @@ interface RenovacionCard {
   diasVencer: number;
   status: string;
   phone: string;
-  placa: string;
+  placa: string;    // solo para auto/soat
+  objeto: string;   // para otros ramos
 }
 
-function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => void }) {
+function RenovacionCard({ ren, onClick, onMoveToNext }: { ren: RenovacionCard; onClick: () => void; onMoveToNext?: () => void }) {
   // Normalizar el tipo para el mapeo de iconos
-  const tipoNormalizado = (ren.type || "auto").toLowerCase().trim();
-  const meta = RAMO_META[tipoNormalizado] || RAMO_META["auto"];
+  const tipoNormalizado = (ren.type || "").toLowerCase().trim();
+  const meta = RAMO_META[tipoNormalizado] || RAMO_DEFAULT;
   const RamoIcon = meta.icon;
   const urgency = urgencyBadge(ren.diasVencer);
 
-  const isVehicle = tipoNormalizado === "auto" || tipoNormalizado === "soat";
+  const isVehicle = tipoNormalizado === "auto" || tipoNormalizado === "soat" || tipoNormalizado === "transportes";
+
+  const nextStageIndex = STAGES_RENOVACION.indexOf(ren.status) + 1;
+  const nextStage = nextStageIndex > 0 && nextStageIndex < STAGES_RENOVACION.length ? STAGES_RENOVACION[nextStageIndex] : null;
 
   return (
     <div
@@ -114,9 +127,14 @@ function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => 
           </div>
           <div>
             <p className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors leading-tight">{ren.name}</p>
-            {ren.placa && ren.placa !== "—" && (
+            {isVehicle && ren.placa && ren.placa !== "—" && (
               <p className="text-[10px] text-slate-500 font-bold mt-0.5">
-                {isVehicle ? "Placa: " : "Objeto: "}{ren.placa.toUpperCase()}
+                Placa: {ren.placa.toUpperCase()}
+              </p>
+            )}
+            {!isVehicle && ren.objeto && ren.objeto !== "—" && (
+              <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[160px]" title={ren.objeto}>
+                {ren.objeto}
               </p>
             )}
             <p className="text-[9px] text-slate-400 font-mono mt-0.5">{ren.poliza}</p>
@@ -138,12 +156,78 @@ function RenovacionCard({ ren, onClick }: { ren: RenovacionCard; onClick: () => 
           Vence en {ren.diasVencer} días
         </div>
       </div>
+      {/* Action Button */}
+      {nextStage && onMoveToNext && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveToNext();
+          }}
+          className="w-full flex items-center justify-center gap-1 bg-slate-50 hover:bg-blue-50 text-blue-600 border border-slate-200 hover:border-blue-200 text-[10px] font-bold py-1.5 rounded-md transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 mt-2"
+        >
+          Mover a {nextStage}
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        </button>
+      )}
     </div>
   );
 }
 
+function DroppableColumn({ stage, cfg, stageRens, children }: { stage: string; cfg: any; stageRens: any[]; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage });
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={`flex-shrink-0 w-[280px] flex flex-col bg-slate-50/50 rounded-2xl border-t-4 ${cfg.border} shadow-sm overflow-hidden transition-colors ${isOver ? 'ring-2 ring-blue-500 bg-blue-50/30' : 'border border-slate-200'}`}
+    >
+      <div className="px-4 py-3 flex items-center justify-between bg-white border-b border-slate-100 pointer-events-none">
+        <div className="flex items-center space-x-2">
+          <div className={`h-2 w-2 rounded-full ${cfg.dot}`} />
+          <h3 className="font-bold text-slate-700 text-xs tracking-wide">{stage}</h3>
+          <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${cfg.badge}`}>
+            {stageRens.length}
+          </span>
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[150px]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function DraggableRenovacionCard({ ren, onClick, onMoveToNext }: { ren: RenovacionCard; onClick: () => void; onMoveToNext: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: ren.id,
+    data: { ren },
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+    position: isDragging ? "relative" : undefined,
+  } as React.CSSProperties;
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <RenovacionCard ren={ren} onClick={onClick} onMoveToNext={onMoveToNext} />
+    </div>
+  );
+}
+
+const RAMO_LABELS: Record<string, string> = {
+  "auto": "Autos", "soat": "SOAT", "vida": "Vida", "salud": "Salud",
+  "hogar": "Hogar", "pyme": "Pyme", "empresarial": "Empresarial",
+  "cumplimiento": "Cumplimiento", "responsabilidad_civil": "RC", "rc_medica": "RC Médica",
+  "transportes": "Transportes",
+};
+
 export default function RenovacionesPage() {
   const [search, setSearch] = useState("");
+  const [filterRamo, setFilterRamo] = useState<string | null>(null);
   const [isImportando, setIsImportando] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResult, setImportResult] = useState<{
@@ -166,17 +250,20 @@ export default function RenovacionesPage() {
     const diasVencer = lead.fecha_fin_poliza
       ? Math.ceil((new Date(lead.fecha_fin_poliza).getTime() - Date.now()) / 86_400_000)
       : lead.dias_para_vencer ?? 60;
+    const tipoLead = (lead.type || "").toLowerCase().trim();
+    const esVehiculo = tipoLead === "auto" || tipoLead === "soat" || tipoLead === "transportes";
     return {
       id: lead.id,
       name: lead.name || "Sin nombre",
-      type: lead.type || "auto",
+      type: lead.type || "",
       poliza: lead.numero_poliza || "—",
       aseguradora: lead.aseguradora || "—",
       prima: Number(lead.prima_actual || 0),
       diasVencer: Math.max(diasVencer, 0),
       status: lead.status || "Importada",
       phone: lead.phone || "",
-      placa: lead.placa || lead.vehiclePlate || lead.objeto_asegurado || "—",
+      placa: esVehiculo ? (lead.placa || lead.vehiclePlate || "—") : "—",
+      objeto: !esVehiculo ? (lead.objeto_asegurado || lead.placa || lead.vehiclePlate || "—") : "—",
     };
   });
 
@@ -185,13 +272,31 @@ export default function RenovacionesPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const filtered = search
-    ? renovaciones.filter(r =>
-        r.name.toLowerCase().includes(search.toLowerCase()) ||
-        r.poliza.toLowerCase().includes(search.toLowerCase()) ||
-        r.aseguradora.toLowerCase().includes(search.toLowerCase())
-      )
-    : renovaciones;
+  // Ramos presentes en los datos, con conteo
+  const ramosCounts = renovaciones.reduce<Record<string, number>>((acc, r) => {
+    const t = r.type || "otro";
+    acc[t] = (acc[t] || 0) + 1;
+    return acc;
+  }, {});
+  const ramosDisponibles = Object.entries(ramosCounts).sort((a, b) => b[1] - a[1]);
+
+  const filtered = renovaciones.filter(r => {
+    const matchSearch = !search ||
+      r.name.toLowerCase().includes(search.toLowerCase()) ||
+      r.poliza.toLowerCase().includes(search.toLowerCase()) ||
+      r.aseguradora.toLowerCase().includes(search.toLowerCase());
+    const matchRamo = !filterRamo || r.type === filterRamo;
+    return matchSearch && matchRamo;
+  });
+
+  const moveToNextStage = async (leadId: string, currentStage: string) => {
+    const nextIndex = STAGES_RENOVACION.indexOf(currentStage) + 1;
+    if (nextIndex > 0 && nextIndex < STAGES_RENOVACION.length) {
+      await db.transact([
+        db.tx.leads[leadId].update({ status: STAGES_RENOVACION[nextIndex], updatedAt: Date.now() }),
+      ]);
+    }
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -302,6 +407,46 @@ export default function RenovacionesPage() {
         ))}
       </div>
 
+      {/* Filtros por ramo */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setFilterRamo(null)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+            filterRamo === null
+              ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+              : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+          }`}
+        >
+          Todos
+          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${filterRamo === null ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+            {renovaciones.length}
+          </span>
+        </button>
+        {ramosDisponibles.map(([ramo, count]) => {
+          const meta = RAMO_META[ramo] || RAMO_DEFAULT;
+          const RamoIcon = meta.icon;
+          const label = RAMO_LABELS[ramo] || ramo.charAt(0).toUpperCase() + ramo.slice(1);
+          const isActive = filterRamo === ramo;
+          return (
+            <button
+              key={ramo}
+              onClick={() => setFilterRamo(isActive ? null : ramo)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                isActive
+                  ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+                  : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
+              }`}
+            >
+              <RamoIcon className="h-3 w-3" />
+              {label}
+              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Prima en riesgo */}
       <div className="flex items-center gap-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl px-5 py-4">
         <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
@@ -325,42 +470,25 @@ export default function RenovacionesPage() {
           onDragEnd={handleDragEnd}
         >
           {VISIBLE_STAGES.map(stage => {
-            const cfg = STAGE_CONFIG[stage];
+            const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["Importada"];
             const stageRens = filtered.filter(r => r.status === stage);
-            return (
-              <div
-                key={stage}
-                id={stage}
-                className={`flex-shrink-0 w-72 flex flex-col bg-white/50 backdrop-blur-2xl rounded-2xl border-t-[3px] ${cfg.border} border border-white shadow-sm hover:shadow-md transition-all overflow-hidden`}
-              >
-                <div className="p-4 flex items-center justify-between bg-white/40 border-b border-slate-200/30">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
-                    <h3 className="font-bold text-slate-700 text-xs tracking-wide">{stage}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${cfg.badge}`}>
-                      {stageRens.length}
-                    </span>
-                  </div>
-                  <button className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-white transition-colors">
-                    <MoreVertical className="h-3.5 w-3.5 text-slate-400" />
-                  </button>
-                </div>
 
-                <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[120px]">
-                  {stageRens.length === 0 && (
-                    <div className="flex items-center justify-center h-16 rounded-xl border-2 border-dashed border-slate-200/60">
-                      <p className="text-[11px] text-slate-300 font-medium">Sin pólizas</p>
-                    </div>
-                  )}
-                  {stageRens.map(ren => (
-                    <RenovacionCard
-                      key={ren.id}
-                      ren={ren}
-                      onClick={() => router.push(`/renovaciones/${ren.id}`)}
-                    />
-                  ))}
-                </div>
-              </div>
+            return (
+              <DroppableColumn key={stage} stage={stage} cfg={cfg} stageRens={stageRens}>
+                {stageRens.length === 0 && (
+                  <div className="flex items-center justify-center h-16 rounded-xl border-2 border-dashed border-slate-200/60 pointer-events-none">
+                    <p className="text-[11px] text-slate-300 font-medium">Sin pólizas</p>
+                  </div>
+                )}
+                {stageRens.map(ren => (
+                  <DraggableRenovacionCard
+                    key={ren.id}
+                    ren={ren}
+                    onClick={() => router.push(`/renovaciones/${ren.id}`)}
+                    onMoveToNext={() => moveToNextStage(ren.id, ren.status)}
+                  />
+                ))}
+              </DroppableColumn>
             );
           })}
         </DndContext>

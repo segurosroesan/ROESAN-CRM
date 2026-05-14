@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
-import * as nodemailer from 'nodemailer';
 import { getInstantAdmin } from '../lib/instant-admin';
 import { tx } from '@instantdb/admin';
 
@@ -12,9 +11,6 @@ export class GmailService {
 
   constructor(private configService: ConfigService) {}
 
-  /**
-   * Obtiene un cliente OAuth2 configurado con las credenciales de la app.
-   */
   getOAuth2Client() {
     return new google.auth.OAuth2(
       this.configService.get('GOOGLE_CLIENT_ID'),
@@ -23,10 +19,6 @@ export class GmailService {
     );
   }
 
-  /**
-   * Genera la URL de autenticación para que el usuario vincule su cuenta.
-   * IMPORTANTE: 'offline' y 'consent' son necesarios para obtener el refresh_token.
-   */
   getAuthUrl(userId: string) {
     const oauth2Client = this.getOAuth2Client();
     return oauth2Client.generateAuthUrl({
@@ -39,31 +31,26 @@ export class GmailService {
         'https://www.googleapis.com/auth/gmail.modify',
         'https://www.googleapis.com/auth/gmail.compose',
       ],
-      state: userId, // Pasamos el ID del usuario para saber de quién es el token al volver
+      state: userId,
     });
   }
 
-  /**
-   * Intercambia el código de autorización por tokens y los guarda en InstantDB.
-   */
   async handleCallback(code: string, userId: string) {
     const oauth2Client = this.getOAuth2Client();
     const { tokens } = await oauth2Client.getToken(code);
-    
+
     if (!tokens.refresh_token) {
       this.logger.warn(`No se recibió refresh_token para el usuario ${userId}. ¿Ya estaba vinculado?`);
     }
 
-    // Obtener el correo vinculado
     oauth2Client.setCredentials(tokens);
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const userInfo = await oauth2.userinfo.get();
 
-    // Guardar en InstantDB
     await this.db.transact([
       tx.users[userId].update({
         googleEmail: userInfo.data.email,
-        googleRefreshToken: tokens.refresh_token || undefined, // Solo lo actualizamos si viene nuevo
+        googleRefreshToken: tokens.refresh_token || undefined,
         updatedAt: Date.now(),
       }),
     ]);
@@ -73,51 +60,65 @@ export class GmailService {
   }
 
   /**
-   * Envía un correo electrónico a nombre del asesor vinculado.
+   * Envía un correo usando el Gmail OAuth del asesor.
+   * Lanza error si el asesor no tiene Gmail vinculado.
    */
-  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
-    // 1. Obtener el refresh token del usuario
-    const userData = await this.db.query({ users: { $: { where: { id: userId } } } });
-    const user = (userData as any)?.users?.[0];
+  private async sendViaGmailOAuth(
+    userId: string,
+    to: string,
+    subject: string,
+    html: string,
+  ): Promise<string> {
+    const result = await this.db.query({
+      users: { $: { where: { id: userId } } },
+    });
+    const userData = (result as unknown as { users: Array<{ googleRefreshToken?: string; googleEmail?: string }> })
+      .users?.[0];
 
-    if (!user || !user.googleRefreshToken) {
-      throw new Error('El usuario no tiene una cuenta de Gmail vinculada.');
+    if (!userData?.googleRefreshToken) {
+      throw new Error(
+        'Vincula tu cuenta de Gmail en Configuración antes de enviar correos desde tu dirección personal.',
+      );
     }
 
-    // 2. Configurar cliente con el refresh token
     const oauth2Client = this.getOAuth2Client();
-    oauth2Client.setCredentials({ refresh_token: user.googleRefreshToken });
+    oauth2Client.setCredentials({ refresh_token: userData.googleRefreshToken });
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // 3. Construir el correo en formato RFC 2822
-    const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-    const messageParts = [
-      `To: ${to}`,
-      'Content-Type: text/html; charset=utf-8',
-      'MIME-Version: 1.0',
-      `Subject: ${utf8Subject}`,
-      '',
-      body,
-    ];
-    const message = messageParts.join('\n');
+    const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
+    const raw = Buffer.from(
+      [`To: ${to}`, `Subject: ${encodedSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/html; charset=UTF-8', '', html].join('\r\n'),
+    ).toString('base64url');
 
-    // Codificar en Base64 seguro para URL
-    const encodedMessage = Buffer.from(message)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    try {
+      const sent = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: { raw },
+      });
+      this.logger.log(`Correo enviado desde ${userData.googleEmail} a ${to}: ${subject} (${sent.data.id})`);
+      return sent.data.id ?? '';
+    } catch (err: unknown) {
+      const message = (err as { message?: string })?.message ?? '';
+      if (message.includes('invalid_grant') || message.includes('Token has been expired')) {
+        // Limpiar token inválido para forzar re-vinculación
+        await this.db.transact([
+          tx.users[userId].update({ googleRefreshToken: null, googleEmail: null }),
+        ]);
+        throw new Error(
+          'Tu sesión de Gmail ha expirado. Ve a Configuración → Vincular Gmail para reconectar tu cuenta.',
+        );
+      }
+      throw err;
+    }
+  }
 
-    // 4. Enviar
-    const res = await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: {
-        raw: encodedMessage,
-      },
-    });
+  /**
+   * Envía un correo de propuesta al cliente desde el Gmail del asesor (OAuth).
+   */
+  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
+    const id = await this.sendViaGmailOAuth(userId, to, subject, body);
 
-    // 5. Registrar en el timeline del lead
     if (leadId) {
       await this.db.transact([
         tx.interacciones[crypto.randomUUID()].update({
@@ -125,43 +126,60 @@ export class GmailService {
           notas: `Enviado: ${subject}`,
           leadId,
           createdAt: Date.now(),
-          metadata: {
-            gmailMessageId: res.data.id,
-            to,
-            subject,
-          }
+          metadata: { gmailMessageId: id, to, subject },
         }),
       ]);
     }
 
-    return res.data;
+    return { id };
   }
 
   /**
-   * Envía un correo de sistema (notificaciones internas) usando SMTP propio.
-   * No depende de ningún usuario OAuth del CRM.
-   * Variables necesarias: SMTP_USER, SMTP_PASS (Gmail app password).
+   * Envía un correo de sistema o notificación.
+   * Si se pasa userId → intenta Gmail OAuth del asesor; si falla o no hay userId → Resend.
    */
-  async sendNotificationEmail(to: string, subject: string, html: string): Promise<void> {
-    const smtpUser = this.configService.get<string>('SMTP_USER');
-    const smtpPass = this.configService.get<string>('SMTP_PASS');
+  async sendNotificationEmail(
+    to: string,
+    subject: string,
+    html: string,
+    cc?: string,
+    userId?: string,
+  ): Promise<void> {
+    // Intentar Gmail OAuth del asesor si hay contexto de usuario
+    if (userId) {
+      try {
+        await this.sendViaGmailOAuth(userId, to, subject, html);
+        return;
+      } catch (e) {
+        this.logger.warn(`Gmail OAuth no disponible para notificación (${userId}), usando Resend: ${e}`);
+      }
+    }
 
-    if (!smtpUser || !smtpPass) {
-      this.logger.warn('SMTP_USER o SMTP_PASS no configurados — notificación omitida.');
+    // Fallback: Resend HTTP API
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('RESEND_API_KEY no configurado — notificación omitida.');
       return;
     }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: smtpUser, pass: smtpPass },
+    const from =
+      this.configService.get<string>('RESEND_FROM') ||
+      'CRM Roesan <noreply@segurosroesan.com>';
+
+    const payload: Record<string, unknown> = { from, to: [to], subject, html };
+    if (cc) payload.cc = [cc];
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
-    await transporter.sendMail({
-      from: `"CRM Roesan" <${smtpUser}>`,
-      to,
-      subject,
-      html,
-    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({})) as { message?: string };
+      this.logger.error(`Error Resend al enviar notificación a ${to}: ${err.message || response.statusText}`);
+      return;
+    }
 
     this.logger.log(`Notificación enviada a ${to}: ${subject}`);
   }

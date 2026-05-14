@@ -36,7 +36,6 @@ import {
   User,
   ExternalLink,
   Copy,
-  Search,
 } from "lucide-react";
 import { EmailComposer } from "@/components/EmailComposer";
 import { CotizacionComparativo } from "@/components/CotizacionComparativo";
@@ -136,7 +135,7 @@ export default function LeadDetailPage() {
     },
   });
 
-  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails" | "documentos">("timeline");
+  const [activeTab, setActiveTab] = useState<"timeline" | "cotizaciones" | "datos" | "emails" | "documentos">("datos");
   const [isEditingStage, setIsEditingStage] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editData, setEditData] = useState<any>(null);
@@ -150,9 +149,8 @@ export default function LeadDetailPage() {
   const [isComparing, setIsComparing] = useState(false);
   const [comparativoData, setComparativoData] = useState<any>(null);
   const [propuestaProData, setPropuestaProData] = useState<{ body: string; url: string } | null>(null);
-  const [isAutoQuoting, setIsAutoQuoting] = useState(false);
+  const [quotingInsurer, setQuotingInsurer] = useState<string | null>(null);
   const [uploadingBulk, setUploadingBulk] = useState(false);
-  const [isSearchingPlaca, setIsSearchingPlaca] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
 
   if (isLoading) return (
@@ -189,12 +187,13 @@ export default function LeadDetailPage() {
 
 
   const handleSingleAutoQuote = async (insurer: "all" | "allianz" | "qualitas" | "sbs") => {
+    console.log('[Cotizador] click ->', insurer, { fasecolda: lead.vehicleFasecolda, year: lead.vehicleYear, doc: lead.documento });
     if (!lead.vehicleFasecolda || !lead.vehicleYear || !lead.documento) {
-      alert("Faltan datos críticos para cotizar (Fasecolda, Modelo o Documento). Por favor completa los datos del lead.");
+      window.alert("Faltan datos del vehículo para cotizar.\n\nRevisa en la pestaña Datos que el lead tenga:\n• Código Fasecolda\n• Año/Modelo\n• Número de documento");
       return;
     }
 
-    setIsAutoQuoting(true);
+    setQuotingInsurer(insurer);
     try {
       const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
       const endpoint = insurer === "all" ? "all" : insurer;
@@ -205,7 +204,7 @@ export default function LeadDetailPage() {
           claveFasecolda: lead.vehicleFasecolda,
           modelo: parseInt(lead.vehicleYear),
           placa: lead.vehiclePlate || "PROVIS",
-          tipoDocumento: "CC",
+          tipoDocumento: lead.tipo_documento || "CC",
           documento: lead.documento,
           departamento: "11",
           municipio: "11001",
@@ -217,13 +216,23 @@ export default function LeadDetailPage() {
         }),
       });
 
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const msg = body?.message || body?.error || `Error ${response.status} — Revisa que el backend esté activo en Render.`;
+        throw new Error(msg);
+      }
+
       const results = await response.json();
       const transactions = [];
-      
-      // Manejar respuesta de Allianz (puede venir en results.allianz o directo en results si se llamó solo a allianz)
+      const warnings: string[] = [];
+
+      // Manejar respuesta de Allianz
       const allianzData = insurer === "allianz" ? results : results.allianz;
-      if (allianzData && !allianzData.error) {
+      if (allianzData?.error) {
+        warnings.push(`Allianz: ${allianzData.error}`);
+      } else if (allianzData) {
         for (const pkg of (allianzData.paquetes || [])) {
+          if (!pkg.primaTotal || pkg.primaTotal <= 0) continue;
           const aId = crypto.randomUUID();
           transactions.push(db.tx.cotizaciones[aId].update({
             leadId,
@@ -238,58 +247,75 @@ export default function LeadDetailPage() {
           }));
           transactions.push(db.tx.cotizaciones[aId].link({ lead: leadId }));
         }
+        if (allianzData.paquetes?.length > 0 && transactions.length === 0) {
+          warnings.push("Allianz: la respuesta llegó pero sin valores de prima válidos.");
+        }
       }
 
       // Manejar respuesta de Qualitas
       const qualitasData = insurer === "qualitas" ? results : results.qualitas;
-      if (qualitasData && !qualitasData.error) {
-        const qId = crypto.randomUUID();
+      if (qualitasData?.error) {
+        warnings.push(`Qualitas: ${qualitasData.error}`);
+      } else if (qualitasData) {
         const prima = qualitasData.primaTotal || qualitasData.prima_total || 0;
-        transactions.push(db.tx.cotizaciones[qId].update({
-          leadId,
-          aseguradora: "Qualitas",
-          valor: prima,
-          prima_total: prima,
-          cobertura: "Plan Automóvil - Generado Automáticamente",
-          estado: "enviada",
-          fuente: "API Qualitas",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }));
-        transactions.push(db.tx.cotizaciones[qId].link({ lead: leadId }));
+        if (prima > 0) {
+          const qId = crypto.randomUUID();
+          transactions.push(db.tx.cotizaciones[qId].update({
+            leadId,
+            aseguradora: "Qualitas",
+            valor: prima,
+            prima_total: prima,
+            cobertura: "Plan Automóvil - Generado Automáticamente",
+            estado: "enviada",
+            fuente: "API Qualitas",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }));
+          transactions.push(db.tx.cotizaciones[qId].link({ lead: leadId }));
+        } else {
+          warnings.push("Qualitas: respondió pero sin prima válida (posible error de configuración en QA).");
+        }
       }
 
       // Manejar respuesta de SBS
       const sbsData = insurer === "sbs" ? results : results.sbs;
-      if (sbsData && !sbsData.error) {
-        const sId = crypto.randomUUID();
+      if (sbsData?.error) {
+        warnings.push(`SBS: ${sbsData.error}`);
+      } else if (sbsData) {
         const prima = sbsData.primaTotal || 0;
-        transactions.push(db.tx.cotizaciones[sId].update({
-          leadId,
-          aseguradora: "SBS",
-          valor: prima,
-          prima_total: prima,
-          cobertura: "Plan Automóvil - Generado Automáticamente",
-          estado: "enviada",
-          fuente: "API SBS",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        }));
-        transactions.push(db.tx.cotizaciones[sId].link({ lead: leadId }));
+        if (prima > 0) {
+          const sId = crypto.randomUUID();
+          transactions.push(db.tx.cotizaciones[sId].update({
+            leadId,
+            aseguradora: "SBS",
+            valor: prima,
+            prima_total: prima,
+            cobertura: "Plan Automóvil - Generado Automáticamente",
+            estado: "enviada",
+            fuente: "API SBS",
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          }));
+          transactions.push(db.tx.cotizaciones[sId].link({ lead: leadId }));
+        } else {
+          warnings.push("SBS: respondió pero sin prima válida.");
+        }
       }
 
       if (transactions.length > 0) {
         await db.transact(transactions);
-        alert(`✅ ${transactions.length / 2} cotización(es) guardada(s) exitosamente.`);
+        const saved = transactions.length / 2;
+        const warnPart = warnings.length > 0 ? `\n\n⚠️ ${warnings.join("\n")}` : "";
+        alert(`✅ ${saved} cotización(es) guardada(s) exitosamente.${warnPart}`);
       } else {
-        const errorMsg = results.error || results.qualitas?.error || results.allianz?.error || results.sbs?.error || "La aseguradora no devolvió resultados.";
-        alert(`Atención: ${errorMsg}`);
+        const errorMsg = warnings.length > 0 ? warnings.join("\n") : (results.error || "La aseguradora no devolvió resultados.");
+        alert(`Atención:\n${errorMsg}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error en auto-quote:", err);
-      alert("Error llamando al servicio de cotización.");
+      window.alert(`Error al cotizar:\n${err?.message || "Error desconocido. Revisa que el backend esté activo."}`);
     } finally {
-      setIsAutoQuoting(false);
+      setQuotingInsurer(null);
     }
   };
 
@@ -310,11 +336,13 @@ export default function LeadDetailPage() {
       
       if (res.ok) {
         const parsedQuotes = await res.json();
+        const fileArray = Array.from(files);
         const txs: any[] = [];
-        
-        parsedQuotes.forEach((data: any) => {
+
+        parsedQuotes.forEach((data: any, idx: number) => {
           const newId = crypto.randomUUID();
           const prima = parseFloat(String(data.prima_total || 0)) || 0;
+          const esRenovacion = /renovaci/i.test(fileArray[idx]?.name || "");
           txs.push(
             db.tx.cotizaciones[newId].update({
               leadId,
@@ -326,7 +354,7 @@ export default function LeadDetailPage() {
               cobertura: data.cobertura || "",
               coberturas: buildCoberturas(data),
               estado: "enviada",
-              es_renovacion: false,
+              es_renovacion: esRenovacion,
               fuente: "IA (Múltiples PDFs)",
               createdAt: Date.now(),
               updatedAt: Date.now(),
@@ -402,52 +430,6 @@ export default function LeadDetailPage() {
     }
   };
 
-  const handleSearchPlaca = async (placaBuscada?: string) => {
-    const placaAUsar = placaBuscada || (isEditingInfo ? editData?.vehiclePlate : lead?.vehiclePlate);
-    if (!placaAUsar) {
-      alert("Por favor ingresa una placa primero.");
-      return;
-    }
-
-    setIsSearchingPlaca(true);
-    try {
-      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
-      const response = await fetch(`${backendUrl}/vehiculos/placa/${placaAUsar}`);
-      const result = await response.json();
-
-      if (response.ok && result.success && result.data) {
-        const { modelo, fasecolda, marca, linea } = result.data;
-        const infoMsg = `Vehículo encontrado: ${marca} ${linea} ${modelo}`;
-        
-        if (isEditingInfo) {
-          setEditData({
-            ...editData,
-            vehicleYear: modelo,
-            vehicleFasecolda: fasecolda,
-          });
-          alert(`${infoMsg}\n(Datos actualizados en el formulario, recuerda Guardar)`);
-        } else {
-          // Guardar directamente
-          await db.transact([
-            db.tx.leads[leadId].update({
-              vehicleYear: modelo,
-              vehicleFasecolda: fasecolda,
-              updatedAt: Date.now()
-            })
-          ]);
-          alert(`${infoMsg}\n(Datos guardados exitosamente)`);
-        }
-      } else {
-        alert(result.error || "No se encontraron datos para esta placa.");
-      }
-    } catch (err) {
-      console.error("Error consultando placa:", err);
-      alert("Error de conexión al consultar la placa.");
-    } finally {
-      setIsSearchingPlaca(false);
-    }
-  };
-
   const handleCompararCotizaciones = async () => {
     if (!cotizaciones || cotizaciones.length === 0) return;
     setIsComparing(true);
@@ -514,9 +496,9 @@ export default function LeadDetailPage() {
       </button>
 
       {/* Lead Hero Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100">
         {/* Gradient header */}
-        <div className={`h-1 bg-gradient-to-r ${ramoMeta.color}`} />
+        <div className={`h-1 rounded-t-xl bg-gradient-to-r ${ramoMeta.color}`} />
 
         <div className="p-5 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -589,7 +571,7 @@ export default function LeadDetailPage() {
               
               {isEditingStage && (
                 <div className="absolute right-0 mt-1.5 w-56 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-30">
-                  <div className="p-1.5 max-h-72 overflow-y-auto">
+                  <div className="p-1.5">
                     {STAGES.map(stage => (
                       <button
                         key={stage}
@@ -659,11 +641,11 @@ export default function LeadDetailPage() {
           {/* Tab Bar */}
           <div className="flex items-center gap-0.5 bg-white/70 backdrop-blur rounded-xl p-1 border border-slate-100 w-fit shadow-sm">
             {[
+              { id: "datos", label: "Datos completos", icon: User },
               { id: "timeline", label: "Timeline", icon: Clock },
               { id: "emails", label: `Emails (${interacciones.filter(i => i.tipo === "email").length})`, icon: Mail },
               { id: "documentos", label: "Documentos", icon: FileText },
               { id: "cotizaciones", label: `Cotizaciones (${cotizaciones.length})`, icon: DollarSign },
-              { id: "datos", label: "Datos completos", icon: User },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -806,27 +788,27 @@ export default function LeadDetailPage() {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => handleSingleAutoQuote("allianz")}
-                    disabled={isAutoQuoting}
+                    disabled={quotingInsurer !== null}
                     className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-blue-600"
                   >
-                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                    Cotizar Allianz
+                    <Zap className={`h-3.5 w-3.5 ${quotingInsurer === "allianz" ? "animate-spin" : ""}`} />
+                    {quotingInsurer === "allianz" ? "Cotizando..." : "Cotizar Allianz"}
                   </button>
                   <button
                     onClick={() => handleSingleAutoQuote("qualitas")}
-                    disabled={isAutoQuoting}
+                    disabled={quotingInsurer !== null}
                     className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-sky-500"
                   >
-                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                    Cotizar Qualitas
+                    <Zap className={`h-3.5 w-3.5 ${quotingInsurer === "qualitas" ? "animate-spin" : ""}`} />
+                    {quotingInsurer === "qualitas" ? "Cotizando..." : "Cotizar Qualitas"}
                   </button>
                   <button
                     onClick={() => handleSingleAutoQuote("sbs")}
-                    disabled={isAutoQuoting}
+                    disabled={quotingInsurer !== null}
                     className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm disabled:opacity-50 hover:opacity-90 bg-slate-700"
                   >
-                    <Zap className={`h-3.5 w-3.5 ${isAutoQuoting ? "animate-spin" : ""}`} />
-                    Cotizar SBS (Pruebas)
+                    <Zap className={`h-3.5 w-3.5 ${quotingInsurer === "sbs" ? "animate-spin" : ""}`} />
+                    {quotingInsurer === "sbs" ? "Cotizando..." : "Cotizar SBS (Pruebas)"}
                   </button>
                 </div>
               </div>
@@ -870,7 +852,11 @@ export default function LeadDetailPage() {
                       // 1. Guardar la propuesta en InstantDB
                       const propuestaId = crypto.randomUUID();
                       const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
-                      
+                      const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
+                      const aseguradoraSeleccionada = cotizacionAceptada
+                        ? (cotizacionAceptada.aseguradora || "")
+                        : aseguradoraRecomendada;
+
                       const cots = cotizaciones.map(c => ({
                         aseguradora: c.aseguradora,
                         plan: c.cobertura || c.nombre_plan || "",
@@ -905,7 +891,7 @@ export default function LeadDetailPage() {
                           cotizaciones: cots,
                         },
                         analysis: {
-                           recomendada: aseguradoraRecomendada,
+                           recomendada: aseguradoraSeleccionada,
                            plan_recomendado: comparativoData.comparativo_ia?.plan_recomendado || "",
                            razon_principal: comparativoData.comparativo_ia?.razon_principal || comparativoData.comparativo_ia?.justificacion_corta || "",
                            puntos_fuertes: comparativoData.comparativo_ia?.puntos_fuertes || [],
@@ -930,16 +916,16 @@ export default function LeadDetailPage() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          cotizacionSeleccionada: cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraRecomendada.toUpperCase()),
+                          cotizacionSeleccionada: cotizacionAceptada || cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase()),
                           todasCotizaciones: cotizaciones,
-                          aseguradoraRecomendada: aseguradoraRecomendada,
+                          aseguradoraRecomendada: aseguradoraSeleccionada,
                           justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
                           datosExtra: { tomador: lead.name, placa: lead.vehiclePlate, descripcion_vehiculo: `${lead.vehicleBrand || ""} ${lead.vehicleModel || ""} ${lead.vehicleYear || ""}`.trim() },
                           accionIA: comparativoData.accion,
                           aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
                           diferenciaPrima: comparativoData.diferencia_prima,
                           esNuevo: lead.pipeline_tipo !== "renovacion",
-                          propuestaUrl: `${window.location.origin}/propuesta/${propuestaId}`
+                          enlacePropuesta: `${window.location.origin}/propuesta/${propuestaId}`
                         }),
                       });
                       const result = await response.json();
@@ -970,7 +956,22 @@ export default function LeadDetailPage() {
                         <h4 className="font-bold text-slate-800">{cot.aseguradora}</h4>
                         <p className="text-xs text-slate-400 mt-0.5">{cot.cobertura || "Sin descripción de cobertura"}</p>
                       </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`}>{eConf.label}</span>
+                      <div className="flex items-center gap-2">
+                        {cot.es_renovacion && (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">🔄 Vigente</span>
+                        )}
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${eConf.color}`} title={cot.estado === "enviada" ? "Esta cotización fue enviada al cliente" : undefined}>{eConf.label}</span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("¿Eliminar esta cotización?")) return;
+                            await db.transact([db.tx.cotizaciones[cot.id].delete()]);
+                          }}
+                          className="h-6 w-6 flex items-center justify-center rounded-md text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                          title="Eliminar cotización"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-black text-emerald-600">
@@ -1040,37 +1041,67 @@ export default function LeadDetailPage() {
               <div className="p-5 grid grid-cols-2 gap-4">
                 {[
                   { label: "Nombre completo", field: "name", value: lead.name },
+                  { label: "Tipo Documento", field: "tipo_documento", value: lead.tipo_documento },
                   { label: "Cédula / NIT", field: "documento", value: lead.documento },
+                  { label: "Fecha Nacimiento", field: "fecha_nacimiento", value: lead.fecha_nacimiento },
+                  { label: "Género", field: "genero", value: lead.genero },
                   { label: "Celular", field: "phone", value: lead.phone },
                   { label: "Email", field: "email", value: lead.email },
                   { label: "Ciudad", field: "city", value: lead.city },
                   { label: "Ramo", field: "type", value: lead.type },
                   { label: "Fuente", field: "source", value: lead.source },
+                  { label: "Intereses (Formulario)", field: "selectedProducts", value: lead.selectedProducts },
+                  { label: "Observaciones", field: "observaciones", value: lead.observaciones },
+                  { label: "Nombre Empresa", field: "companyName", value: lead.companyName },
+                  { label: "NIT Empresa", field: "companyNit", value: lead.companyNit },
+                  { label: "Representante", field: "responsibleName", value: lead.responsibleName },
+                  { label: "Teléfono Representante", field: "responsiblePhone", value: lead.responsiblePhone },
                   { label: "Placa", field: "vehiclePlate", value: lead.vehiclePlate },
+                  { label: "Marca", field: "vehicleBrand", value: lead.vehicleBrand },
+                  { label: "Línea", field: "vehicleLine", value: lead.vehicleLine },
                   { label: "Modelo", field: "vehicleYear", value: lead.vehicleYear },
                   { label: "Fasecolda", field: "vehicleFasecolda", value: lead.vehicleFasecolda },
+                  { label: "¿Tiene Prenda?", field: "hasPledge", value: lead.hasPledge ? "Sí" : lead.hasPledge === false ? "No" : "" },
+                  { label: "Detalles Prenda", field: "pledgeDetails", value: lead.pledgeDetails },
+                  { label: "Zona Circulación", field: "drivingZone", value: lead.drivingZone },
                   { label: "ID Soft Cliente", field: "soft_cliente_id", value: lead.soft_cliente_id },
                 ].map(({ label, field, value }) => (
                   <div key={field} className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</label>
-                      {field === "vehiclePlate" && (
-                        <button
-                          onClick={() => handleSearchPlaca()}
-                          disabled={isSearchingPlaca}
-                          className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded transition-all disabled:opacity-50"
-                        >
-                          <Search className={`h-3 w-3 ${isSearchingPlaca ? "animate-spin" : ""}`} />
-                          {isSearchingPlaca ? "Buscando..." : "Buscar RUNT"}
-                        </button>
-                      )}
                     </div>
                     {isEditingInfo ? (
-                      <input
-                        value={editData?.[field] || ""}
-                        onChange={e => setEditData({ ...editData, [field]: e.target.value })}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
-                      />
+                      field === "genero" ? (
+                        <select
+                          value={editData?.[field] || ""}
+                          onChange={e => setEditData({ ...editData, [field]: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+                        >
+                          <option value="">— Sin especificar —</option>
+                          <option value="M">Masculino (M)</option>
+                          <option value="F">Femenino (F)</option>
+                        </select>
+                      ) : field === "tipo_documento" ? (
+                        <select
+                          value={editData?.[field] || ""}
+                          onChange={e => setEditData({ ...editData, [field]: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+                        >
+                          <option value="">— Seleccionar —</option>
+                          <option value="CC">Cédula de Ciudadanía (CC)</option>
+                          <option value="CE">Cédula de Extranjería (CE)</option>
+                          <option value="NIT">NIT</option>
+                          <option value="PP">Pasaporte (PP)</option>
+                          <option value="TI">Tarjeta de Identidad (TI)</option>
+                        </select>
+                      ) : (
+                        <input
+                          type={field === "fecha_nacimiento" ? "date" : "text"}
+                          value={editData?.[field] || ""}
+                          onChange={e => setEditData({ ...editData, [field]: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
+                        />
+                      )
                     ) : (
                       <p className="text-sm font-semibold text-slate-700">{value || <span className="text-slate-300 font-normal">—</span>}</p>
                     )}
@@ -1089,7 +1120,7 @@ export default function LeadDetailPage() {
             <div className="space-y-2">
               {lead.phone && (
                 <a
-                  href={`https://wa.me/${lead.phone.replace("+", "")}`}
+                  href={`https://wa.me/${lead.phone.replace(/\\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 font-bold text-sm transition-all"
@@ -1219,16 +1250,43 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {propuestaProData && lead.email && (
+      {propuestaProData && (
         <PropuestaProModal
           leadId={leadId}
-          toEmail={lead.email}
+          toEmail={lead.email || ""}
+          phone={lead.phone || ""}
           initialBody={propuestaProData.body}
           propuestaUrl={propuestaProData.url}
           onClose={() => setPropuestaProData(null)}
-          onRegenerate={() => {
-            setPropuestaProData(null);
-            handleCompararCotizaciones();
+          onRegenerate={async () => {
+            if (!comparativoData) return;
+            try {
+              const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
+              const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
+              const aseguradoraSeleccionada = cotizacionAceptada?.aseguradora || aseguradoraRecomendada;
+              const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
+              const response = await fetch(`${backendUrl}/cotizador/email`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  cotizacionSeleccionada: cotizacionAceptada || cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase()),
+                  todasCotizaciones: cotizaciones,
+                  aseguradoraRecomendada: aseguradoraSeleccionada,
+                  justificacionIA: comparativoData.comparativo_ia?.justificacion_corta,
+                  datosExtra: { tomador: lead.name, placa: lead.vehiclePlate, descripcion_vehiculo: `${lead.vehicleBrand || ""} ${lead.vehicleModel || ""} ${lead.vehicleYear || ""}`.trim() },
+                  accionIA: comparativoData.accion,
+                  aseguradoraRenovacion: comparativoData.aseguradora_renovacion,
+                  diferenciaPrima: comparativoData.diferencia_prima,
+                  esNuevo: lead.pipeline_tipo !== "renovacion",
+                  enlacePropuesta: propuestaProData.url,
+                }),
+              });
+              const result = await response.json();
+              return result.body as string | undefined;
+            } catch (err) {
+              console.error(err);
+              alert("Error regenerando el correo");
+            }
           }}
         />
       )}

@@ -139,7 +139,8 @@ export default function RemisionarPage() {
         message: data.message 
       });
       if (data.found && data.cliente) {
-        // Cliente existe — pre-llenar con info de Soft Seguros pero la nueva info sobreescribirá
+        // Cliente existe — pre-llenar con info de Soft Seguros y quedarse en Step 1
+        // para que el usuario vea las pólizas y escoja cuál renovar antes de continuar
         setFormCliente(prev => ({
           ...prev,
           nombres:   data.cliente.nombres  || prev.nombres,
@@ -147,10 +148,8 @@ export default function RemisionarPage() {
           email:     data.cliente.email    || prev.email,
           telefono:  data.cliente.celular  || prev.telefono,
         }));
-        // No bloqueamos: continuamos al paso 2 directamente
-        setStep(2);
       } else {
-        // Cliente no existe — ir directamente a subir documentos
+        // Cliente no existe — avanzar directamente a subir documentos
         setStep(2);
       }
     } catch {

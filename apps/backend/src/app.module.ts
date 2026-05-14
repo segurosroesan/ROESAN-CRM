@@ -13,6 +13,7 @@ import { GmailModule } from './gmail/gmail.module';
 import { DocumentosModule } from './documentos/documentos.module';
 import { RemisionesModule } from './remisiones/remisiones.module';
 import { VehiculosModule } from './vehiculos/vehiculos.module';
+import { PropuestaTrackingModule } from './propuesta-tracking/propuesta-tracking.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { VehiculosModule } from './vehiculos/vehiculos.module';
     DocumentosModule,
     RemisionesModule,
     VehiculosModule,
+    PropuestaTrackingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

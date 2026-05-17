@@ -68,7 +68,7 @@ export function generarCorreo(params: GenerarCorreoParams): string {
   // ── Encabezado ──
   lineas.push(`De: Autos Roesan <autos@roesan.com.co>`);
   lineas.push(`Para: [CORREO CLIENTE]`);
-  lineas.push(`CC: comercial@roesan.com.co; tecnico@roesan.com.co`);
+  lineas.push(`CC: comercial@roesan.com; seguros@roesan.com`);
 
   if (esNuevo) {
     lineas.push(`Asunto: PROPUESTA POLIZA TODO RIESGO ${placa} ${tomador.toUpperCase()}`);
@@ -85,26 +85,28 @@ export function generarCorreo(params: GenerarCorreoParams): string {
   lineas.push(`Buenas tardes ${nombreTrato},`);
   lineas.push("");
 
+  const esMismaAseguradora = aseguradora.toUpperCase() === (aseguradoraRenovacion || "").toUpperCase();
+
   if (esNuevo) {
-    lineas.push(`Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`);
+    lineas.push(`Le comparto la propuesta de seguro TODO RIESGO para su **${descripcion}** placa **${placa.toUpperCase()}**.`);
     lineas.push("");
-    lineas.push(`Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}, que ofrece la mejor relación precio-cobertura del mercado.`);
-  } else if (accionIA === "CAMBIAR" && aseguradoraRenovacion) {
-    lineas.push(`Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer y le tenemos una buena noticia.`);
+    lineas.push(`Nuestra recomendación es **${aseguradora}** con una prima anual de **${primaTotal}**, que ofrece la mejor relación precio-cobertura del mercado.`);
+  } else if (accionIA === "CAMBIAR" && aseguradoraRenovacion && !esMismaAseguradora) {
+    lineas.push(`Su póliza de **${descripcion}** placa **${placa.toUpperCase()}** está próxima a vencer y le tenemos una buena noticia.`);
     lineas.push("");
-    lineas.push(`Cotizamos con varias aseguradoras y encontramos que ${aseguradora} le ofrece mejor precio: ${primaTotal} anuales — por debajo de lo que paga hoy con ${aseguradoraRenovacion.toUpperCase()}.`);
+    lineas.push(`Cotizamos con varias aseguradoras y encontramos que **${aseguradora}** le ofrece mejor precio: **${primaTotal}** anuales — por debajo de lo que paga hoy con ${aseguradoraRenovacion.toUpperCase()}.`);
     lineas.push("");
     lineas.push(`Si prefiere quedarse con ${aseguradoraRenovacion.toUpperCase()}, con solo confirmarnos gestionamos la renovación.`);
-  } else if (accionIA === "RENOVAR" && aseguradoraRenovacion) {
-    lineas.push(`Su póliza de ${descripcion} placa ${placa.toUpperCase()} está próxima a vencer.`);
+  } else if (aseguradoraRenovacion) {
+    lineas.push(`Su póliza de **${descripcion}** placa **${placa.toUpperCase()}** está próxima a vencer.`);
     lineas.push("");
-    lineas.push(`Revisamos el mercado y ${aseguradora} sigue siendo la mejor opción para usted — prima anual de ${primaTotal} con excelentes coberturas.`);
+    lineas.push(`Revisamos el mercado y **${aseguradora}** sigue siendo la mejor opción para usted — prima anual de **${primaTotal}** con excelentes coberturas.`);
     lineas.push("");
     lineas.push(`Con solo confirmarnos por este medio, gestionamos la renovación.`);
   } else {
-    lineas.push(`Le comparto la propuesta de seguro TODO RIESGO para su ${descripcion} placa ${placa.toUpperCase()}.`);
+    lineas.push(`Le comparto la propuesta de seguro TODO RIESGO para su **${descripcion}** placa **${placa.toUpperCase()}**.`);
     lineas.push("");
-    lineas.push(`Nuestra recomendación es ${aseguradora} con una prima anual de ${primaTotal}.`);
+    lineas.push(`Nuestra recomendación es **${aseguradora}** con una prima anual de **${primaTotal}**.`);
   }
   lineas.push("");
 
@@ -129,7 +131,7 @@ export function generarCorreo(params: GenerarCorreoParams): string {
     lineas.push("");
   }
 
-  if (accionIA === "CAMBIAR" && aseguradoraRenovacion) {
+  if (accionIA === "CAMBIAR" && aseguradoraRenovacion && !esMismaAseguradora) {
     lineas.push(`Para hacer el cambio necesitamos:`);
     lineas.push(`  → Formato adjunto diligenciado`);
     lineas.push(`  → Copia cédula y tarjeta de propiedad`);

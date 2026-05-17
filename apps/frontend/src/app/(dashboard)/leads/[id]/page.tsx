@@ -148,6 +148,8 @@ export default function LeadDetailPage() {
   const [copied, setCopied] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const [comparativoData, setComparativoData] = useState<any>(null);
+  const [polizaSeleccionada, setPolizaSeleccionada] = useState<string>("");
+  const polizaSeleccionadaRef = useRef<string>("");
   const [propuestaProData, setPropuestaProData] = useState<{ body: string; url: string } | null>(null);
   const [quotingInsurer, setQuotingInsurer] = useState<string | null>(null);
   const [uploadingBulk, setUploadingBulk] = useState(false);
@@ -463,6 +465,9 @@ export default function LeadDetailPage() {
       const result = await response.json();
       if (result.comparativo_ia) {
         setComparativoData(result);
+        const rec = result.comparativo_ia?.aseguradora_recomendada || "";
+        polizaSeleccionadaRef.current = rec;
+        setPolizaSeleccionada(rec);
       }
     } catch (err) {
       console.error("Error comparando cotizaciones:", err);
@@ -840,8 +845,42 @@ export default function LeadDetailPage() {
               )}
 
               {comparativoData && (
-                <CotizacionComparativo 
-                  cotizaciones={cotizaciones}
+                <>
+                  {/* Selector de póliza — asesor puede sobreescribir la recomendación IA */}
+                  <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Póliza a destacar en la propuesta</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {cotizaciones.map(c => {
+                        const isSelected = (c.aseguradora || "").toUpperCase() === polizaSeleccionada.toUpperCase();
+                        const prima = c.prima_total || c.valor || 0;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              polizaSeleccionadaRef.current = c.aseguradora || "";
+                              setPolizaSeleccionada(c.aseguradora || "");
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                              isSelected
+                                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                : "bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300"
+                            }`}
+                          >
+                            {isSelected && <CheckCircle2 className="h-3 w-3" />}
+                            {c.aseguradora}
+                            {prima > 0 && (
+                              <span className={`font-normal ${isSelected ? "text-indigo-200" : "text-slate-400"}`}>
+                                · ${Math.round(prima).toLocaleString("es-CO")}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <CotizacionComparativo
+                    cotizaciones={cotizaciones}
                   comparativoIA={comparativoData.comparativo_ia}
                   accionIA={comparativoData.accion}
                   asegRenovacion={comparativoData.aseguradora_renovacion}
@@ -851,11 +890,8 @@ export default function LeadDetailPage() {
                     try {
                       // 1. Guardar la propuesta en InstantDB
                       const propuestaId = crypto.randomUUID();
-                      const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
-                      const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
-                      const aseguradoraSeleccionada = cotizacionAceptada
-                        ? (cotizacionAceptada.aseguradora || "")
-                        : aseguradoraRecomendada;
+                      const aseguradoraSeleccionada = polizaSeleccionadaRef.current || comparativoData.comparativo_ia?.aseguradora_recomendada || "";
+                      const cotizacionAceptada = cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase());
 
                       const cots = cotizaciones.map(c => ({
                         aseguradora: c.aseguradora,
@@ -938,6 +974,7 @@ export default function LeadDetailPage() {
                     }
                   }}
                 />
+                </>
               )}
 
               <div className="grid grid-cols-1 gap-4">

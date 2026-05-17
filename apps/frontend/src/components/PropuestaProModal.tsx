@@ -23,8 +23,13 @@ export function PropuestaProModal({
   onClose,
   onRegenerate
 }: PropuestaProModalProps) {
-  const [body, setBody] = useState(initialBody);
-  const [subject, setSubject] = useState("Tu propuesta de seguro - Seguros Roesan");
+  const [subject, setSubject] = useState(() => {
+    const match = initialBody.match(/^Asunto:\s*(.+)$/m);
+    return match ? match[1].trim() : "Tu propuesta de seguro - Seguros Roesan";
+  });
+  const [body, setBody] = useState(() =>
+    initialBody.replace(/^(De|Para|CC|Asunto):.*\n?/gm, "").replace(/^\n+/, "").trimStart()
+  );
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -51,6 +56,9 @@ export function PropuestaProModal({
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+
+    // Convert **text** to <strong>
+    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
     // Replace the raw propuesta URL with a styled CTA button
     if (propuestaUrl) {
@@ -81,6 +89,7 @@ export function PropuestaProModal({
           subject,
           content: convertToHtml(body),
           leadId,
+          cc: "comercial@roesan.com,seguros@roesan.com",
         }),
       });
 

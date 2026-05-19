@@ -28,10 +28,15 @@ export class RemisionesService {
         this.logger.log(`Se encontraron ${polizas.length} pólizas para el cliente.`);
       }
 
+      const vigentes = polizas.filter(
+        (p) => p.estado_poliza?.id === 45909 || p.estado_poliza?.codigo_generico === '01',
+      );
+      this.logger.log(`Pólizas vigentes: ${vigentes.length} de ${polizas.length} totales.`);
+
       return {
         found: !!cliente,
         cliente: cliente ?? null,
-        polizas: polizas.map(p => ({
+        polizas: vigentes.map(p => ({
           id: p.id,
           numero_poliza: p.numero_poliza,
           ramo_nombre: p.ramo_nombre || p.ramo?.nombre,
@@ -41,7 +46,7 @@ export class RemisionesService {
           prima: p.prima,
         })),
         message: cliente
-          ? `Cliente encontrado con ${polizas.length} pólizas asociadas.`
+          ? `Cliente encontrado con ${vigentes.length} póliza(s) vigente(s).`
           : 'Cliente no encontrado — se creará al remisionar.',
       };
     } catch (error) {
@@ -368,6 +373,19 @@ export class RemisionesService {
       throw new Error(`Error creando póliza en Soft Seguros: ${detail}`);
     }
     this.logger.log(`Póliza creada con ID: ${soft_poliza_id}`);
+
+    // SYNC-4b: Marcar póliza anterior como Devengada (estado_poliza: 45911) al renovar
+    if (policyData.poliza_padre_id) {
+      try {
+        this.logger.log(`SYNC-4b: Marcando póliza ${policyData.poliza_padre_id} como Devengada (renovada)`);
+        await this.softApi.updatePolicy(policyData.poliza_padre_id, { estado_poliza: 45911 });
+        steps.polizaPadreDevengada = { id: policyData.poliza_padre_id, estado_poliza: 45911 };
+        this.logger.log(`Póliza ${policyData.poliza_padre_id} marcada como Devengada`);
+      } catch (renewErr: any) {
+        this.logger.warn(`SYNC-4b (no crítico): ${renewErr.message}`);
+        steps.polizaPadreError = renewErr.message;
+      }
+    }
 
     // STEP B.5: SYNC-3 — Vehicle extra data for auto/soat policies
     const isVehicle = ['auto', 'soat'].includes((policyData.ramo || '').toLowerCase());

@@ -283,6 +283,18 @@ export default function RemisionarPage() {
     } else if (!policyData.vendedor_id) {
       setPolicyData(p => ({ ...p, vendedor_id: "27931" }));
     }
+    // Si hay póliza padre seleccionada, tomar ramo y aseguradora de ella
+    // cuando Step 2 no aportó carátula de póliza
+    if (selectedPolizaId) {
+      const polizaPadre = busquedaResult.polizas.find(p => String(p.id) === selectedPolizaId);
+      if (polizaPadre) {
+        setPolicyData(prev => ({
+          ...prev,
+          ramo:        prev.ramo        || (polizaPadre.ramo_nombre || "auto").toLowerCase(),
+          aseguradora: prev.aseguradora || polizaPadre.aseguradora_nombre || "",
+        }));
+      }
+    }
     setStep(3);
   }
 

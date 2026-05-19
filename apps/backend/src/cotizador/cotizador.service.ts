@@ -61,8 +61,8 @@ export class CotizadorService {
     return result;
   }
 
-  async compararCotizaciones(cotizaciones: any[]) {
-    return this.comparadorService.compararCotizaciones(cotizaciones);
+  async compararCotizaciones(cotizaciones: any[], forzar_recomendada?: string) {
+    return this.comparadorService.compararCotizaciones(cotizaciones, forzar_recomendada);
   }
 
   generarCorreoCliente(params: GenerarCorreoParams) {

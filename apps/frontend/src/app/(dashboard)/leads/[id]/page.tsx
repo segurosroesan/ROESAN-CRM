@@ -890,8 +890,34 @@ export default function LeadDetailPage() {
                     try {
                       // 1. Guardar la propuesta en InstantDB
                       const propuestaId = crypto.randomUUID();
+                      const recomendadaIA = (comparativoData.comparativo_ia?.aseguradora_recomendada || "").toUpperCase();
                       const aseguradoraSeleccionada = polizaSeleccionadaRef.current || comparativoData.comparativo_ia?.aseguradora_recomendada || "";
                       const cotizacionAceptada = cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase());
+
+                      // Si el asesor eligió diferente a la IA, regenerar el análisis para la selección manual
+                      let analysisData = comparativoData.comparativo_ia;
+                      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
+                      if (aseguradoraSeleccionada.toUpperCase() !== recomendadaIA) {
+                        try {
+                          const cots4Comp = cotizaciones.filter(c => !c.error).map(c => ({
+                            aseguradora: c.aseguradora,
+                            nombre_plan: c.nombre_plan || c.cobertura || "",
+                            prima_total: c.prima_total || c.valor || 0,
+                            es_renovacion: c.es_renovacion || false,
+                            coberturas: c.coberturas || [],
+                            deducibles: c.deducibles || [],
+                          }));
+                          const respComp = await fetch(`${backendUrl}/cotizador/comparar`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ cotizaciones: cots4Comp, forzar_recomendada: aseguradoraSeleccionada }),
+                          });
+                          if (respComp.ok) {
+                            const compResult = await respComp.json();
+                            if (compResult.comparativo_ia) analysisData = compResult.comparativo_ia;
+                          }
+                        } catch { /* usa datos anteriores si falla */ }
+                      }
 
                       const cots = cotizaciones.map(c => ({
                         aseguradora: c.aseguradora,
@@ -928,12 +954,12 @@ export default function LeadDetailPage() {
                         },
                         analysis: {
                            recomendada: aseguradoraSeleccionada,
-                           plan_recomendado: comparativoData.comparativo_ia?.plan_recomendado || "",
-                           razon_principal: comparativoData.comparativo_ia?.razon_principal || comparativoData.comparativo_ia?.justificacion_corta || "",
-                           puntos_fuertes: comparativoData.comparativo_ia?.puntos_fuertes || [],
-                           analisis_general: comparativoData.comparativo_ia?.analisis_general || "",
-                           alternativa: comparativoData.comparativo_ia?.alternativa || "",
-                           razon_alternativa: comparativoData.comparativo_ia?.razon_alternativa || "",
+                           plan_recomendado: analysisData?.plan_recomendado || "",
+                           razon_principal: analysisData?.razon_principal || analysisData?.justificacion_corta || "",
+                           puntos_fuertes: analysisData?.puntos_fuertes || [],
+                           analisis_general: analysisData?.analisis_general || "",
+                           alternativa: analysisData?.alternativa || "",
+                           razon_alternativa: analysisData?.razon_alternativa || "",
                         }
                       };
 
@@ -947,7 +973,6 @@ export default function LeadDetailPage() {
                         db.tx.propuestas[propuestaId].link({ lead: leadId })
                       ]);
 
-                      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
                       const response = await fetch(`${backendUrl}/cotizador/email`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },

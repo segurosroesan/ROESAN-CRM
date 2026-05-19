@@ -33,6 +33,7 @@ export function EmailComposer({ leadId, toEmail, userId, onClose }: EmailCompose
           subject,
           content: body,
           leadId,
+          cc: "jorge.jaime.henao.romero@gmail.com",
         }),
       });
 

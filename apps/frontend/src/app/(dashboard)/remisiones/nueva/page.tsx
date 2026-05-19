@@ -473,21 +473,30 @@ export default function RemisionarPage() {
                       <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Seleccionar póliza para renovar (opcional)</p>
                     </div>
                     <div className="divide-y divide-slate-200 max-h-48 overflow-y-auto">
-                      {busquedaResult.polizas.map((pol: any) => (
-                        <div 
-                          key={pol.id} 
+                      {busquedaResult.polizas.map((pol: any) => {
+                        const isVigente = pol.codigo_estado === '01';
+                        const estadoColor = isVigente
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-100 text-slate-500";
+                        return (
+                        <div
+                          key={pol.id}
                           onClick={() => setSelectedPolizaId(selectedPolizaId === String(pol.id) ? null : String(pol.id))}
                           className={`p-3 flex items-center justify-between hover:bg-amber-50 cursor-pointer transition-colors ${selectedPolizaId === String(pol.id) ? "bg-amber-50" : ""}`}
                         >
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-700">#{pol.numero_poliza} - {pol.aseguradora_nombre}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-bold text-slate-700">#{pol.numero_poliza} - {pol.aseguradora_nombre}</p>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${estadoColor}`}>{pol.estado}</span>
+                            </div>
                             <p className="text-[10px] text-slate-500">{pol.ramo_nombre} | Vence: {pol.fecha_fin}</p>
                           </div>
                           <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedPolizaId === String(pol.id) ? "border-amber-500 bg-amber-500" : "border-slate-300"}`}>
                             {selectedPolizaId === String(pol.id) && <CheckCircle className="h-3 w-3 text-white" />}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

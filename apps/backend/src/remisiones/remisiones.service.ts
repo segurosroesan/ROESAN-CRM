@@ -28,25 +28,27 @@ export class RemisionesService {
         this.logger.log(`Se encontraron ${polizas.length} pólizas para el cliente.`);
       }
 
-      const vigentes = polizas.filter(
-        (p) => p.estado_poliza?.id === 45909 || p.estado_poliza?.codigo_generico === '01',
-      );
-      this.logger.log(`Pólizas vigentes: ${vigentes.length} de ${polizas.length} totales.`);
+      // Para remisiones mostramos todas las pólizas del cliente (vigentes Y renovadas)
+      // El asesor debe poder seleccionar la póliza que está renovando/remisionando,
+      // independientemente de su estado actual en Soft Seguros.
+      const polizasMapeadas = polizas.map(p => ({
+        id: p.id,
+        numero_poliza: p.numero_poliza,
+        ramo_nombre: p.ramo_nombre || p.ramo?.nombre,
+        aseguradora_nombre: p.aseguradora_nombre || p.aseguradora?.nombre,
+        fecha_fin: p.fecha_fin,
+        estado: p.estado_poliza?.nombre || 'Desconocido',
+        codigo_estado: p.estado_poliza?.codigo_generico || '',
+        prima: p.prima,
+      }));
+      this.logger.log(`Pólizas totales del cliente: ${polizasMapeadas.length}`);
 
       return {
         found: !!cliente,
         cliente: cliente ?? null,
-        polizas: vigentes.map(p => ({
-          id: p.id,
-          numero_poliza: p.numero_poliza,
-          ramo_nombre: p.ramo_nombre || p.ramo?.nombre,
-          aseguradora_nombre: p.aseguradora_nombre || p.aseguradora?.nombre,
-          fecha_fin: p.fecha_fin,
-          estado: p.estado_poliza?.nombre || 'Desconocido',
-          prima: p.prima,
-        })),
+        polizas: polizasMapeadas,
         message: cliente
-          ? `Cliente encontrado con ${vigentes.length} póliza(s) vigente(s).`
+          ? `Cliente encontrado con ${polizasMapeadas.length} póliza(s).`
           : 'Cliente no encontrado — se creará al remisionar.',
       };
     } catch (error) {

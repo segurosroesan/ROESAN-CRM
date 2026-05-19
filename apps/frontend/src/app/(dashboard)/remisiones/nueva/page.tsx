@@ -141,12 +141,13 @@ export default function RemisionarPage() {
       if (data.found && data.cliente) {
         // Cliente existe — pre-llenar con info de Soft Seguros y quedarse en Step 1
         // para que el usuario vea las pólizas y escoja cuál renovar antes de continuar
+        const c = data.cliente;
         setFormCliente(prev => ({
           ...prev,
-          nombres:   data.cliente.nombres  || prev.nombres,
-          apellidos: data.cliente.apellidos || prev.apellidos,
-          email:     data.cliente.email    || prev.email,
-          telefono:  data.cliente.celular  || prev.telefono,
+          nombres:   c.nombres || c.nombre || c.nombre_completo || prev.nombres,
+          apellidos: c.apellidos || c.apellido || prev.apellidos,
+          email:     c.email || c.correo || prev.email,
+          telefono:  c.celular || c.telefono || prev.telefono,
         }));
       } else {
         // Cliente no existe — avanzar directamente a subir documentos
@@ -493,10 +494,16 @@ export default function RemisionarPage() {
               </div>
             )}
 
+            {busquedaResult.searched && busquedaResult.found && !formCliente.nombres && (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-800">
+                <span className="shrink-0">⚠️</span>
+                <span>El cliente fue encontrado pero Soft Seguros no tiene nombre registrado. <strong>Ingresa el nombre manualmente</strong> para continuar.</span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4 mb-4">
               {[
-                { key: "nombres",   label: "Nombres *",   placeholder: "Juan Carlos" },
-                { key: "apellidos", label: "Apellidos",   placeholder: "Pérez López" },
+                { key: "nombres",   label: "Nombres *",   placeholder: "Nombres del cliente" },
+                { key: "apellidos", label: "Apellidos",   placeholder: "Apellidos del cliente" },
                 { key: "email",     label: "Correo",      placeholder: "cliente@email.com", type: "email" },
                 { key: "telefono",  label: "Teléfono",    placeholder: "+573001234567" },
               ].map(({ key, label, placeholder, type }) => (

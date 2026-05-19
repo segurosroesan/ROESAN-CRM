@@ -3,7 +3,7 @@ import { QualitasApi, CotizarDto } from '../lib/qualitas-api';
 import { AllianzApi } from '../lib/allianz-api';
 import { SBSApi } from '../lib/sbs-api';
 import { ComparadorService } from './comparador.service';
-import { generarCorreo, GenerarCorreoParams } from './email-generator';
+import { generarCorreo, generarAsunto, GenerarCorreoParams } from './email-generator';
 
 @Injectable()
 export class CotizadorService {
@@ -66,7 +66,10 @@ export class CotizadorService {
   }
 
   generarCorreoCliente(params: GenerarCorreoParams) {
-    return generarCorreo(params);
+    return {
+      body: generarCorreo(params),
+      subject: generarAsunto(params),
+    };
   }
 
   async parsearPdfCotizacion(buffer: Buffer, mimeType: string) {

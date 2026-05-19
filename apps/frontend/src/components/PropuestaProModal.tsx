@@ -9,6 +9,7 @@ interface PropuestaProModalProps {
   toEmail: string;
   phone?: string;
   initialBody: string;
+  initialSubject?: string;
   propuestaUrl: string;
   onClose: () => void;
   onRegenerate?: () => Promise<string | void>;
@@ -19,17 +20,15 @@ export function PropuestaProModal({
   toEmail,
   phone,
   initialBody,
+  initialSubject,
   propuestaUrl,
   onClose,
   onRegenerate
 }: PropuestaProModalProps) {
-  const [subject, setSubject] = useState(() => {
-    const match = initialBody.match(/^Asunto:\s*(.+)$/m);
-    return match ? match[1].trim() : "Tu propuesta de seguro - Seguros Roesan";
-  });
-  const [body, setBody] = useState(() =>
-    initialBody.replace(/^(De|Para|CC|Asunto):.*\n?/gm, "").replace(/^\n+/, "").trimStart()
+  const [subject, setSubject] = useState(
+    initialSubject || "Tu propuesta de seguro - Seguros Roesan"
   );
+  const [body, setBody] = useState(initialBody.replace(/^\n+/, "").trimStart());
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);

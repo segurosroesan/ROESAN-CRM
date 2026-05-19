@@ -78,8 +78,7 @@ export class CotizadorController {
   @HttpCode(200)
   async generarCorreo(@Body() params: GenerarCorreoParams) {
     this.logger.log(`Solicitud para generar correo al cliente`);
-    const body = this.cotizadorService.generarCorreoCliente(params);
-    return { body };
+    return this.cotizadorService.generarCorreoCliente(params);
   }
 
   @Post('parse-pdf')

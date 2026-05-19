@@ -150,7 +150,7 @@ export default function LeadDetailPage() {
   const [comparativoData, setComparativoData] = useState<any>(null);
   const [polizaSeleccionada, setPolizaSeleccionada] = useState<string>("");
   const polizaSeleccionadaRef = useRef<string>("");
-  const [propuestaProData, setPropuestaProData] = useState<{ body: string; url: string } | null>(null);
+  const [propuestaProData, setPropuestaProData] = useState<{ body: string; subject: string; url: string } | null>(null);
   const [quotingInsurer, setQuotingInsurer] = useState<string | null>(null);
   const [uploadingBulk, setUploadingBulk] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
@@ -991,7 +991,7 @@ export default function LeadDetailPage() {
                       });
                       const result = await response.json();
                       if (result.body) {
-                        setPropuestaProData({ body: result.body, url: `${window.location.origin}/propuesta/${propuestaId}` });
+                        setPropuestaProData({ body: result.body, subject: result.subject || "", url: `${window.location.origin}/propuesta/${propuestaId}` });
                       }
                     } catch(err) {
                       console.error(err);
@@ -1318,6 +1318,7 @@ export default function LeadDetailPage() {
           toEmail={lead.email || ""}
           phone={lead.phone || ""}
           initialBody={propuestaProData.body}
+          initialSubject={propuestaProData.subject}
           propuestaUrl={propuestaProData.url}
           onClose={() => setPropuestaProData(null)}
           onRegenerate={async () => {

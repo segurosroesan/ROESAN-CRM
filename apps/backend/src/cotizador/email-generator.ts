@@ -43,6 +43,20 @@ export interface GenerarCorreoParams {
   enlacePropuesta?: string;
 }
 
+/** Genera el asunto del correo al cliente. */
+export function generarAsunto(params: GenerarCorreoParams): string {
+  const { cotizacionSeleccionada, datosExtra = {}, esNuevo = false } = params;
+  const cot = cotizacionSeleccionada;
+  const tomador = (cot?.tomador || datosExtra?.tomador || "").toUpperCase();
+  const placa = (cot?.placa || datosExtra?.placa || "").toUpperCase();
+  const primerNombre = tomador.split(" ")[0] || "";
+  if (esNuevo) {
+    return `PROPUESTA POLIZA TODO RIESGO ${placa} ${primerNombre}`.trim();
+  } else {
+    return `CONDICIONES DE RENOVACION POLIZA TODO RIESGO ${placa} ${primerNombre}`.trim();
+  }
+}
+
 /**
  * Genera el texto del correo al cliente.
  */

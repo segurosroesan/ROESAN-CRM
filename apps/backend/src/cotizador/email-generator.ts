@@ -65,18 +65,6 @@ export function generarCorreo(params: GenerarCorreoParams): string {
 
   const lineas: string[] = [];
 
-  // ── Encabezado ──
-  lineas.push(`De: Autos Roesan <autos@roesan.com.co>`);
-  lineas.push(`Para: [CORREO CLIENTE]`);
-  lineas.push(`CC: comercial@roesan.com; seguros@roesan.com`);
-
-  if (esNuevo) {
-    lineas.push(`Asunto: PROPUESTA POLIZA TODO RIESGO ${placa} ${tomador.toUpperCase()}`);
-  } else {
-    lineas.push(`Asunto: CONDICIONES DE RENOVACION POLIZA TODO RIESGO ${placa} ${tomador.toUpperCase()}`);
-  }
-
-  lineas.push("");
 
   // ── Cuerpo ──
   const nombreCorto = tomador.split(" ")[0];

@@ -65,6 +65,14 @@ export class AllianzApi {
       ...(certBuffer ? { pfx: certBuffer, passphrase: certPassword } : {}),
       rejectUnauthorized: false,
     });
+
+    this.logger.log(
+      `Allianz config: partnerId=${this.partnerid ? 'SET' : 'EMPTY'}, ` +
+      `agentId=${this.agentid ? 'SET' : 'EMPTY'}, ` +
+      `partnerCode=${this.partnercode ? 'SET' : 'EMPTY'}, ` +
+      `agentCode=${this.agentcode ? 'SET' : 'EMPTY'}, ` +
+      `cert=${certBuffer ? 'LOADED' : 'MISSING'}`
+    );
   }
 
   async cotizar(dto: CotizarDto): Promise<AllianzQuoteResult> {
@@ -142,7 +150,7 @@ export class AllianzApi {
       `<operationtypecode>TA</operationtypecode>` +
       `<productcode>1243</productcode>` +
       `</operationheaders>` +
-      `<cap>3</cap>` +
+      `<cap>0</cap>` +
       `<effectivedate>${effectiveDate}</effectivedate>` +
       `<TermDate>${termDate}</TermDate>` +
       `<firstbill>0</firstbill>` +

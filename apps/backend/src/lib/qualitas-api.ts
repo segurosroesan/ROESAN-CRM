@@ -194,7 +194,8 @@ export class QualitasApi {
       const status = error.response?.status;
       const body = error.response?.data;
       this.logger.error(`Qualitas HTTP ${status}: ${JSON.stringify(body)}`);
-      const msg = body?.message || body?.Mensaje || body?.error || JSON.stringify(body) || error.message;
+      const msn = body?.Movimientos?.[0]?.Respuesta_Solicitud?.msn;
+      const msg = msn || body?.message || body?.Mensaje || body?.error || JSON.stringify(body) || error.message;
       throw new Error(`Qualitas (HTTP ${status}): ${msg}`);
     }
   }

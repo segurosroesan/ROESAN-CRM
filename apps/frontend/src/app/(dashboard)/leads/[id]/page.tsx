@@ -899,7 +899,7 @@ export default function LeadDetailPage() {
                       const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
                       if (aseguradoraSeleccionada.toUpperCase() !== recomendadaIA) {
                         try {
-                          const cots4Comp = cotizaciones.filter(c => !c.error).map(c => ({
+                          const cots4Comp = cotizaciones.filter(c => !(c as any).error).map(c => ({
                             aseguradora: c.aseguradora,
                             nombre_plan: c.nombre_plan || c.cobertura || "",
                             prima_total: c.prima_total || c.valor || 0,

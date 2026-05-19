@@ -141,12 +141,13 @@ export default function RemisionarPage() {
       if (data.found && data.cliente) {
         // Cliente existe — pre-llenar con info de Soft Seguros y quedarse en Step 1
         // para que el usuario vea las pólizas y escoja cuál renovar antes de continuar
+        const c = data.cliente;
         setFormCliente(prev => ({
           ...prev,
-          nombres:   data.cliente.nombres  || prev.nombres,
-          apellidos: data.cliente.apellidos || prev.apellidos,
-          email:     data.cliente.email    || prev.email,
-          telefono:  data.cliente.celular  || prev.telefono,
+          nombres:   c.nombres || c.nombre || c.nombre_completo || prev.nombres,
+          apellidos: c.apellidos || c.apellido || prev.apellidos,
+          email:     c.email || c.correo || prev.email,
+          telefono:  c.celular || c.telefono || prev.telefono,
         }));
       } else {
         // Cliente no existe — avanzar directamente a subir documentos
@@ -283,6 +284,18 @@ export default function RemisionarPage() {
       });
     } else if (!policyData.vendedor_id) {
       setPolicyData(p => ({ ...p, vendedor_id: "27931" }));
+    }
+    // Si hay póliza padre seleccionada, tomar ramo y aseguradora de ella
+    // cuando Step 2 no aportó carátula de póliza
+    if (selectedPolizaId) {
+      const polizaPadre = busquedaResult.polizas.find(p => String(p.id) === selectedPolizaId);
+      if (polizaPadre) {
+        setPolicyData(prev => ({
+          ...prev,
+          ramo:        prev.ramo        || (polizaPadre.ramo_nombre || "auto").toLowerCase(),
+          aseguradora: prev.aseguradora || polizaPadre.aseguradora_nombre || "",
+        }));
+      }
     }
     setStep(3);
   }
@@ -461,31 +474,46 @@ export default function RemisionarPage() {
                       <p className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Seleccionar póliza para renovar (opcional)</p>
                     </div>
                     <div className="divide-y divide-slate-200 max-h-48 overflow-y-auto">
-                      {busquedaResult.polizas.map((pol: any) => (
-                        <div 
-                          key={pol.id} 
+                      {busquedaResult.polizas.map((pol: any) => {
+                        const isVigente = pol.codigo_estado === '01';
+                        const estadoColor = isVigente
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-100 text-slate-500";
+                        return (
+                        <div
+                          key={pol.id}
                           onClick={() => setSelectedPolizaId(selectedPolizaId === String(pol.id) ? null : String(pol.id))}
                           className={`p-3 flex items-center justify-between hover:bg-amber-50 cursor-pointer transition-colors ${selectedPolizaId === String(pol.id) ? "bg-amber-50" : ""}`}
                         >
                           <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-700">#{pol.numero_poliza} - {pol.aseguradora_nombre}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-bold text-slate-700">#{pol.numero_poliza} - {pol.aseguradora_nombre}</p>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${estadoColor}`}>{pol.estado}</span>
+                            </div>
                             <p className="text-[10px] text-slate-500">{pol.ramo_nombre} | Vence: {pol.fecha_fin}</p>
                           </div>
                           <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedPolizaId === String(pol.id) ? "border-amber-500 bg-amber-500" : "border-slate-300"}`}>
                             {selectedPolizaId === String(pol.id) && <CheckCircle className="h-3 w-3 text-white" />}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
               </div>
             )}
 
+            {busquedaResult.searched && busquedaResult.found && !formCliente.nombres && (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 text-sm text-amber-800">
+                <span className="shrink-0">⚠️</span>
+                <span>El cliente fue encontrado pero Soft Seguros no tiene nombre registrado. <strong>Ingresa el nombre manualmente</strong> para continuar.</span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4 mb-4">
               {[
-                { key: "nombres",   label: "Nombres *",   placeholder: "Juan Carlos" },
-                { key: "apellidos", label: "Apellidos",   placeholder: "Pérez López" },
+                { key: "nombres",   label: "Nombres *",   placeholder: "Nombres del cliente" },
+                { key: "apellidos", label: "Apellidos",   placeholder: "Apellidos del cliente" },
                 { key: "email",     label: "Correo",      placeholder: "cliente@email.com", type: "email" },
                 { key: "telefono",  label: "Teléfono",    placeholder: "+573001234567" },
               ].map(({ key, label, placeholder, type }) => (

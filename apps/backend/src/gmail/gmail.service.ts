@@ -68,6 +68,7 @@ export class GmailService {
     to: string,
     subject: string,
     html: string,
+    cc?: string,
   ): Promise<string> {
     const result = await this.db.query({
       users: { $: { where: { id: userId } } },
@@ -87,9 +88,10 @@ export class GmailService {
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
-    const raw = Buffer.from(
-      [`To: ${to}`, `Subject: ${encodedSubject}`, 'MIME-Version: 1.0', 'Content-Type: text/html; charset=UTF-8', '', html].join('\r\n'),
-    ).toString('base64url');
+    const headers = [`To: ${to}`, `Subject: ${encodedSubject}`];
+    if (cc) headers.push(`Cc: ${cc}`);
+    headers.push('MIME-Version: 1.0', 'Content-Type: text/html; charset=UTF-8');
+    const raw = Buffer.from([...headers, '', html].join('\r\n')).toString('base64url');
 
     try {
       const sent = await gmail.users.messages.send({
@@ -116,8 +118,8 @@ export class GmailService {
   /**
    * Envía un correo de propuesta al cliente desde el Gmail del asesor (OAuth).
    */
-  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string) {
-    const id = await this.sendViaGmailOAuth(userId, to, subject, body);
+  async sendEmail(userId: string, to: string, subject: string, body: string, leadId?: string, cc?: string) {
+    const id = await this.sendViaGmailOAuth(userId, to, subject, body, cc);
 
     if (leadId) {
       await this.db.transact([

@@ -78,7 +78,7 @@ export class ComparadorService {
     }
   }
 
-  async compararCotizaciones(cotizaciones: any[]): Promise<any> {
+  async compararCotizaciones(cotizaciones: any[], forzar_recomendada?: string): Promise<any> {
     if (!cotizaciones || cotizaciones.length === 0) {
       throw new Error("No hay cotizaciones para comparar");
     }
@@ -130,7 +130,11 @@ export class ComparadorService {
 
     prompt = prompt.replace("{cotizaciones_json}", JSON.stringify(resumen, null, 2));
 
-    this.logger.log(`Solicitando comparacion a Gemini Flash (${resumen.length} cotizaciones)`);
+    if (forzar_recomendada) {
+      prompt += `\n\nIMPORTANTE: El asesor ha seleccionado manualmente "${forzar_recomendada}" como la opción a presentar al cliente, basado en criterios de relación precio-cobertura y preferencias del cliente. Genera el análisis justificando esta elección. La alternativa debe ser la opción con menor prima que no sea "${forzar_recomendada}".`;
+    }
+
+    this.logger.log(`Solicitando comparacion a Gemini Flash (${resumen.length} cotizaciones${forzar_recomendada ? `, forzando ${forzar_recomendada}` : ''})`);
 
     // Llamar a Gemini
     const model = this.genAI.getGenerativeModel({
@@ -153,10 +157,11 @@ export class ComparadorService {
     }
 
     // ── OVERRIDE DETERMINÍSTICO POR PRECIO ──
+    // Saltar si el asesor forzó una selección manual
     const validas = resumen.filter((c) => toInt(c.prima_total) > 0);
     const renovacion = validas.find((c) => c.es_renovacion) || null;
 
-    if (validas.length > 0) {
+    if (!forzar_recomendada && validas.length > 0) {
       const ordenadas = [...validas].sort((a, b) => toInt(a.prima_total) - toInt(b.prima_total));
       const masBarata = ordenadas[0];
       const recomAI = (resultado.aseguradora_recomendada || "").toUpperCase();

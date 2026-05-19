@@ -9,6 +9,7 @@ interface PropuestaProModalProps {
   toEmail: string;
   phone?: string;
   initialBody: string;
+  initialSubject?: string;
   propuestaUrl: string;
   onClose: () => void;
   onRegenerate?: () => Promise<string | void>;
@@ -19,12 +20,15 @@ export function PropuestaProModal({
   toEmail,
   phone,
   initialBody,
+  initialSubject,
   propuestaUrl,
   onClose,
   onRegenerate
 }: PropuestaProModalProps) {
-  const [body, setBody] = useState(initialBody);
-  const [subject, setSubject] = useState("Tu propuesta de seguro - Seguros Roesan");
+  const [subject, setSubject] = useState(
+    initialSubject || "Tu propuesta de seguro - Seguros Roesan"
+  );
+  const [body, setBody] = useState(initialBody.replace(/^\n+/, "").trimStart());
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -51,6 +55,9 @@ export function PropuestaProModal({
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+
+    // Convert **text** to <strong>
+    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
     // Replace the raw propuesta URL with a styled CTA button
     if (propuestaUrl) {
@@ -81,6 +88,7 @@ export function PropuestaProModal({
           subject,
           content: convertToHtml(body),
           leadId,
+          cc: "comercial@roesan.com,seguros@roesan.com",
         }),
       });
 

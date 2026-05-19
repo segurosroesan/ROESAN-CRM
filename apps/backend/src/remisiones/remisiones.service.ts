@@ -28,20 +28,27 @@ export class RemisionesService {
         this.logger.log(`Se encontraron ${polizas.length} pólizas para el cliente.`);
       }
 
+      // Para remisiones mostramos todas las pólizas del cliente (vigentes Y renovadas)
+      // El asesor debe poder seleccionar la póliza que está renovando/remisionando,
+      // independientemente de su estado actual en Soft Seguros.
+      const polizasMapeadas = polizas.map(p => ({
+        id: p.id,
+        numero_poliza: p.numero_poliza,
+        ramo_nombre: p.ramo_nombre || p.ramo?.nombre,
+        aseguradora_nombre: p.aseguradora_nombre || p.aseguradora?.nombre,
+        fecha_fin: p.fecha_fin,
+        estado: p.estado_poliza?.nombre || 'Desconocido',
+        codigo_estado: p.estado_poliza?.codigo_generico || '',
+        prima: p.prima,
+      }));
+      this.logger.log(`Pólizas totales del cliente: ${polizasMapeadas.length}`);
+
       return {
         found: !!cliente,
         cliente: cliente ?? null,
-        polizas: polizas.map(p => ({
-          id: p.id,
-          numero_poliza: p.numero_poliza,
-          ramo_nombre: p.ramo_nombre || p.ramo?.nombre,
-          aseguradora_nombre: p.aseguradora_nombre || p.aseguradora?.nombre,
-          fecha_fin: p.fecha_fin,
-          estado: p.estado_poliza?.nombre || 'Desconocido',
-          prima: p.prima,
-        })),
+        polizas: polizasMapeadas,
         message: cliente
-          ? `Cliente encontrado con ${polizas.length} pólizas asociadas.`
+          ? `Cliente encontrado con ${polizasMapeadas.length} póliza(s).`
           : 'Cliente no encontrado — se creará al remisionar.',
       };
     } catch (error) {
@@ -372,6 +379,19 @@ export class RemisionesService {
       throw new Error(`Error creando póliza en Soft Seguros: ${detail}`);
     }
     this.logger.log(`Póliza creada con ID: ${soft_poliza_id}`);
+
+    // SYNC-4b: Marcar póliza anterior como Devengada (estado_poliza: 45911) al renovar
+    if (policyData.poliza_padre_id) {
+      try {
+        this.logger.log(`SYNC-4b: Marcando póliza ${policyData.poliza_padre_id} como Devengada (renovada)`);
+        await this.softApi.updatePolicy(policyData.poliza_padre_id, { estado_poliza: 45911 });
+        steps.polizaPadreDevengada = { id: policyData.poliza_padre_id, estado_poliza: 45911 };
+        this.logger.log(`Póliza ${policyData.poliza_padre_id} marcada como Devengada`);
+      } catch (renewErr: any) {
+        this.logger.warn(`SYNC-4b (no crítico): ${renewErr.message}`);
+        steps.polizaPadreError = renewErr.message;
+      }
+    }
 
     // STEP B.5: SYNC-3 — Vehicle extra data for auto/soat policies
     const isVehicle = ['auto', 'soat'].includes((policyData.ramo || '').toLowerCase());

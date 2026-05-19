@@ -3,7 +3,7 @@ import { QualitasApi, CotizarDto } from '../lib/qualitas-api';
 import { AllianzApi } from '../lib/allianz-api';
 import { SBSApi } from '../lib/sbs-api';
 import { ComparadorService } from './comparador.service';
-import { generarCorreo, GenerarCorreoParams } from './email-generator';
+import { generarCorreo, generarAsunto, GenerarCorreoParams } from './email-generator';
 
 @Injectable()
 export class CotizadorService {
@@ -61,12 +61,15 @@ export class CotizadorService {
     return result;
   }
 
-  async compararCotizaciones(cotizaciones: any[]) {
-    return this.comparadorService.compararCotizaciones(cotizaciones);
+  async compararCotizaciones(cotizaciones: any[], forzar_recomendada?: string) {
+    return this.comparadorService.compararCotizaciones(cotizaciones, forzar_recomendada);
   }
 
   generarCorreoCliente(params: GenerarCorreoParams) {
-    return generarCorreo(params);
+    return {
+      body: generarCorreo(params),
+      subject: generarAsunto(params),
+    };
   }
 
   async parsearPdfCotizacion(buffer: Buffer, mimeType: string) {

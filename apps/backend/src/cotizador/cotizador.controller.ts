@@ -63,10 +63,11 @@ export class CotizadorController {
 
   @Post('comparar')
   @HttpCode(200)
-  async compararCotizaciones(@Body('cotizaciones') cotizaciones: any[]) {
-    this.logger.log(`Solicitud de comparación IA para ${cotizaciones?.length || 0} cotizaciones`);
+  async compararCotizaciones(@Body() body: { cotizaciones: any[]; forzar_recomendada?: string }) {
+    const { cotizaciones, forzar_recomendada } = body;
+    this.logger.log(`Solicitud de comparación IA para ${cotizaciones?.length || 0} cotizaciones${forzar_recomendada ? ` (forzando ${forzar_recomendada})` : ''}`);
     try {
-      return await this.cotizadorService.compararCotizaciones(cotizaciones);
+      return await this.cotizadorService.compararCotizaciones(cotizaciones, forzar_recomendada);
     } catch (e: any) {
       this.logger.error(`Comparador IA falló: ${e.message}`);
       throw new HttpException({ error: e.message }, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -77,8 +78,7 @@ export class CotizadorController {
   @HttpCode(200)
   async generarCorreo(@Body() params: GenerarCorreoParams) {
     this.logger.log(`Solicitud para generar correo al cliente`);
-    const body = this.cotizadorService.generarCorreoCliente(params);
-    return { body };
+    return this.cotizadorService.generarCorreoCliente(params);
   }
 
   @Post('parse-pdf')

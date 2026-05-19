@@ -148,7 +148,9 @@ export default function LeadDetailPage() {
   const [copied, setCopied] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const [comparativoData, setComparativoData] = useState<any>(null);
-  const [propuestaProData, setPropuestaProData] = useState<{ body: string; url: string } | null>(null);
+  const [polizaSeleccionada, setPolizaSeleccionada] = useState<string>("");
+  const polizaSeleccionadaRef = useRef<string>("");
+  const [propuestaProData, setPropuestaProData] = useState<{ body: string; subject: string; url: string } | null>(null);
   const [quotingInsurer, setQuotingInsurer] = useState<string | null>(null);
   const [uploadingBulk, setUploadingBulk] = useState(false);
   const bulkFileInputRef = useRef<HTMLInputElement>(null);
@@ -463,6 +465,9 @@ export default function LeadDetailPage() {
       const result = await response.json();
       if (result.comparativo_ia) {
         setComparativoData(result);
+        const rec = result.comparativo_ia?.aseguradora_recomendada || "";
+        polizaSeleccionadaRef.current = rec;
+        setPolizaSeleccionada(rec);
       }
     } catch (err) {
       console.error("Error comparando cotizaciones:", err);
@@ -840,8 +845,42 @@ export default function LeadDetailPage() {
               )}
 
               {comparativoData && (
-                <CotizacionComparativo 
-                  cotizaciones={cotizaciones}
+                <>
+                  {/* Selector de póliza — asesor puede sobreescribir la recomendación IA */}
+                  <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Póliza a destacar en la propuesta</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {cotizaciones.map(c => {
+                        const isSelected = (c.aseguradora || "").toUpperCase() === polizaSeleccionada.toUpperCase();
+                        const prima = c.prima_total || c.valor || 0;
+                        return (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              polizaSeleccionadaRef.current = c.aseguradora || "";
+                              setPolizaSeleccionada(c.aseguradora || "");
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                              isSelected
+                                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                : "bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300"
+                            }`}
+                          >
+                            {isSelected && <CheckCircle2 className="h-3 w-3" />}
+                            {c.aseguradora}
+                            {prima > 0 && (
+                              <span className={`font-normal ${isSelected ? "text-indigo-200" : "text-slate-400"}`}>
+                                · ${Math.round(prima).toLocaleString("es-CO")}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <CotizacionComparativo
+                    cotizaciones={cotizaciones}
                   comparativoIA={comparativoData.comparativo_ia}
                   accionIA={comparativoData.accion}
                   asegRenovacion={comparativoData.aseguradora_renovacion}
@@ -851,11 +890,34 @@ export default function LeadDetailPage() {
                     try {
                       // 1. Guardar la propuesta en InstantDB
                       const propuestaId = crypto.randomUUID();
-                      const aseguradoraRecomendada = comparativoData.comparativo_ia?.aseguradora_recomendada || "";
-                      const cotizacionAceptada = cotizaciones.find(c => c.estado === "aceptada");
-                      const aseguradoraSeleccionada = cotizacionAceptada
-                        ? (cotizacionAceptada.aseguradora || "")
-                        : aseguradoraRecomendada;
+                      const recomendadaIA = (comparativoData.comparativo_ia?.aseguradora_recomendada || "").toUpperCase();
+                      const aseguradoraSeleccionada = polizaSeleccionadaRef.current || comparativoData.comparativo_ia?.aseguradora_recomendada || "";
+                      const cotizacionAceptada = cotizaciones.find(c => (c.aseguradora || "").toUpperCase() === aseguradoraSeleccionada.toUpperCase());
+
+                      // Si el asesor eligió diferente a la IA, regenerar el análisis para la selección manual
+                      let analysisData = comparativoData.comparativo_ia;
+                      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
+                      if (aseguradoraSeleccionada.toUpperCase() !== recomendadaIA) {
+                        try {
+                          const cots4Comp = cotizaciones.filter(c => !(c as any).error).map(c => ({
+                            aseguradora: c.aseguradora,
+                            nombre_plan: c.nombre_plan || c.cobertura || "",
+                            prima_total: c.prima_total || c.valor || 0,
+                            es_renovacion: c.es_renovacion || false,
+                            coberturas: c.coberturas || [],
+                            deducibles: c.deducibles || [],
+                          }));
+                          const respComp = await fetch(`${backendUrl}/cotizador/comparar`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ cotizaciones: cots4Comp, forzar_recomendada: aseguradoraSeleccionada }),
+                          });
+                          if (respComp.ok) {
+                            const compResult = await respComp.json();
+                            if (compResult.comparativo_ia) analysisData = compResult.comparativo_ia;
+                          }
+                        } catch { /* usa datos anteriores si falla */ }
+                      }
 
                       const cots = cotizaciones.map(c => ({
                         aseguradora: c.aseguradora,
@@ -892,12 +954,12 @@ export default function LeadDetailPage() {
                         },
                         analysis: {
                            recomendada: aseguradoraSeleccionada,
-                           plan_recomendado: comparativoData.comparativo_ia?.plan_recomendado || "",
-                           razon_principal: comparativoData.comparativo_ia?.razon_principal || comparativoData.comparativo_ia?.justificacion_corta || "",
-                           puntos_fuertes: comparativoData.comparativo_ia?.puntos_fuertes || [],
-                           analisis_general: comparativoData.comparativo_ia?.analisis_general || "",
-                           alternativa: comparativoData.comparativo_ia?.alternativa || "",
-                           razon_alternativa: comparativoData.comparativo_ia?.razon_alternativa || "",
+                           plan_recomendado: analysisData?.plan_recomendado || "",
+                           razon_principal: analysisData?.razon_principal || analysisData?.justificacion_corta || "",
+                           puntos_fuertes: analysisData?.puntos_fuertes || [],
+                           analisis_general: analysisData?.analisis_general || "",
+                           alternativa: analysisData?.alternativa || "",
+                           razon_alternativa: analysisData?.razon_alternativa || "",
                         }
                       };
 
@@ -911,7 +973,6 @@ export default function LeadDetailPage() {
                         db.tx.propuestas[propuestaId].link({ lead: leadId })
                       ]);
 
-                      const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3002"}/api`;
                       const response = await fetch(`${backendUrl}/cotizador/email`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -930,7 +991,7 @@ export default function LeadDetailPage() {
                       });
                       const result = await response.json();
                       if (result.body) {
-                        setPropuestaProData({ body: result.body, url: `${window.location.origin}/propuesta/${propuestaId}` });
+                        setPropuestaProData({ body: result.body, subject: result.subject || "", url: `${window.location.origin}/propuesta/${propuestaId}` });
                       }
                     } catch(err) {
                       console.error(err);
@@ -938,6 +999,7 @@ export default function LeadDetailPage() {
                     }
                   }}
                 />
+                </>
               )}
 
               <div className="grid grid-cols-1 gap-4">
@@ -1256,6 +1318,7 @@ export default function LeadDetailPage() {
           toEmail={lead.email || ""}
           phone={lead.phone || ""}
           initialBody={propuestaProData.body}
+          initialSubject={propuestaProData.subject}
           propuestaUrl={propuestaProData.url}
           onClose={() => setPropuestaProData(null)}
           onRegenerate={async () => {

@@ -1,7 +1,7 @@
 # Memoria del Proyecto — ROESAN CRM
 
 > **AGENTES DE IA:** Leer este archivo al inicio de CADA sesión antes de escribir cualquier código. Actualizar al finalizar avances importantes.
-> Última actualización: 2026-05-12
+> Última actualización: 2026-05-13
 
 ---
 
@@ -245,4 +245,18 @@ Cuando se sube una póliza y el cliente **ya existe** en Soft Seguros:
 - Se extrajeron `AddInteraccionForm` y `AddCotizacionForm` a componentes globales.
 - El pipeline de **Renovaciones** ahora cuenta con las mismas herramientas comerciales que el de **Pre-venta**: registro de interacciones, cotizador manual/AI, carga de documentos y generación de Propuesta Pro.
 - Corrección de labels de relación (`lead` en lugar de `leads`) para mantener consistencia con el schema de InstantDB.
+
+### Alertas en Tiempo Real y Propuestas Pro ✅ (2026-05-13)
+- **Sistema de Alertas:** Implementación de notificaciones sonoras (5s) y "toasts" persistentes que incluyen el nombre del cliente y botón directo a WhatsApp.
+- **Tracking de Propuestas:** Notificación automática en el CRM cuando un cliente abre el link de su propuesta comercial.
+- **Propuesta Pro Premium:** Inclusión de logo oficial, formato de RC en millones y envío de correos vía Gmail API en formato HTML con botones de acción (CTA).
+- **Control de Cotizaciones:** El asesor puede realizar un "manual override" de la selección de la IA en el comparador; los encabezados de los planes son pegajosos (sticky) para facilitar la navegación.
+- **Detección de Renovaciones:** El sistema identifica automáticamente si un PDF es una renovación por el nombre del archivo y muestra un badge visual.
+- **Integraciones:** 
+    - **Allianz:** Corrección de estructura XML Call4, restauración de tags obligatorios (`discountextension`, etc.) y mejor manejo de errores SOAP 500.
+    - **SBS:** Optimización del parsing eliminando prefijos de namespaces.
+- **Datos y UX:** 
+    - Agregados campos de Marca y Línea de vehículo, Género y Fecha de Nacimiento en el tab de Datos.
+    - Filtros por Ramo en el Kanban de Renovaciones e iconos corregidos por ramo.
+    - Notificaciones de nuevos leads con CC configurable.
 

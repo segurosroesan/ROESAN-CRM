@@ -45,7 +45,7 @@ export class GmailController {
    */
   @Post('send')
   async sendEmail(
-    @Body() body: { userId: string; to: string; subject: string; content: string; leadId: string },
+    @Body() body: { userId: string; to: string; subject: string; content: string; leadId: string; cc?: string },
   ) {
     try {
       return await this.gmailService.sendEmail(
@@ -54,6 +54,7 @@ export class GmailController {
         body.subject,
         body.content,
         body.leadId,
+        body.cc,
       );
     } catch (error) {
       throw new InternalServerErrorException(error instanceof Error ? error.message : 'Error enviando correo');
